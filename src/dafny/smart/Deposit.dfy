@@ -12,7 +12,11 @@
  * under the License.
  */
 
+include "Helpers.dfy"
+
 module DepositSmartContract {
+
+    import opened Helpers
 
     /** Merkle Binary trees.
      *
@@ -26,22 +30,11 @@ module DepositSmartContract {
             Leaf(v: T, ghost l: nat, ghost i: nat)
         |   Node(v: T, left: Node, right: Node, ghost l: nat, ghost i: nat)
 
-
-    /**
-     *  Maximum of two non-negative integers.
-     */
-    function max(x: nat, y : nat) : nat 
-    {
-        if x > y then 
-            x
-        else 
-            y
-    }
-
     /**
      *  Height of a tree.
      */
     function height<T>(root : Node<T>) : nat 
+        ensures height(root) >= 1
         decreases root
     {
         match root 
@@ -68,15 +61,47 @@ module DepositSmartContract {
     }
 
     /**
-     *  Nodes if a Merkle tree can be indexed at each level from 1 to 2^(h - l).
+     *  Check that the levels in a tree are set accordingly.
+     *
      */
-    predicate isMerkleIndexedTree<T>(root : Node<T>, parentIndex: nat) 
+    predicate isMerkleLevelTree<T>(root : Node<T>, level: nat) 
         requires isCompleteTree(root, height(root))
+        decreases root
     {
          match root 
-           case Leaf(_, _, i) => i == 0
-           case Node(_, _, _, _, i) => i == 0
+           case Leaf(_, l, _) => l == level == 0
+           case Node(_, lc, rc, l, _) => l >= 0 && isMerkleLevelTree(lc, l - 1) && isMerkleLevelTree(rc,l - 1)
     }
+    
+    /**
+     *  The level of root is height - 1 for a correctly levelled tree.
+     */
+    lemma {:induction root} levelOfRoot<T>(root : Node<T>) 
+        requires isCompleteTree(root, height(root))
+        requires  isMerkleLevelTree(root, height(root) - 1)
+        ensures root.l == height(root) - 1
+    {   //  Thanks Dafny
+    }    
+
+    /**
+     *
+     *  Nodes in a Merkle tree can be indexed at each level from 1 to 2^(h - l) - 1.
+     */
+    predicate isMerkleIndexedTree<T>(root : Node<T>, level: nat) 
+        requires isCompleteTree(root, height(root))
+        decreases root
+    {
+         match root 
+           case Leaf(_, l, _) => true
+           case Node(_, lc, rc, l, _) => true
+    }
+    
+    // lemma {:induction root} levelOfRoot<T>(root : Node<T>) 
+    //     requires isCompleteTree(root, height(root))
+    //     requires  isMerkleLevelTree(root, height(root) - 1)
+    //     ensures root.l == height(root) - 1
+    // {   //  Thanks Dafny
+    // }    
     
     /**
      *  We return a sequence of nodes.
@@ -113,17 +138,6 @@ module DepositSmartContract {
     // {
 
     // }
-
-    /** Define 2^n. */
-    function power2(n : nat): nat 
-        ensures power2(n) >= 1
-        ensures n >= 1 ==> power2(n) >= 2 
-
-        decreases n
-    {
-        if n == 0 then 1 else 2 * power2(n - 1)
-    }
-
 
     /**
      *  A binary Merkle Tree of height h has 2^h - 1 nodes.
