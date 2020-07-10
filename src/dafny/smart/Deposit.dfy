@@ -45,65 +45,6 @@ module DepositSmartContract {
     }
 
     /**
-     *  Whether the tree defined by a node is a Merkle Tree of height `h`.
-     */
-    predicate isCompleteTree<T>(root : Node<T>, h : nat) 
-        requires h == height(root)
-        decreases h
-    {
-        match root 
-            //  a leaf, level 0 is a MT of height 1
-            case Leaf(_, l, _) => l == h - 1 == 0
-            //  A node, level l, is a MT of height h if both children are MTs of height h - 1
-            case Node(_, lc, rc, l, _) => 1 <= l == h - 1 
-                && height(lc) == height(rc) == h - 1
-                && isCompleteTree(lc, h - 1) && isCompleteTree(rc, h - 1)
-    }
-
-    /**
-     *  Check that the levels in a tree are set accordingly.
-     *
-     */
-    predicate isMerkleLevelTree<T>(root : Node<T>, level: nat) 
-        requires isCompleteTree(root, height(root))
-        decreases root
-    {
-         match root 
-           case Leaf(_, l, _) => l == level == 0
-           case Node(_, lc, rc, l, _) => l >= 0 && isMerkleLevelTree(lc, l - 1) && isMerkleLevelTree(rc,l - 1)
-    }
-    
-    /**
-     *  The level of root is height - 1 for a correctly levelled tree.
-     */
-    lemma {:induction root} levelOfRoot<T>(root : Node<T>) 
-        requires isCompleteTree(root, height(root))
-        requires  isMerkleLevelTree(root, height(root) - 1)
-        ensures root.l == height(root) - 1
-    {   //  Thanks Dafny
-    }    
-
-    /**
-     *
-     *  Nodes in a Merkle tree can be indexed at each level from 1 to 2^(h - l) - 1.
-     */
-    predicate isMerkleIndexedTree<T>(root : Node<T>, level: nat) 
-        requires isCompleteTree(root, height(root))
-        decreases root
-    {
-         match root 
-           case Leaf(_, l, _) => true
-           case Node(_, lc, rc, l, _) => true
-    }
-    
-    // lemma {:induction root} levelOfRoot<T>(root : Node<T>) 
-    //     requires isCompleteTree(root, height(root))
-    //     requires  isMerkleLevelTree(root, height(root) - 1)
-    //     ensures root.l == height(root) - 1
-    // {   //  Thanks Dafny
-    // }    
-    
-    /**
      *  We return a sequence of nodes.
      *
      *  @note   We may not use a set for collectting the nodes, as it is possible that
@@ -126,41 +67,94 @@ module DepositSmartContract {
     {
         match root 
             case Leaf(_, _, _) => [ root ] 
-            case Node(_, lc, rc, _, _) =>  collectLeaves<T>(lc) + collectLeaves<T>(rc) 
+            case Node(_, lc, rc, _, _) =>  
+                collectLeaves<T>(lc) + collectLeaves<T>(rc) 
     }
     
     /**
-     *  In a MerkleTree, all the levels are between 0 and h - 1
+     *  Whether the tree defined by a node is a Merkle Tree of height `h`.
      */
-    // lemma boundedLevels<T>(root : Node<T>, h : nat) 
-    //     requires isMerkleTree(root, h)
-    //     ensures 
-    // {
-
-    // }
+    predicate isCompleteTree<T>(root : Node<T>) 
+        decreases root
+    {
+        match root 
+            //  A leaf is a complete tree
+            case Leaf(_, _, _) => true
+            //  From a root node, a tree is complete if both children have same height
+            case Node(_, lc, rc, _, _) => 
+                && height(lc) == height(rc) 
+                && isCompleteTree(lc) && isCompleteTree(rc)
+    }
 
     /**
-     *  A binary Merkle Tree of height h has 2^h - 1 nodes.
+     *  Check that the levels in a tree are set according to the height - 1.
+     *
      */
-    lemma {:induction root, h} numberOfNodesInCompleteTree<T>(root : Node<T>, h : nat)
-        requires h == height(root)
-        requires isCompleteTree(root, h)
-        ensures |collectNodes(root)| == power2(h) - 1
+    predicate isMerkleLevelTree<T>(root : Node<T>, level: nat) 
+        requires isCompleteTree(root)
+        decreases root
+    {
+        root.l == height(root) - 1
+    }
+    
+    /**
+     *
+     *  Nodes in a Merkle tree can be indexed at each level from 1 to 2^(h - l) - 1.
+     *  @todo   Check from 1 to 2^(h - l) - 1.
+     *  @todo   Write the definition! for now consistently returns true ...
+     */
+    predicate isMerkleIndexedTree<T>(root : Node<T>, level: nat) 
+        requires isCompleteTree(root)
+        decreases root
+    {
+         match root 
+           case Leaf(_, l, i) => true
+           case Node(_, lc, rc, l, i) => true
+    }
+     
+    /**
+     *  Relation between heigth and number of leaves in a complete tree.
+     */
+    lemma {:induction root} completeTreeNumberOfLeaves<T>(root : Node<T>) 
+        requires isCompleteTree(root)
+        ensures |collectLeaves(root)| == power2(height(root) - 1)
     {   //  Thanks Dafny
     }
 
     /**
-     *  The number of leaves in a complete tree.
+     *  Relation between heigth and number of nodes in a complete tree.
      */
-    lemma {:induction root, h} numberOfLeavesInCompleteTree<T>(root : Node<T>, h : nat)
-        requires h == height(root)
-        requires isCompleteTree(root, h)
-        ensures |collectLeaves(root)| == power2(h - 1)       
+    lemma {:induction root} completeTreeNumberOfNodes<T>(root : Node<T>) 
+        requires isCompleteTree(root)
+        ensures |collectNodes(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
-    } 
+    }
 
+    //  Trees holding integer attributes
+    type Intnode = Node<int>
 
+    /** 
+     *  Difference between two integers.
+     */
+    function diff(a: int, b : int) : int 
+    {
+        a - b
+    }
 
+    /**
+     *  Check that a decorated tree correctly stores the diff attribute. 
+     */
+    predicate isDecoratedWithDiff(root: Node<int>)
+    {
+        match root
+            case Leaf(v, _, _) => true
+
+            case Node(v, lc, rc, _, _) => v == diff(lc.v, rc.v)
+    }
+
+    /**
+     *  
+     */
 
 /*
  * fun init() -> unit:
@@ -201,4 +195,4 @@ module DepositSmartContract {
  */
 
 
- }
+}
