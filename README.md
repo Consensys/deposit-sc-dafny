@@ -177,13 +177,17 @@ For a complete (binary) tree this also amounts to matching the `|l|` leftmost le
 The example above illustrates this for the list `[3, 6, 2, -1, 4]`:  `s[0].v == n1.v == 3`,
 `s[1].v == n2.v == 6` and so on (we assume sequences of length `n` are indexed from `0` to `n - 1`).
 
-Assume we change the value of one leaf in the above tree, say `n6`.
-This impacts the values of the `diff` attributes on the path `p = n15, n14, n11, n6`.
+Assume we change the value of one leaf in the above tree, say `n6` from `0` (default) to `3`.
+This impacts the values of the `diff` attributes on the (green) path `p = n15, n14, n11, n6`.
 And the values needed to re-compute (or update) the `diff` attributes on this path are on the left (yellow) and on the  right (purple) of `p`
 
+<center>
+<img src="tree4.jpg" alt="Incomplete/Complete Binary Trees" width="500">
+</center>
 
-
+Furthermore, assume we are interested in the value of the attribute `diff` on `n15` only.
 We can state the incremental Merkle tree computation problem as follows: 
+
 
 ```haskell
 method incrDiffAlgo(root: Node<int>, l: seq<int>, e: int) 
