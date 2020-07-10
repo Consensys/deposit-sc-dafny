@@ -203,4 +203,13 @@ As a result, it may be possible to compute the updated value of the `diff` attri
 `n15` by storing only a **summary** of the previous computations that capture the values of the yellow (left of current path) and purple (right of current path) nodes.
 This is a typical example of **dynamic programming**.
 
-We can state the incremental Merkle tree computation problem as follows: 
+## Incremental Algorithm in Dafny
+
+The file `intTree.dfy` contains the scaffolding for the specification, implementation and proof of an incremental algorithm to compute the `diff` attribute on the root of a tree.
+
+In order to finalise the proof we need to:
+
+1. add data structures to store the values of the yellow (and possibly purple) nodes
+2. define how these are updated.
+
+This can be done in the `add` method.
