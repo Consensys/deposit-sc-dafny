@@ -45,7 +45,7 @@ To represent a list of `n < 2^(h - 1)` elements with a binary complete tree of h
  `L` is **right-padded** with  dummy or neutral elements (e.g. zeroes) to obtain `L'` of length `2^(h - 1)`. `L'` is used to define the leaves of a complete binary tree, on which the Merkle attribute (_hash_) is computed.
 
 <center>
-<img src="tree2.jpg" alt="Incomplete/Complete Binary Trees" width="500">
+<img src="tree2.jpg" alt="Storing a list in the tree leaves" width="500">
 </center>
 
 In the tree above, the list `[3, 6, 2, -1, 4]` is stored in the 5 leftmost leaves, and three zeroes (default values) are used to fill in the remaining leaves.
@@ -115,7 +115,7 @@ For instance, `Node<int>` can store the value of non-negative integers' attribut
 The height attribute is a simple one. To define a problem that is equivalent to the **IncMerkleTree** problem, we may use a synthesised attribute that is _assymetric_.
 A simple version is to assume that each leave holds an _integer_ value, and the value of an internal node is the difference between the values of the left and right children.
 
-To check that an `int`-decorated tree stores the value of the previous attribute, we can use the following predicate: 
+To check that an `int`-decorated tree stores the value of the previous attribute, we can use the following predicate (with `diff(x,y) == x - y`): 
 
 ```haskell
 predicate isDecoratedWithDiff(root: Node<int>)
@@ -132,7 +132,7 @@ predicate isDecoratedWithDiff(root: Node<int>)
 The values of the `diff` attribute on (the nodes of) a tree of height `4` that stores the list `[3, 6, 2, -1, 4]` are provided below: the blue values correspond to the leaves and the green ones are the synthesised (computed) ones.  Nodes are labelled starting from the leaves left to right and upwards to the root level.
 
 <center>
-<img src="tree3.jpg" alt="Incomplete/Complete Binary Trees" width="500">
+<img src="tree3.jpg" alt="Computing Synthesised Attribute" width="500">
 </center>
 
 ## Incremental Computation of the Diff attribute
@@ -180,7 +180,7 @@ This impacts the values of the `diff` attributes on the (green) path `p = n15, n
 And the values needed to re-compute (or update) the `diff` attributes on this path are on the left (yellow) and on the  right (purple) of `p`
 
 <center>
-<img src="tree4.jpg" alt="Incomplete/Complete Binary Trees" width="500">
+<img src="tree4.jpg" alt="Impact of leaf change" width="500">
 </center>
 
 Furthermore, assume 
@@ -196,7 +196,7 @@ To compute the updated value of `diff` on `n15`, we only need to store the three
 And for the next position (`n7`) in which we can add a new element, we will need the yellow and purple nodes' values at `n11` and `n8` as depicted below. 
 
 <center>
-<img src="tree5.jpg" alt="Incomplete/Complete Binary Trees" width="500"> 
+<img src="tree5.jpg" alt="Nodes needed to compute updated root hash" width="500"> 
 </center>
 
 As a result, it may be possible to compute the updated value of the `diff` attribute on the root
