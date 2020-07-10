@@ -36,7 +36,7 @@ module Helpers {
     }
 
     /** 
-     *  A simple lemma: 2* (2^n) == 2 ^(n + 1)
+     *  A simple lemma: (2^n) * (2^n) == 2 ^(n + 1)
      */
     lemma {:induction n} twoTimesPower2(n: nat) 
         ensures power2(n) + power2(n) <= power2(n + 1)
