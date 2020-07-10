@@ -198,7 +198,7 @@ To compute the updated value of `diff` on `n15`, we only need to store the three
 And for the next position (`n7`) in which we can add a new element, we will need the yellow and purple nodes' values at `n11` and `n8` as depicted below. 
 
 <center>
-<img src="tree5.jpg" alt="Incomplete/Complete Binary Trees" width="500">
+<img src="tree5.jpg" alt="Incomplete/Complete Binary Trees" width="500"> 
 </center>
 
 As a result, it may be possible to compute the updated value of the `diff` attribute on the root
