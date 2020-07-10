@@ -37,7 +37,7 @@ module Trees {
     /**
      *  Height of a tree.
      */
-    function height<T>(root : Node<T>) : nat 
+    function method height<T>(root : Node<T>) : nat 
         ensures height(root) >= 1
         decreases root
     {
@@ -56,7 +56,7 @@ module Trees {
      *  @return     The sequence of nodes that corresponds to the pre-order 
      *              (node, left right) traversal of a tree.
      */
-    function collectNodes<T>(root : Node<T>) : seq<Node<T>>
+    function method collectNodes<T>(root : Node<T>) : seq<Node<T>>
         decreases root
     {
         match root 
@@ -72,7 +72,7 @@ module Trees {
      *  @return         The leaves as a sequence from left to right in-order traversal (left, node, right).
      *
      */
-    function collectLeaves<T>(root : Node<T>) : seq<Node<T>>
+    function method collectLeaves<T>(root : Node<T>) : seq<Node<T>>
         decreases root
     {
         match root 

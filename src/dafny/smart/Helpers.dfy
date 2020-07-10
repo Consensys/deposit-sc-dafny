@@ -17,7 +17,7 @@ module Helpers {
     /**
      *  Maximum of two non-negative integers.
      */
-    function max(x: nat, y : nat) : nat 
+    function method max(x: nat, y : nat) : nat 
     {
         if x > y then 
             x
