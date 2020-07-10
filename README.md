@@ -112,8 +112,6 @@ datatype Node<T> =
 
 For instance, `Node<int>` can store the value of non-negative integers' attribute like `height`.
 
-## Efficient Computation of Synthesised Attributes
-
 The height attribute is a simple one. To define a problem that is equivalent to the **IncMerkleTree** problem, we may use a synthesised attribute that is _assymetric_.
 A simple version is to assume that each leave holds an _integer_ value, and the value of an internal node is the difference between the values of the left and right children.
 
@@ -203,6 +201,6 @@ And for the next position (`n7`) in which we can add a new element, we will need
 
 As a result, it may be possible to compute the updated value of the `diff` attribute on the root
 `n15` by storing only a **summary** of the previous computations that capture the values of the yellow (left of current path) and purple (right of current path) nodes.
-This is a typical example of a _dynamic programming_ problem.
+This is a typical example of **dynamic programming**.
 
 We can state the incremental Merkle tree computation problem as follows: 
