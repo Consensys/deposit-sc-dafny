@@ -58,8 +58,8 @@ module MerkleTrees {
         requires |l| <= |collectLeaves(root)|
     {
         forall i:: 
-            0 <= i < |l| ==> l[i] == collectLeaves(root)[i].v
-            && |l| <= i < |collectLeaves(root)|  ==> collectLeaves(root)[i].v == default
+            (0 <= i < |l| ==> l[i] == collectLeaves(root)[i].v)
+            && 
+            (|l| <= i < |collectLeaves(root)|  ==> collectLeaves(root)[i].v == default)
     }
-
 }
