@@ -185,21 +185,24 @@ And the values needed to re-compute (or update) the `diff` attributes on this pa
 <img src="tree4.jpg" alt="Incomplete/Complete Binary Trees" width="500">
 </center>
 
-Furthermore, assume we are interested in the value of the attribute `diff` on `n15` only.
+Furthermore, assume 
+1. we are interested in the value of the attribute `diff` on the root `n15` only,
+2. the list of stored elements in the leaves grow monotonically: once a new element is inserted
+    its value is never modified. 
+3. the right-most leaves all have the default value (in our example zero).
+
+In the example above, it is clear that to compute the new value of `diff` on `n15`, after adding `3` as the value of `n6`, we need only the yellow and purple nodes.
+As the nodes on the right of `p` have the default value, they all have a default value for the attributes (that may depend on the level in tree).
+
+To compute the updated value of `diff` on `n15`, we only need to store the three values of the yellow and purple nodes.
+And for the next position (`n7`) in which we can add a new element, we will need the yellow and purple nodes' values at `n11` and `n8` as depicted below. 
+
+<center>
+<img src="tree5.jpg" alt="Incomplete/Complete Binary Trees" width="500">
+</center>
+
+As a result, it may be possible to compute the updated value of the `diff` attribute on the root
+`n15` by storing only a **summary** of the previous computations that capture the values of the yellow (left of current path) and purple (right of current path) nodes.
+This is a typical example of a _dynamic programming_ problem.
+
 We can state the incremental Merkle tree computation problem as follows: 
-
-
-```haskell
-method incrDiffAlgo(root: Node<int>, l: seq<int>, e: int) 
-                                            returns (root' : Node<int>) 
-    requires isCompleteTree(root)
-    requires |l| < |collectLeaves(root)|
-    requires treeLeftmostLeavesMatchList(l, root)
-
-    ensures isCompleteTree(root')
-    ensures height(root') == height(root)
-    ensures treeLeftmostLeavesMatchList(l + [e], root')
-{
-
-}
-```
