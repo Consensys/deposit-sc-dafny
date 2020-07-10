@@ -11,7 +11,7 @@
  * License for the specific language governing permissions and limitations 
  * under the License.
  */
- 
+
 module Helpers {
 
     /**
@@ -33,5 +33,14 @@ module Helpers {
         decreases n
     {
         if n == 0 then 1 else 2 * power2(n - 1)
+    }
+
+    /** 
+     *  A simple lemma: 2* (2^n) == 2 ^(n + 1)
+     */
+    lemma {:induction n} twoTimesPower2(n: nat) 
+        ensures power2(n) + power2(n) <= power2(n + 1)
+    {
+
     }
 }
