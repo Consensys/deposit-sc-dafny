@@ -129,10 +129,11 @@ module DiffTree {
          *              `diffRoot == root.v`.
          */
         method add(e: int)
-            //  Store is not full
 
             requires Trees.isCompleteTree(root)
             requires isValid()
+
+            //  Store is not full
             requires |store| < power2(height - 1)
 
             //  Preserves tree height and completeness
