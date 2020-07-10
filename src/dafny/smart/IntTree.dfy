@@ -39,11 +39,15 @@ module DiffTree {
      *  Check that a decorated tree correctly stores the diff attribute. 
      */
     predicate isDecoratedWithDiff(root: Node<int>)
+        decreases root
     {
         match root
             case Leaf(v, _, _) => true
 
-            case Node(v, lc, rc, _, _) => v == diff(lc.v, rc.v)
+            case Node(v, lc, rc, _, _) => 
+                v == diff(lc.v, rc.v)
+                && isDecoratedWithDiff(lc)
+                && isDecoratedWithDiff(rc)
     }
 
     /**
