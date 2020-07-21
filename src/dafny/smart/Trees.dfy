@@ -61,7 +61,7 @@ module Trees {
     {
         match root 
             case Leaf(_, _, _) => [ root ] 
-            case Node(_, lc, rc, _, _) =>  [ root ] + collectNodes<T>(lc) + collectNodes<T>(rc) 
+            case Node(_, lc, rc, _, _) =>  [ root ] + collectNodes(lc) + collectNodes(rc) 
     }
 
     /**
@@ -78,7 +78,7 @@ module Trees {
         match root 
             case Leaf(_, _, _) => [ root ] 
             case Node(_, lc, rc, _, _) =>  
-                collectLeaves<T>(lc) + collectLeaves<T>(rc) 
+                collectLeaves(lc) + collectLeaves(rc) 
     }
     
     /**
