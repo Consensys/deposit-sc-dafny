@@ -37,7 +37,7 @@ module Trees {
     /**
      *  Height of a tree.
      */
-    function method height<T>(root : Tree<T>) : nat 
+    function height(root : Tree) : nat 
         ensures height(root) >= 1
         decreases root
     {
@@ -56,7 +56,7 @@ module Trees {
      *  @return         The sequence of nodes/leaves that corresponds to the pre-order 
      *                  (node, left, right) traversal of a tree.
      */
-    function method collectNodes<T>(root : Tree<T>) : seq<Tree<T>>
+    function method collectNodes(root : Tree) : seq<Tree>
         decreases root
     {
         match root 
@@ -72,7 +72,7 @@ module Trees {
      *  @return         The leaves as a sequence from left to right in-order traversal (left, node, right).
      *
      */
-    function method collectLeaves<T>(root : Tree<T>) : seq<Tree<T>>
+    function method collectLeaves(root : Tree) : seq<Tree>
         ensures forall i :: 0 <= i < |collectLeaves(root)| ==>  collectLeaves(root)[i].Leaf?
         decreases root
     {
@@ -87,7 +87,7 @@ module Trees {
      *
      *  @param  root    The root node of the tree.
      */
-    predicate isCompleteTree<T>(root : Tree<T>) 
+    predicate isCompleteTree(root : Tree) 
         decreases root
     {
         match root 
@@ -102,7 +102,7 @@ module Trees {
     /**
      *  Relation between height and number of leaves in a complete tree.
      */
-    lemma {:induction root} completeTreeNumberOfLeaves<T>(root : Tree<T>) 
+    lemma {:induction root} completeTreeNumberOfLeaves(root : Tree) 
         requires isCompleteTree(root)
         ensures |collectLeaves(root)| == power2(height(root) - 1)
     {   //  Thanks Dafny
@@ -111,7 +111,7 @@ module Trees {
     /**
      *  Relation between height and number of nodes in a complete tree.
      */
-    lemma {:induction root} completeTreeNumberOfNodes<T>(root : Tree<T>) 
+    lemma {:induction root} completeTreeNumberOfNodes(root : Tree) 
         requires isCompleteTree(root)
         ensures |collectNodes(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
