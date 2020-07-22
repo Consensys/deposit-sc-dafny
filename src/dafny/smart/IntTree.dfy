@@ -63,8 +63,8 @@ module DiffTree {
         /**  The root tracking the Merkle Tree. */
         ghost var root : Tree<int>
 
-        /** Height if the tree */
-        var height : nat 
+        /** Height of the tree */
+        var h : nat 
 
         /** diffRoot, the value of diff on the root. */
         var diffRoot : int
@@ -74,9 +74,9 @@ module DiffTree {
 
         ghost var store : seq<int>
 
-        /** A valid configuration. */
+        /** A valid tree. */
         predicate isValid() 
-            requires Trees.isCompleteTree(root)
+            requires isCompleteTree(root)
             reads this
         {
             completeTreeNumberOfLeaves(root);
@@ -86,23 +86,23 @@ module DiffTree {
             //  diffRoot is the value of diff on root.
             && diffRoot == root.v
             //  height preserved.
-            && height == Trees.height(root) 
-            && 0 <= |store| <= power2(height - 1)
-            && |collectLeaves(root)| == power2(height - 1)
+            && h == height(root) 
+            && 0 <= |store| <= power2(h - 1)
+            && |collectLeaves(root)| == power2(h - 1)
 
             //  tree leftmost leaves are in store.
-            && MerkleTrees.treeLeftmostLeavesMatchList(store, root, 0)
+            && treeLeftmostLeavesMatchList(store, root, 0)
         }
 
         /**
-         *  Initial tree of height h and all leaves set to 0.
+         *  Initial tree of height initH and all leaves set to 0.
          */
-        constructor(h: nat) 
-            requires h >= 1
-            ensures Trees.height(root) == h == height
-            ensures MerkleTrees.treeLeftmostLeavesMatchList([], root, 0)
+        constructor(initH: nat) 
+            requires initH >= 1
+            ensures height(root) == h == initH
+            ensures treeLeftmostLeavesMatchList([], root, 0)
             ensures store == []
-            ensures Trees.isCompleteTree(root)
+            ensures isCompleteTree(root)
             ensures isValid()
 
         /** Defines the Int Tree for a given sequence.
@@ -114,8 +114,8 @@ module DiffTree {
         function buildMerkle(l: seq<int>, h : nat) : Tree<int> 
             requires h >= 1
             requires |l| <= power2(h - 1)
-            ensures Trees.height(buildMerkle(l, h)) == h
-            ensures Trees.isCompleteTree(buildMerkle(l, h))
+            ensures height(buildMerkle(l, h)) == h
+            ensures isCompleteTree(buildMerkle(l, h))
             ensures |collectLeaves(buildMerkle(l, h))| == power2(h - 1)
             ensures isDecoratedWithDiff(buildMerkle(l, h))
             ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h), 0)
@@ -130,25 +130,25 @@ module DiffTree {
          */
         method add(e: int)
 
-            requires Trees.isCompleteTree(root)
+            requires isCompleteTree(root)
             requires isValid()
 
             //  Store is not full
-            requires |store| < power2(height - 1)
+            requires |store| < power2(h - 1)
 
             //  Preserves tree height and completeness
-            ensures height == old(height) == Trees.height(root) 
-            ensures Trees.isCompleteTree(root)
+            ensures h == old(h) == height(root) 
+            ensures isCompleteTree(root)
 
             //  Store is updated
             ensures store == old(store) + [ e ]
 
-            ensures |collectLeaves(root)| == power2(height - 1)
+            ensures |collectLeaves(root)| == power2(h - 1)
 
             //  diffRoot stores value of diff for store
             ensures isDecoratedWithDiff(root)
-            ensures |store| <= power2(height - 1)
-            ensures MerkleTrees.treeLeftmostLeavesMatchList(store, root, 0)
+            ensures |store| <= power2(h - 1)
+            ensures treeLeftmostLeavesMatchList(store, root, 0)
 
             //  The next one is not verified in the current version of this algo.
             ensures diffRoot == root.v
@@ -161,7 +161,7 @@ module DiffTree {
             store := store + [ e ] ;
             
             //  Define new tree for updated store
-            root := buildMerkle(store, height);
+            root := buildMerkle(store, h);
 
             //  Compute the new diffRoot
             diffRoot := 0 ;
