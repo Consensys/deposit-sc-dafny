@@ -72,9 +72,9 @@ To solve the **IncMerkleTree** problem, it may be useful to recall some simple d
 > A _binary tree_ can be defined by an Abstract Data Type (ADT) as follows:
 
 ```haskell
-datatype Node =
+datatype Tree =
             Leaf
-        |   Node(left: Node, right: Node)
+        |   Node(left: Tree, right: Tree)
 ```
 
 A node is either a _leaf_ or an _internal node_ with two (ordered) children, _left_ and _right_.
@@ -91,7 +91,7 @@ The Merkle attribute belongs to the category of _synthesised_ attributes.
 A simple example of a _synthesised attribute_ is the _height_ of a tree that can be defined by:
 
 ```haskell
-function height(root : Node) : nat
+function height(root : Tree) : nat
   {
     match root
         //  A leaf has height 1
@@ -107,12 +107,12 @@ To define trees decorated with an attribute of type `T`, we can use a _generic_ 
 that holds the value `v : T` of the attribute:
 
 ```haskell
-datatype Node<T> =
+datatype Tree<T> =
             Leaf(v: T)
-        |   Node(v: T, left: Node, right: Node)
+        |   Node(v: T, left: Tree, right: Tree)
 ```
 
-For instance, `Node<nat>` can store the value of non-negative integers' attributes like `height`.
+For instance, `Tree<nat>` can store the value of non-negative integers' attributes like `height`.
 
 The height attribute is a simple one. To define a problem that is equivalent to the **IncMerkleTree** problem, we may use a synthesised attribute that is _asymmetric_.
 A simple version is to assume that each leave holds an _integer_ value, and the value of an internal node is the difference between the values of the left and right children.
@@ -121,7 +121,7 @@ We let `diff(x,y) == x - y`.
 To check that the nodes of a `int`-decorated tree stores the value of the previous `diff` attribute, we can use the following predicate:
 
 ```haskell
-predicate isDecoratedWithDiff(root: Node<int>)
+predicate isDecoratedWithDiff(root: Tree<int>)
 {
     match root
         case Leaf(v) => true
@@ -150,7 +150,7 @@ The following function collects the leaves of a tree in a (indexed) sequence fro
 to right:
 
 ```haskell
-function collectLeaves<T>(root : Node<T>) : seq<Node<T>>
+function collectLeaves<T>(root : Tree<T>) : seq<Leaf<T>>
 {
     match root
         case Leaf(_, _, _) => [ root ]
@@ -166,7 +166,7 @@ To state that a `int`-tree stores the values of a list `l` as the first `|l|` le
 we define the following predicate:
 
 ```haskell
-predicate treeLeavesForList(l: seq<int>, root: Node<int>)
+predicate treeLeavesForList(l: seq<int>, root: Tree<int>)
     requires |l| <= |collectLeaves(root)|
 {
     forall i::
