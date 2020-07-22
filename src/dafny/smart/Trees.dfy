@@ -30,14 +30,14 @@ module Trees {
      *              It is 0 for leaves.
      *  @param  i   The index of a child at a given level.
      */
-    datatype Node<T> = 
+    datatype Tree<T> = 
             Leaf(v: T, ghost l: nat, ghost i: nat)
-        |   Node(v: T, left: Node, right: Node, ghost l: nat, ghost i: nat)
+        |   Node(v: T, left: Tree, right: Tree, ghost l: nat, ghost i: nat)
 
     /**
      *  Height of a tree.
      */
-    function method height<T>(root : Node<T>) : nat 
+    function method height<T>(root : Tree<T>) : nat 
         ensures height(root) >= 1
         decreases root
     {
@@ -53,10 +53,10 @@ module Trees {
      *
      *  @param  root    The root of the tree.
      *
-     *  @return     The sequence of nodes that corresponds to the pre-order 
-     *              (node, left right) traversal of a tree.
+     *  @return         The sequence of nodes/leaves that corresponds to the pre-order 
+     *                  (node, left, right) traversal of a tree.
      */
-    function method collectNodes<T>(root : Node<T>) : seq<Node<T>>
+    function method collectNodes<T>(root : Tree<T>) : seq<Tree<T>>
         decreases root
     {
         match root 
@@ -72,7 +72,8 @@ module Trees {
      *  @return         The leaves as a sequence from left to right in-order traversal (left, node, right).
      *
      */
-    function method collectLeaves<T>(root : Node<T>) : seq<Node<T>>
+    function method collectLeaves<T>(root : Tree<T>) : seq<Tree<T>>
+        ensures forall i :: 0 <= i < |collectLeaves(root)| ==>  collectLeaves(root)[i].Leaf?
         decreases root
     {
         match root 
@@ -86,7 +87,7 @@ module Trees {
      *
      *  @param  root    The root node of the tree.
      */
-    predicate isCompleteTree<T>(root : Node<T>) 
+    predicate isCompleteTree<T>(root : Tree<T>) 
         decreases root
     {
         match root 
@@ -101,7 +102,7 @@ module Trees {
     /**
      *  Relation between height and number of leaves in a complete tree.
      */
-    lemma {:induction root} completeTreeNumberOfLeaves<T>(root : Node<T>) 
+    lemma {:induction root} completeTreeNumberOfLeaves<T>(root : Tree<T>) 
         requires isCompleteTree(root)
         ensures |collectLeaves(root)| == power2(height(root) - 1)
     {   //  Thanks Dafny
@@ -110,7 +111,7 @@ module Trees {
     /**
      *  Relation between height and number of nodes in a complete tree.
      */
-    lemma {:induction root} completeTreeNumberOfNodes<T>(root : Node<T>) 
+    lemma {:induction root} completeTreeNumberOfNodes<T>(root : Tree<T>) 
         requires isCompleteTree(root)
         ensures |collectNodes(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny

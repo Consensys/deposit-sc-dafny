@@ -24,7 +24,7 @@ module MerkleTrees {
      *  Check that the levels in a tree are set according to the height - 1.
      *
      */
-    predicate isMerkleLevelTree<T>(root : Node<T>, level: nat) 
+    predicate isMerkleLevelTree<T>(root : Tree<T>, level: nat) 
         requires isCompleteTree(root)
         decreases root
     {
@@ -37,7 +37,7 @@ module MerkleTrees {
      *  @todo   Check from 1 to 2^(h - l) - 1.
      *  @todo   Write the definition! for now consistently returns true ...
      */
-    predicate isMerkleIndexedTree<T>(root : Node<T>, level: nat) 
+    predicate isMerkleIndexedTree<T>(root : Tree<T>, level: nat) 
         requires isCompleteTree(root)
         decreases root
     {
@@ -54,7 +54,7 @@ module MerkleTrees {
      *
      *  We assume collectLeaves return an indexed from left to right list of leaves.
      */
-    predicate treeLeftmostLeavesMatchList<T>(l: seq<T>, root: Node<T>, default: T)
+    predicate treeLeftmostLeavesMatchList<T>(l: seq<T>, root: Tree<T>, default: T)
         requires |l| <= |collectLeaves(root)|
     {
         forall i:: 

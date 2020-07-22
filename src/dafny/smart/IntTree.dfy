@@ -23,7 +23,7 @@ module DiffTree {
     import opened MerkleTrees
 
     //  Trees holding integer values as attribute.
-    type Intnode = Node<int>
+    type Intnode = Tree<int>
 
     /** 
      *  Difference between two integers.
@@ -40,7 +40,7 @@ module DiffTree {
     /**
      *  Check that a decorated tree correctly stores the diff attribute. 
      */
-    predicate isDecoratedWithDiff(root: Node<int>)
+    predicate isDecoratedWithDiff(root: Tree<int>)
         decreases root
     {
         match root
@@ -61,7 +61,7 @@ module DiffTree {
     class IntTree {
 
         /**  The root tracking the Merkle Tree. */
-        ghost var root : Node<int>
+        ghost var root : Tree<int>
 
         /** Height if the tree */
         var height : nat 
@@ -111,7 +111,7 @@ module DiffTree {
          *          defines its properties: correctly stores the attribute
          *          `diff` and the leftmost |l| leaves store l.
          */
-        function buildMerkle(l: seq<int>, h : nat) : Node<int> 
+        function buildMerkle(l: seq<int>, h : nat) : Tree<int> 
             requires h >= 1
             requires |l| <= power2(h - 1)
             ensures Trees.height(buildMerkle(l, h)) == h

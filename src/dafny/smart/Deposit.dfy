@@ -29,7 +29,7 @@ module DepositTree {
     /**
      *  Check that a decorated tree correctly stores the diff attribute. 
      */
-    predicate isDecoratedWithHash<T>(root: Node<T>)
+    predicate isDecoratedWithHash<T>(root: Tree<T>)
     {
         match root
             case Leaf(v, _, _) => true
