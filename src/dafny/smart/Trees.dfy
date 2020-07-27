@@ -103,8 +103,7 @@ module Trees {
      *  Relation between height and number of leaves in a complete tree.
      */
     lemma {:induction root} completeTreeNumberOfLeaves(root : Tree) 
-        requires isCompleteTree(root)
-        ensures |collectLeaves(root)| == power2(height(root) - 1)
+        ensures isCompleteTree(root) ==> |collectLeaves(root)| == power2(height(root) - 1)
     {   //  Thanks Dafny
     }
 
@@ -112,8 +111,7 @@ module Trees {
      *  Relation between height and number of nodes in a complete tree.
      */
     lemma {:induction root} completeTreeNumberOfNodes(root : Tree) 
-        requires isCompleteTree(root)
-        ensures |collectNodes(root)| == power2(height(root)) - 1
+        ensures isCompleteTree(root) ==> |collectNodes(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
     }
      
