@@ -49,12 +49,62 @@ module Trees {
     }
 
     /**
+     *  The node at the end of a path.
+     *
+     *  @param  p   A path (left/right).
+     *  @param  r   A complete binary tree.
+     *
+     *  @returns    The node of the tree that is the target of path `p`.
+     */
+    function nodeAt(p : seq<bool>, r: Tree) : Tree
+        requires |p| < height(r) 
+        requires isCompleteTree(r)
+        decreases p
+    {
+        if |p| == 0 then  
+            r
+        else 
+            // r must be a node as height(r) > |p| >= 1
+            assert(r.Node?);
+            match r 
+                case Node(_, lc, rc, _ , _) => 
+                        if p[0] then
+                        nodeAt(p[1..], lc)
+                    else 
+                        nodeAt(p[1..], rc)
+    }
+
+    /**
+     *  The nodes on each side of the path to a leaf.
+     *
+     *  @param  p   A path (left/right).
+     *  @param  r   A complete binary tree.
+     *  @returns    The nodes on the sides of the path `p`.
+     */
+    function leftRight(p : seq<bool>, r: Tree) : seq<Tree>
+        requires |p| == height(r) - 1
+        requires isCompleteTree(r)
+        ensures |leftRight(p, r)| == |p|
+        decreases p
+    {
+        match r 
+            case Leaf(_, _, _) => []
+
+            case Node(_, lc, rc, _, _) => 
+                if p[0] then
+                    [lc] + leftRight(p[1..], lc)
+                else 
+                    [rc] + leftRight(p[1..], rc)
+    }
+
+    /**
      *  The nodes of a tree (pre-order traversal).    .
      *
      *  @param  root    The root of the tree.
      *
      *  @return         The sequence of nodes/leaves that corresponds to the pre-order 
      *                  (node, left, right) traversal of a tree.
+     *  @todo           We don't really need that but only the number of nodes.
      */
     function method collectNodes(root : Tree) : seq<Tree>
         decreases root
@@ -69,7 +119,10 @@ module Trees {
      *  
      *  @param  root    The root node of the tree.
      *
-     *  @return         The leaves as a sequence from left to right in-order traversal (left, node, right).
+     *  @return         The leaves as a sequence from left to right in-order 
+     *                  traversal (left, node, right).
+     *
+     *  @todo           We don't really need that but only the values of the leaves.
      *
      */
     function method collectLeaves(root : Tree) : seq<Tree>
@@ -83,9 +136,10 @@ module Trees {
     }
     
     /**
-     *  Whether the tree rooted at root is complete.
+     *  Complete trees.
      *
      *  @param  root    The root node of the tree.
+     *  @returns        True if and only if the tree rooted at root is complete
      */
     predicate isCompleteTree(root : Tree) 
         decreases root
