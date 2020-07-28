@@ -149,6 +149,8 @@ module Trees {
                 && height(lc) == height(rc) 
                 && isCompleteTree(lc) && isCompleteTree(rc)
     }
+    
+    //  Helpers lemmas.
 
     /**
      *  Relation between height and number of leaves in a complete tree.

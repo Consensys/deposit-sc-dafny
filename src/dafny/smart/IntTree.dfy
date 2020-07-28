@@ -36,26 +36,14 @@ module DiffTree {
     {
         a - b
     }
-
+    
     /**
      *  Check that a decorated tree correctly stores the diff attribute. 
      */
-    predicate isDecoratedWithDiff(root: Tree<int>)
-        decreases root
+    predicate isDecoratedWithDiff(r: Tree<int>) 
     {
-        match root
-
-            case Leaf(v) => 
-                    //  leaves define the attributes
-                    true
-
-            case Node(v, lc, rc) => 
-                    //  Recursive definition for an internal node: children and
-                    //  well decorated and node value if the diff between children.
-                    v == diff(lc.v, rc.v)
-                    && isDecoratedWithDiff(lc)
-                    && isDecoratedWithDiff(rc)
-    }
+        isDecoratedWith(diff, r)
+    } 
 
     /**
      *  Incremental algorithm.
@@ -139,11 +127,8 @@ module DiffTree {
          *  @returns    True if and olny if all values are zero.
          */
         predicate isZeroTree(r : Tree<int>) 
-            decreases r
         {
-            match r 
-                case Leaf(v) => v == 0
-                case Node(v, lc, rc) => v == 0 && isZeroTree(lc) && isZeroTree(rc)
+            isConstantTree(r, 0)
         }
 
         /**

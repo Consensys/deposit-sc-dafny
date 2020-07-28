@@ -40,4 +40,73 @@ module MerkleTrees {
             && 
             (|l| <= i < |collectLeaves(root)|  ==> collectLeaves(root)[i].v == default)
     }
+
+    /**
+     *  Default value for a given type.
+     */
+    // function default<T>() : T 
+
+    /**
+     *  Check that a decorated tree correctly stores the f attribute. 
+     */
+    predicate isDecoratedWith<T>(f : (T, T) -> T, root: Tree<T>)
+        decreases root
+    {
+        match root
+
+            case Leaf(v) => 
+                    //  leaves define the attributes
+                    true
+
+            case Node(v, lc, rc) => 
+                    //  Recursive definition for an internal node: children are
+                    //  well decorated and node value if the f between children.
+                    v == f(lc.v, rc.v)
+                    && isDecoratedWith(f, lc)
+                    && isDecoratedWith(f, rc)
+    }
+
+   /** 
+    *  Defines the Tree associated with a given sequence.
+    *  
+    *  @note   T   his function does not compute the tree but rather
+    *              defines its properties: correctly stores the attribute
+    *              `diff` and the leftmost |l| leaves store l.
+    *
+    *   @param  l   A list of values.
+    *   @param  h   A height.
+    *   @param  f   A function to combine two values.
+    *   @param  d   A default value for the leaves not in `l`.
+    */
+    function buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : Tree<T> 
+        requires h >= 1
+        /** Tree has enough leaves to store `l`. */
+        requires |l| <= power2(h - 1)      
+
+        ensures height(buildMerkle(l, h, f, d)) == h
+        ensures isCompleteTree(buildMerkle(l, h, f, d))
+        ensures |collectLeaves(buildMerkle(l, h, f, d))| == power2(h - 1)
+        ensures isDecoratedWith(f, buildMerkle(l, h, f, d))
+        ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h, f, d), d)
+
+        /**
+         *  The tree decorated with constant values.
+         *  
+         *  @param  r   A tree.
+         *  @param  c   A value.
+         *  @returns    True if and olny if all values are equal to `c`.
+         */
+        predicate isConstantTree<T>(r : Tree<T>, c: T) 
+            decreases r
+        {
+            match r 
+                case Leaf(v) => v == c
+                case Node(v, lc, rc) => v == c
+                                && isConstantTree(lc, c) 
+                                && isConstantTree(rc, c)
+        }
+
+    //  Helpers lemmas
+
+
 }
