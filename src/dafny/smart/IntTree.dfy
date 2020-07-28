@@ -32,7 +32,7 @@ module DiffTree {
      *          isDecoratedWithDiff, but we may use another 
      *          function later, so we factor it out.
      */
-    function diff(a: int, b : int) : int 
+    function method diff(a: int, b : int) : int 
     {
         a - b
     }
@@ -44,12 +44,17 @@ module DiffTree {
         decreases root
     {
         match root
-            case Leaf(v, _, _) => true
 
-            case Node(v, lc, rc, _, _) => 
-                v == diff(lc.v, rc.v)
-                && isDecoratedWithDiff(lc)
-                && isDecoratedWithDiff(rc)
+            case Leaf(v) => 
+                    //  leaves define the attributes
+                    true
+
+            case Node(v, lc, rc) => 
+                    //  Recursive definition for an internal node: children and
+                    //  well decorated and node value if the diff between children.
+                    v == diff(lc.v, rc.v)
+                    && isDecoratedWithDiff(lc)
+                    && isDecoratedWithDiff(rc)
     }
 
     /**
@@ -72,6 +77,7 @@ module DiffTree {
         /** Number of elements in the tree. */
         // var counter : nat
 
+        /** The list of ints stored in the tree.  */
         ghost var store : seq<int>
 
         /** A valid tree. */
@@ -79,9 +85,10 @@ module DiffTree {
             requires isCompleteTree(root)
             reads this
         {
+            //  Use lemmas relating number of leaves and height of a complete tree.
             completeTreeNumberOfLeaves(root);
 
-            //  tree correctly decorated by diff.
+            //  The tree is correctly decorated by diff.
             isDecoratedWithDiff(root)
             //  diffRoot is the value of diff on root.
             && diffRoot == root.v
@@ -105,20 +112,93 @@ module DiffTree {
             ensures isCompleteTree(root)
             ensures isValid()
 
-        /** Defines the Int Tree for a given sequence.
+        /** 
+         *  Defines the Int Tree associated with a given sequence.
          *  
-         *  @note   This function does not compute the tree but rather
-         *          defines its properties: correctly stores the attribute
-         *          `diff` and the leftmost |l| leaves store l.
+         *  @note   T   his function does not compute the tree but rather
+         *              defines its properties: correctly stores the attribute
+         *              `diff` and the leftmost |l| leaves store l.
+         *
+         *  @param  l   
          */
         function buildMerkle(l: seq<int>, h : nat) : Tree<int> 
             requires h >= 1
-            requires |l| <= power2(h - 1)
+            /** Tree has enough leaves to store `l`. */
+            requires |l| <= power2(h - 1)      
+
             ensures height(buildMerkle(l, h)) == h
             ensures isCompleteTree(buildMerkle(l, h))
             ensures |collectLeaves(buildMerkle(l, h))| == power2(h - 1)
             ensures isDecoratedWithDiff(buildMerkle(l, h))
             ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h), 0)
+
+        /**
+         *  The tree decorated with zeroes.
+         *  
+         *  @param  r   A tree.
+         *  @returns    True if and olny if all values are zero.
+         */
+        predicate isZeroTree(r : Tree<int>) 
+            decreases r
+        {
+            match r 
+                case Leaf(v) => v == 0
+                case Node(v, lc, rc) => v == 0 && isZeroTree(lc) && isZeroTree(rc)
+        }
+
+        /**
+         *  Equivalent characterisation of zero trees.
+         */
+        lemma {:induction r} isZeroTreeiffAllNodesZero(r : Tree<int>) 
+             ensures (forall l :: l in collectNodes(r) ==> l.v == 0) <==> isZeroTree(r)
+        {   //  Thanks Dafny
+        } 
+
+        /**
+         *  The Merkle tree of height `h` for the empty list is the 
+         *  zero (complete) tree of height `h`.
+         */
+        lemma merkleEmptyListIsZeroTree(h : nat)
+            requires h >= 1 
+            ensures isZeroTree(buildMerkle([], h))
+        {
+            allLeavesZeroImplyAllNodesZero(buildMerkle([], h));
+            isZeroTreeiffAllNodesZero(buildMerkle([], h));
+        }   
+       
+        /**
+         *  If all leaves are zero and tree is decorated with diff, then
+         *  all nodes are zero.
+         */
+        lemma {:induction r} allLeavesZeroImplyAllNodesZero(r: Tree<int>) 
+            requires isDecoratedWithDiff(r)
+            requires forall l :: l in collectLeaves(r) ==> l.v == 0
+            ensures forall l :: l in collectNodes(r) ==> l.v == 0 
+        {   //  Thanks Dafny
+        }
+
+        /**
+         *  Merkle tree of height 1 with empty list is Leaf(0).
+         */
+        lemma merkleTreeHeightOneZero() 
+            ensures buildMerkle([], 1) == Leaf(0)
+        {
+            assert(buildMerkle([], 1).Leaf?);
+            match buildMerkle([], 1)
+                case Leaf(v) => 
+                    assert (Leaf(v) in collectLeaves(buildMerkle([], 1)));
+        }
+
+        /**
+         *  The value of diff at the root of a well decorated tree is the value of
+         *  the tree.
+         */
+        function hash_tree_root(r: Tree<int>) : int 
+            requires isCompleteTree(r)
+            requires isDecoratedWithDiff(r) 
+        {
+            r.v
+        }
 
         /** 
          *  Add element e to the tree.
@@ -167,5 +247,32 @@ module DiffTree {
             diffRoot := 0 ;
         }
 
+        function method foo(p : seq<bool>, levelVal : seq<int>, lastVal: int) : int 
+            requires |p| == |levelVal|
+            decreases p
+        {
+            if |p| == 0 then
+                lastVal
+            else if p[0] then
+                //  child was on the left
+                foo(p[1..], levelVal[1..], diff(lastVal, levelVal[0]))
+            else 
+                //  child was on the right
+                foo(p[1..], levelVal[1..], diff(levelVal[0], lastVal))
+        }
+
+        method foo2(p: seq<bool>, r: Tree<int>) returns (r' : Tree<int>)
+            requires |p| == height(r) - 1
+            requires isCompleteTree(r)
+            requires forall i :: 0 <= i < |p| ==> isDecoratedWithDiff(leftRight(p, r)[i])
+
+            ensures isDecoratedWithDiff(r')
+        {
+            r' := r;
+            //  compute attribute on path `p`.
+        }
+
+       
+        
     } 
 }
