@@ -26,13 +26,10 @@ module Trees {
      *  Values are in a domain `T`.
      *  
      *  @param  v   The value associated with a node.
-     *  @param  l   This ghost variable is the level of a node.
-     *              It is 0 for leaves.
-     *  @param  i   The index of a child at a given level.
      */
     datatype Tree<T> = 
-            Leaf(v: T, ghost l: nat, ghost i: nat)
-        |   Node(v: T, left: Tree, right: Tree, ghost l: nat, ghost i: nat)
+            Leaf(v: T)
+        |   Node(v: T, left: Tree, right: Tree)
 
     /**
      *  Height of a tree.
@@ -43,9 +40,9 @@ module Trees {
     {
         match root 
             //  a leaf, level 0 is a MT of height 1
-            case Leaf(_, _, _) => 1
+            case Leaf(_) => 1
             //  A node, level l, is a MT of height h if both children are MTs of height h - 1
-            case Node(_, lc, rc, _, _) => 1 + max(height(lc), height(rc))
+            case Node(_, lc, rc) => 1 + max(height(lc), height(rc))
     }
 
     /**
@@ -67,7 +64,7 @@ module Trees {
             // r must be a node as height(r) > |p| >= 1
             assert(r.Node?);
             match r 
-                case Node(_, lc, rc, _ , _) => 
+                case Node(_, lc, rc) => 
                         if p[0] then
                         nodeAt(p[1..], lc)
                     else 
@@ -88,9 +85,9 @@ module Trees {
         decreases p
     {
         match r 
-            case Leaf(_, _, _) => []
+            case Leaf(_) => []
 
-            case Node(_, lc, rc, _, _) => 
+            case Node(_, lc, rc) => 
                 if p[0] then
                     [lc] + leftRight(p[1..], lc)
                 else 
@@ -110,8 +107,8 @@ module Trees {
         decreases root
     {
         match root 
-            case Leaf(_, _, _) => [ root ] 
-            case Node(_, lc, rc, _, _) =>  [ root ] + collectNodes(lc) + collectNodes(rc) 
+            case Leaf(_) => [ root ] 
+            case Node(_, lc, rc) =>  [ root ] + collectNodes(lc) + collectNodes(rc) 
     }
 
     /**
@@ -130,8 +127,8 @@ module Trees {
         decreases root
     {
         match root 
-            case Leaf(_, _, _) => [ root ] 
-            case Node(_, lc, rc, _, _) =>  
+            case Leaf(_) => [ root ] 
+            case Node(_, lc, rc) =>  
                 collectLeaves(lc) + collectLeaves(rc) 
     }
     
@@ -146,9 +143,9 @@ module Trees {
     {
         match root 
             //  A leaf is a complete tree
-            case Leaf(_, _, _) => true
+            case Leaf(_) => true
             //  From a root node, a tree is complete if both children have same height
-            case Node(_, lc, rc, _, _) => 
+            case Node(_, lc, rc) => 
                 && height(lc) == height(rc) 
                 && isCompleteTree(lc) && isCompleteTree(rc)
     }

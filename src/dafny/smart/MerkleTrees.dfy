@@ -19,33 +19,7 @@ module MerkleTrees {
 
     import opened Helpers
     import opened Trees
-
-    /**
-     *  Check that the levels in a tree are set according to the height - 1.
-     *
-     */
-    predicate isMerkleLevelTree(root : Tree, level: nat) 
-        requires isCompleteTree(root)
-        decreases root
-    {
-        root.l == height(root) - 1
-    }
-    
-    /**
-     *
-     *  Nodes in a Merkle tree can be indexed at each level from 1 to 2^(h - l) - 1.
-     *  @todo   Check from 1 to 2^(h - l) - 1.
-     *  @todo   Write the definition! for now consistently returns true ...
-     */
-    predicate isMerkleIndexedTree(root : Tree, level: nat) 
-        requires isCompleteTree(root)
-        decreases root
-    {
-         match root 
-           case Leaf(_, l, i) => true
-           case Node(_, lc, rc, l, i) => true
-    }
-     
+ 
     /**
      *  
      *  @param  l       A list of elements.
@@ -53,6 +27,10 @@ module MerkleTrees {
      *  @param  default The default vakue for right-padding the tree leaves.
      *
      *  We assume collectLeaves return an indexed from left to right list of leaves.
+     *
+     *  @todo           We can use another function that returns the values instead
+     *                  of collectleaves (returns the seq of values directly) and then
+     *                  no need for `x.v`.
      */
     predicate treeLeftmostLeavesMatchList<T>(l: seq<T>, root: Tree<T>, default: T)
         requires |l| <= |collectLeaves(root)|
