@@ -62,15 +62,33 @@ module Trees {
             r
         else 
             // r must be a node as height(r) > |p| >= 1
-            assert(r.Node?);
             match r 
                 case Node(_, lc, rc) => 
-                        if p[0] then
-                        nodeAt(p[1..], lc)
-                    else 
-                        nodeAt(p[1..], rc)
+                    nodeAt(p[1..], if p[0] then lc else rc)
     }
 
+    /**
+     *  The node at a depth height(r) - 1 is a leaf.
+     */
+    lemma {:induction p, r} nodeAfterFullPathIsLeaf(p : seq<bool>, r : Tree) 
+        requires |p| == height(r) - 1 
+        requires isCompleteTree(r)
+        ensures nodeAt(p, r).Leaf?
+    {   //  Thanks Dafny
+    }
+
+    /**
+     *  The leaf that corresponds to a path of length height(r) - 1.
+     */
+    function leafAt(p : seq<bool>, r: Tree) : Tree
+        requires |p| == height(r) - 1 
+        requires isCompleteTree(r)
+        ensures leafAt(p, r).Leaf?
+    {
+        nodeAfterFullPathIsLeaf(p, r);
+        nodeAt(p, r)
+    }
+    
     /**
      *  The nodes on each side of the path to a leaf.
      *
@@ -149,7 +167,7 @@ module Trees {
                 && height(lc) == height(rc) 
                 && isCompleteTree(lc) && isCompleteTree(rc)
     }
-    
+
     //  Helpers lemmas.
 
     /**
