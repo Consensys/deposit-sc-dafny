@@ -13,7 +13,7 @@
  */
 
 include "Helpers.dfy"
-include "Trees.dfy"
+include "Trees2.dfy"
 include "MerkleTrees.dfy"
 
 module DiffTree {
@@ -40,7 +40,7 @@ module DiffTree {
     /**
      *  Check that a decorated tree correctly stores the diff attribute. 
      */
-    predicate isDecoratedWithDiff(r: Tree<int>) 
+    predicate isDecoratedWithDiff(r: ITree<int>) 
     {
         isDecoratedWith(diff, r)
     } 
@@ -54,7 +54,7 @@ module DiffTree {
     class IntTree {
 
         /**  The root tracking the Merkle Tree. */
-        ghost var root : Tree<int>
+        ghost var root : ITree<int>
 
         /** Height of the tree */
         var h : nat 
@@ -74,7 +74,7 @@ module DiffTree {
             reads this
         {
             //  Use lemmas relating number of leaves and height of a complete tree.
-            completeTreeNumberOfLeaves(root);
+            completeTreeNumberLemmas(root);
 
             //  The tree is correctly decorated by diff.
             isDecoratedWithDiff(root)
@@ -83,7 +83,7 @@ module DiffTree {
             //  height preserved.
             && h == height(root) 
             && 0 <= |store| <= power2(h - 1)
-            && |collectLeaves(root)| == power2(h - 1)
+            && |leavesIn(root)| == power2(h - 1)
 
             //  tree leftmost leaves are in store.
             && treeLeftmostLeavesMatchList(store, root, 0)
@@ -109,33 +109,33 @@ module DiffTree {
          *
          *  @param  l   
          */
-        function buildMerkle(l: seq<int>, h : nat) : Tree<int> 
-            requires h >= 1
-            /** Tree has enough leaves to store `l`. */
-            requires |l| <= power2(h - 1)      
+        // function buildMerkle(l: seq<int>, h : nat) : Tree<int> 
+        //     requires h >= 1
+        //     /** Tree has enough leaves to store `l`. */
+        //     requires |l| <= power2(h - 1)      
 
-            ensures height(buildMerkle(l, h)) == h
-            ensures isCompleteTree(buildMerkle(l, h))
-            ensures |collectLeaves(buildMerkle(l, h))| == power2(h - 1)
-            ensures isDecoratedWithDiff(buildMerkle(l, h))
-            ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h), 0)
+        //     ensures height(buildMerkle(l, h)) == h
+        //     ensures isCompleteTree(buildMerkle(l, h))
+        //     ensures |collectLeaves(buildMerkle(l, h))| == power2(h - 1)
+        //     ensures isDecoratedWithDiff(buildMerkle(l, h))
+        //     ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h), 0)
 
         /**
          *  The tree decorated with zeroes.
          *  
          *  @param  r   A tree.
-         *  @returns    True if and olny if all values are zero.
+         *  @returns    True if and only if all values are zero.
          */
-        predicate isZeroTree(r : Tree<int>) 
+        predicate isZeroTree(r : ITree<int>) 
         {
-            isConstantTree(r, 0)
+            isConstant(r, 0)
         }
 
         /**
          *  Equivalent characterisation of zero trees.
          */
-        lemma {:induction r} isZeroTreeiffAllNodesZero(r : Tree<int>) 
-             ensures (forall l :: l in collectNodes(r) ==> l.v == 0) <==> isZeroTree(r)
+        lemma {:induction r} isZeroTreeiffAllNodesZero(r : ITree<int>) 
+             ensures (forall l :: l in nodesIn(r) ==> l.v == 0) <==> isZeroTree(r)
         {   //  Thanks Dafny
         } 
 
@@ -143,42 +143,66 @@ module DiffTree {
          *  The Merkle tree of height `h` for the empty list is the 
          *  zero (complete) tree of height `h`.
          */
-        lemma merkleEmptyListIsZeroTree(h : nat)
-            requires h >= 1 
-            ensures isZeroTree(buildMerkle([], h))
-        {
-            allLeavesZeroImplyAllNodesZero(buildMerkle([], h));
-            isZeroTreeiffAllNodesZero(buildMerkle([], h));
-        }   
+        // lemma merkleEmptyListIsZeroTree(h : nat)
+        //     requires h >= 1 
+        //     ensures isZeroTree(buildMerkle([], h))
+        // {
+        //     allLeavesZeroImplyAllNodesZero(buildMerkle([], h));
+        //     isZeroTreeiffAllNodesZero(buildMerkle([], h));
+        // }   
        
         /**
          *  If all leaves are zero and tree is decorated with diff, then
          *  all nodes are zero.
          */
-        lemma {:induction r} allLeavesZeroImplyAllNodesZero(r: Tree<int>) 
+        lemma {:induction r} allLeavesZeroImplyAllNodesZero(r: ITree<int>) 
             requires isDecoratedWithDiff(r)
-            requires forall l :: l in collectLeaves(r) ==> l.v == 0
-            ensures forall l :: l in collectNodes(r) ==> l.v == 0 
+            requires forall l :: l in leavesIn(r) ==> l.v == 0
+            ensures forall l :: l in nodesIn(r) ==> l.v == 0 
         {   //  Thanks Dafny
         }
 
         /**
          *  Merkle tree of height 1 with empty list is Leaf(0).
          */
-        lemma merkleTreeHeightOneZero() 
-            ensures buildMerkle([], 1) == Leaf(0)
-        {
-            assert(buildMerkle([], 1).Leaf?);
-            match buildMerkle([], 1)
-                case Leaf(v) => 
-                    assert (Leaf(v) in collectLeaves(buildMerkle([], 1)));
-        }
+        // lemma merkleTreeHeightOneZero() 
+        //     ensures buildMerkle([], 1) == Leaf(0)
+        // {
+        //     assert(buildMerkle([], 1).Leaf?);
+        //     match buildMerkle([], 1)
+        //         case Leaf(v) => 
+        //             assert (Leaf(v) in collectLeaves(buildMerkle([], 1)));
+        // }
+
+        // lemma foo15(p: seq<bool>, r: Tree<int>, l : seq<int>, h : nat)
+
+
+        /**
+         *  Vakues of the nodes on the right of a path to e in Merkle(l :+ e,h)
+         *  are all zeroes.
+         */
+        // lemma nodesOnRightZero(p: seq<bool>, r: Tree<int>, l : seq<int>, h : nat)
+        //     requires h == height(r) >= 1
+        //     requires |l| <= power2(h - 1)
+        //     requires r == buildMerkle(l, h)
+        //     requires pathToLeafIndex(p) == |l|
+        //     requires |p| == h - 1
+        //     ensures forall n :: n in nodesRightOf(p, r) ==> n.v == 0 
+        // {
+        //     if h == 1 {
+        //         //  Thanks Dafny
+        //     }
+        //     else {
+        //         match r 
+        //             case Node(_, lc, rc) =>
+        //     }
+        // }
 
         /**
          *  The value of diff at the root of a well decorated tree is the value of
          *  the tree.
          */
-        function hash_tree_root(r: Tree<int>) : int 
+        function hash_tree_root(r: ITree<int>) : int 
             requires isCompleteTree(r)
             requires isDecoratedWithDiff(r) 
         {
@@ -196,19 +220,24 @@ module DiffTree {
         method add(e: int)
 
             requires isCompleteTree(root)
-            requires isValid()
-
-            //  Store is not full
+            requires h == height(root) 
             requires |store| < power2(h - 1)
 
-            //  Preserves tree height and completeness
-            ensures h == old(h) == height(root) 
-            ensures isCompleteTree(root)
+            requires |leavesIn(root)| == power2(h - 1)
+            requires isDecoratedWith(diff, root)
+            requires treeLeftmostLeavesMatchList(store, root, 0)
+            requires isMerkle(root, store, diff, 0)
+            requires isValid()
 
             //  Store is updated
             ensures store == old(store) + [ e ]
 
-            ensures |collectLeaves(root)| == power2(h - 1)
+            //  Preserves tree height and completeness
+            ensures  old(h) == h
+            //  Store is not full
+            ensures isCompleteTree(root)
+
+            ensures |leavesIn(root)| == power2(h - 1)
 
             //  diffRoot stores value of diff for store
             ensures isDecoratedWithDiff(root)
@@ -226,38 +255,36 @@ module DiffTree {
             store := store + [ e ] ;
             
             //  Define new tree for updated store
-            root := buildMerkle(store, h);
+            // root := buildMerkle(store, h);
 
             //  Compute the new diffRoot
             diffRoot := 0 ;
         }
 
-        function method foo(p : seq<bool>, levelVal : seq<int>, lastVal: int) : int 
-            requires |p| == |levelVal|
-            decreases p
-        {
-            if |p| == 0 then
-                lastVal
-            else if p[0] then
-                //  child was on the left
-                foo(p[1..], levelVal[1..], diff(lastVal, levelVal[0]))
-            else 
-                //  child was on the right
-                foo(p[1..], levelVal[1..], diff(levelVal[0], lastVal))
-        }
+        // function method foo(p : seq<bool>, levelVal : seq<int>, lastVal: int) : int 
+        //     requires |p| == |levelVal|
+        //     decreases p
+        // {
+        //     if |p| == 0 then
+        //         lastVal
+        //     else if p[0] then
+        //         //  child was on the left
+        //         foo(p[1..], levelVal[1..], diff(lastVal, levelVal[0]))
+        //     else 
+        //         //  child was on the right
+        //         foo(p[1..], levelVal[1..], diff(levelVal[0], lastVal))
+        // }
 
-        method foo2(p: seq<bool>, r: Tree<int>) returns (r' : Tree<int>)
-            requires |p| == height(r) - 1
-            requires isCompleteTree(r)
-            requires forall i :: 0 <= i < |p| ==> isDecoratedWithDiff(leftRight(p, r)[i])
+        // method foo2(p: seq<bool>, r: Tree<int>) returns (r' : Tree<int>)
+        //     requires |p| == height(r) - 1
+        //     requires isCompleteTree(r)
+        //     requires forall i :: 0 <= i < |p| ==> isDecoratedWithDiff(leftRight(p, r)[i])
 
-            ensures isDecoratedWithDiff(r')
-        {
-            r' := r;
-            //  compute attribute on path `p`.
-        }
+        //     ensures isDecoratedWithDiff(r')
+        // {
+        //     r' := r;
+        //     //  compute attribute on path `p`.
+        // }
 
-       
-        
     } 
 }
