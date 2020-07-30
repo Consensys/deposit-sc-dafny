@@ -154,6 +154,30 @@ module Trees {
                     nodeAt(p[1..], if p[0] == 0 then lc else rc)
     }
 
+    /**
+     *  The leaves of a tree (in-order traversal).
+     *  
+     *  @param  root    The root node of the tree.
+     *
+     *  @return         The leaves as a sequence from left to right in-order 
+     *                  traversal (left, node, right).
+     *
+     *  @todo           We don't really need that but only the values of the leaves.
+     *
+     */
+    function method leavesIn(root : ITree) : seq<ITree>
+        /** All the collected nodes are leaves. */
+        ensures forall i :: 0 <= i < |leavesIn(root)| ==>  leavesIn(root)[i].ILeaf?
+        /** All the leaves are collected. */
+        ensures forall n :: n in nodesIn(root) && n.ILeaf? ==> n in leavesIn(root)
+        decreases root
+    {
+        match root 
+            case ILeaf(_, _) => [ root ] 
+            case INode(_, lc, rc, _) =>  
+                leavesIn(lc) + leavesIn(rc) 
+    }
+
     //  Properties of (indexed) trees.
 
     /**
@@ -177,7 +201,7 @@ module Trees {
                         nodeIdAtPathIsPath(p[1..], p' + [0], lc);
                         calc == {
                             nodeAt(p[1..], lc).id ;
-                            == calc {
+                            == calc == {
                                 nodeAt(p, r) ;
                                 == 
                                 nodeAt(p[1..], lc);
@@ -191,7 +215,7 @@ module Trees {
                         nodeIdAtPathIsPath(p[1..], p' + [1], rc);
                         calc == {
                             nodeAt(p[1..], rc).id ;
-                            == calc {
+                            == calc == {
                                 nodeAt(p, r) ;
                                 == 
                                 nodeAt(p[1..], rc);
@@ -210,8 +234,9 @@ module Trees {
     lemma {:induction t} indexFromIsMonotonic(t : ITree, p : seq<bit>, n : nat)
         requires isValidIndex(t, p) 
         requires 0 <= n < |nodesIn(t)|
+        /** Weak ordering for all nodes. */
         ensures p <= nodesIn(t)[n].id 
-        /** For nodes in lc and rc, strict prefix. */
+        /** For nodes in lc and rc, strict prefix ordering wrt root.id.. */
         ensures n >= 1 ==> p < nodesIn(t)[n].id 
         decreases t 
     {
@@ -231,9 +256,11 @@ module Trees {
     /**
      *  Each node has a unique id in a validIndexed tree.
      */
-    lemma {:induction r} eachNodesHasUniqueId(r: ITree, k1 : nat, k2 : nat, p : seq<bit>) 
+    lemma {:induction r} eachNodeHasUniqueId(r: ITree, k1 : nat, k2 : nat, p : seq<bit>) 
         requires isValidIndex(r, p) 
+        /** Two arbitrary strictly ordered indices within the range of nodesIn  */
         requires 0 <= k1 < k2 < |nodesIn(r)|
+        /** The ids of two arbitary nodes are not equal. */
         ensures nodesIn(r)[k1].id !=  nodesIn(r)[k2].id
         decreases r
     { 
@@ -243,25 +270,31 @@ module Trees {
             case INode(v, lc, rc, id) =>
 
                 if ( k1 == 0 ) {
+                    //  k2 is an index of a node in lc or rc, strict ordering applies.
                     indexFromIsMonotonic(r, p, k2);
                 } else if 1 <= k1 < k2 <= |nodesIn(lc)| {
-                    //  both indices are nodes in lc
-                    eachNodesHasUniqueId(lc, k1 - 1, k2 - 1, p + [0]);
+                    //  both indices are nodes in lc. Use induction hypothesis on lc.
+                    eachNodeHasUniqueId(lc, k1 - 1, k2 - 1, p + [0]);
                 } else if 1 + |nodesIn(lc)| <= k1 < k2 < |nodesIn(r)| {
-                    //  both indices are nodes in rc
+                    //  both indices are nodes in rc. Use induction hypothesis on rc. 
                     var i1 := k1 - 1 - |nodesIn(lc)|;
                     var i2 := k2 - 1 - |nodesIn(lc)|;
-                    eachNodesHasUniqueId(rc, i1, i2, p + [1]);   
+                    eachNodeHasUniqueId(rc, i1, i2, p + [1]);   
                 } else {
-                    //  k1 indexed a node in lc and k2 a node in rc
+                    //  k1 indexes a node in lc.
                     assert ( 1 <= k1 <= 1 + |nodesIn(lc)| <= k2 < |nodesIn(r)| );
                     var i1 := k1 - 1;
+                    //  Use induction hypothesis on lc. ids on nodes in lc >= p + [0]
                     indexFromIsMonotonic(lc, p + [0], i1);
 
+                    //  k2 indexes a node in rc.
                     var i2 := k2 - 1 - |nodesIn(lc)|;
+                    //  Use induction hypothesis on rc. Ids of nodes in rc >= p + [1]
                     indexFromIsMonotonic(rc, p + [1], i2);
 
-                    //  Prove post condition by contradiction
+                    //  Prove post condition by contradiction. 
+                    //  Idea: lc nodes start with p + [0] and rc nodes with p + [1].
+                    //  Turns out that p + [0] + p' != p + [1] + p' for all p'.
                     calc ==> {
                         nodesIn(r)[k1].id == nodesIn(r)[k2].id ;
                         ==>
@@ -373,46 +406,14 @@ module Trees {
     //                 [rc] + leftRight(p[1..], rc)
     // }
 
-    
 
-    /**
-     *  The leaves of a tree (in-order traversal).
-     *  
-     *  @param  root    The root node of the tree.
-     *
-     *  @return         The leaves as a sequence from left to right in-order 
-     *                  traversal (left, node, right).
-     *
-     *  @todo           We don't really need that but only the values of the leaves.
-     *
-     */
-    function method leavesIn(root : ITree) : seq<ITree>
-        /** All the collected nodes are leaves. */
-        ensures forall i :: 0 <= i < |leavesIn(root)| ==>  leavesIn(root)[i].ILeaf?
-        /** All the leaves are collected. */
-        ensures forall n :: n in nodesIn(root) && n.ILeaf? ==> n in leavesIn(root)
-        decreases root
-    {
-        match root 
-            case ILeaf(_, _) => [ root ] 
-            case INode(_, lc, rc, _) =>  
-                leavesIn(lc) + leavesIn(rc) 
-    }
-    
-    //  Helpers lemmas.
+    //  Helpers lemmas for complete tress.
 
     /**
      *  Relation between height and number of leaves in a complete tree.
      */
-    lemma {:induction root} completeTreeNumberOfLeaves(root : ITree) 
+    lemma {:induction root} completeTreeNumberLemmas(root : ITree) 
         ensures isCompleteTree(root) ==> |leavesIn(root)| == power2(height(root) - 1)
-    {   //  Thanks Dafny
-    }
-
-    /**
-     *  Relation between height and number of nodes in a complete tree.
-     */
-    lemma {:induction root} completeTreeNumberOfNodes(root : ITree) 
         ensures isCompleteTree(root) ==> |nodesIn(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
     }
