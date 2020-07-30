@@ -38,14 +38,12 @@ module Helpers {
     }
 
     /** 
-     *  A simple lemma: (2^n) * (2^n) == 2 ^(n + 1)
+     *  Usweful lemmas: 
+     *      (2^n) * (2^n) == 2 ^(n + 1)
+     *      2 * 2^n == 2^n * 2 == 2^(n + 1)
      */
-    lemma {:induction n} AddPower2(n: nat) 
-        ensures power2(n) + power2(n) <= power2(n + 1)
-    {   //  Thanks Dafny
-    }
-
-    lemma {:induction n} twoTimesPower2(n: nat) 
+    lemma {:induction n} power2Lemmas(n : nat) 
+        ensures power2(n) + power2(n) == power2(n + 1)
         ensures 2 * power2(n) == power2(n) * 2 == power2(n + 1)
     {   //  Thanks Dafny
     }
@@ -83,51 +81,51 @@ module Helpers {
      *  Bounds for the unsigned nat represented by a bit vector.
      *
      */
-    lemma {:induction p} bitListToNatAccBound(p : seq<bool>, v: nat) 
-        requires |p| >= 1
-        ensures !p[0] ==> 0 <= bitListToNatAcc(p, v) < v * power2(|p|) + power2(|p| - 1) 
-        ensures p[0] ==> v * power2(|p|) + power2(|p| - 1)  <= bitListToNatAcc(p, v) 
-    {
-        if !p[0] {
-            calc {
-                bitListToNatAcc(p, v) ;
-                ==
-                bitListToNatAcc(p[1..], 2 * v) ;
-                <
-                (2 * v) * power2(|p[1..]|) + power2(|p[1..]|);
-                ==
-                (2 * v) * power2(|p| - 1) + power2(|p| - 1);
-                ==
-                v * (2 * power2(|p| - 1)) + power2(|p| - 1);
-                ==
-                v * power2(|p|) + power2(|p| - 1);
-            }
-        }
-        if p[0] {
-            calc {
-                bitListToNatAcc(p, v) ;
-                ==
-                bitListToNatAcc(p[1..], 2 * v + 1) ;
-                >=
-                (2 * v + 1) * power2(|p[1..]|) ;
-                ==
-                (2 * v + 1) * power2(|p| - 1) ;
-                ==
-                2 * v * power2(|p| - 1) + power2(|p| - 1);
-                ==
-                v * power2(|p|) + power2(|p| - 1);
-            }
-        }
-    }
+    // lemma {:induction p} bitListToNatAccBound(p : seq<bool>, v: nat) 
+    //     requires |p| >= 1
+    //     ensures !p[0] ==> 0 <= bitListToNatAcc(p, v) < v * power2(|p|) + power2(|p| - 1) 
+    //     ensures p[0] ==> v * power2(|p|) + power2(|p| - 1)  <= bitListToNatAcc(p, v) 
+    // {
+    //     if !p[0] {
+    //         calc == {
+    //             bitListToNatAcc(p, v) ;
+    //             ==
+    //             bitListToNatAcc(p[1..], 2 * v) ;
+    //             <
+    //             (2 * v) * power2(|p[1..]|) + power2(|p[1..]|);
+    //             ==
+    //             (2 * v) * power2(|p| - 1) + power2(|p| - 1);
+    //             ==
+    //             v * (2 * power2(|p| - 1)) + power2(|p| - 1);
+    //             ==
+    //             v * power2(|p|) + power2(|p| - 1);
+    //         }
+    //     }
+    //     if p[0] {
+    //         calc == {
+    //             bitListToNatAcc(p, v) ;
+    //             ==
+    //             bitListToNatAcc(p[1..], 2 * v + 1) ;
+    //             >=
+    //             (2 * v + 1) * power2(|p[1..]|) ;
+    //             ==
+    //             (2 * v + 1) * power2(|p| - 1) ;
+    //             ==
+    //             2 * (v * power2(|p| - 1)) + power2(|p| - 1);
+    //             ==
+    //             v * power2(|p|) + power2(|p| - 1);
+    //         }
+    //     }
+    // }
 
     /**
      *  The first digit of a bit vector splits possible values in two
      *  ranges.
      */
-    lemma {:induction p} firstDigitDeterminesRange(p : seq<bool>, v: nat)
-        requires |p| >= 1
-        ensures p[0] <==> v * power2(|p|) + power2(|p| - 1)  <= bitListToNatAcc(p, v) 
-    {
-        bitListToNatAccBound(p, v);
-    }
+    // lemma {:induction p} firstDigitDeterminesRange(p : seq<bool>, v: nat)
+    //     requires |p| >= 1
+    //     ensures p[0] <==> v * power2(|p|) + power2(|p| - 1)  <= bitListToNatAcc(p, v) 
+    // {
+    //     bitListToNatAccBound(p, v);
+    // }
 }
