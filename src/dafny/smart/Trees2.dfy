@@ -77,6 +77,24 @@ module Trees {
     }
 
     /**
+     *  Complete trees.
+     *
+     *  @param  root    The root node of the tree.
+     *  @returns        True if and only if the tree rooted at root is complete
+     */
+    predicate isCompleteTree(root : ITree) 
+        decreases root
+    {
+        match root 
+            //  A leaf is a complete tree
+            case ILeaf(_, _) => true
+            //  From a root node, a tree is complete if both children have same height
+            case INode(_, lc, rc, _) => 
+                && height(lc) == height(rc) 
+                && isCompleteTree(lc) && isCompleteTree(rc)
+    }
+
+    /**
      *  Make an indexed tree from a tree.
      *
      *  @param  r   The root of the tree.
@@ -97,54 +115,6 @@ module Trees {
     }
 
     /**
-     *  Index from an intial value 
-     */
-    lemma {:induction r} indexFromMonotonic(r : Tree, t : ITree, p : seq<bit>, n : nat)
-        requires t == indexFrom(r, p)
-        requires 0 <= n < |nodesIn(t)|
-        ensures p <= nodesIn(t)[n]. id 
-        decreases r 
-    {
-        match r 
-            case Leaf(_) =>
-
-            case Node(_, lc, rc) => 
-                assert(t.INode?);
-                match t 
-                    case INode(_, tlc, trc, id) =>
-                        assert(nodesIn(t) == [t] + nodesIn(tlc) + nodesIn(trc));
-                        if ( n == 0 ) {
-                            //  Thanks Dafny
-                        }  else if ( 1 <= n <= |nodesIn(tlc)|) {
-                            indexFromMonotonic(lc, tlc, p + [0], n - 1);
-                        } else {
-                            indexFromMonotonic(rc, trc, p + [1], n - 1 - |nodesIn(tlc)|);
-                        }
-    }
-
-    /**
-     *  Index of each node of a indexed that is valid is >= `p`.
-     */
-    lemma {:induction t} indexFromMonotonic2(t : ITree, p : seq<bit>, n : nat)
-        requires isValidIndex(t, p) 
-        requires 0 <= n < |nodesIn(t)|
-        ensures p <= nodesIn(t)[n].id 
-        decreases t 
-    {
-        match t 
-            case ILeaf(_, _) =>
-
-            case INode(_, lc, rc, _) => 
-                if ( n == 0 ) {
-                    //  Thanks Dafny
-                }  else if ( 1 <= n <= |nodesIn(lc)|) {
-                    indexFromMonotonic2(lc, p + [0], n - 1);
-                } else {
-                    indexFromMonotonic2(rc, p + [1], n - 1 - |nodesIn(lc)|);
-                }
-    }
-
-    /**
      *  The nodes of a tree (pre-order traversal).    .
      *
      *  @param  root    The root of the tree.
@@ -161,157 +131,107 @@ module Trees {
             case INode(_, lc, rc, _) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
     }
 
-    //  Property of indexed trees
+    /**
+     *  The node at the end of a path.
+     *
+     *  @param  p   A path (left/right) in a binary tree.
+     *  @param  r   A complete binary tree.
+     *
+     *  @returns    The node of the tree that is the target of path `p`.
+     */
+    function nodeAt(p : seq<bit>, r: ITree) : ITree
+        requires |p| < height(r) 
+        requires isCompleteTree(r)
+        ensures nodeAt(p, r) in nodesIn(r)
+        decreases p
+    {
+        if |p| == 0 then  
+            r
+        else 
+            // r must be a node as height(r) > |p| >= 1
+            match r 
+                case INode(_, lc, rc, _) => 
+                    nodeAt(p[1..], if p[0] == 0 then lc else rc)
+    }
+
+    //  Properties of (indexed) trees.
 
     /**
-     *  A nice lemma with a tedious proof.
-     *  In a tree obtained with `indexFrom` each node has a unique id.
+     *  The node obtained after a path is the id of rhe node in 
+     *  a validIndex tree.
      */
-    lemma {:induction t} uniqueNodeId(t: Tree, r: ITree, k1 : nat, k2 : nat, p : seq<bit>) 
-        requires r == indexFrom(t, p)
-        requires 0 <= k1 < k2 < |nodesIn(r)|
-        ensures nodesIn(r)[k1].id != nodesIn(r)[k2].id
+    lemma {:induction p} nodeIdAtPathIsPath(p : seq<bit>, p': seq<bit>, r: ITree) 
+        requires |p| < height(r) 
+        requires isCompleteTree(r)
+        requires isValidIndex(r, p') 
+        ensures nodeAt(p, r).id == p' + p
         decreases r
     {
-        match r 
-            case ILeaf(v, id) => // Vacuously true. Thanks Dafny
-
-            case INode(v, lc, rc, id) =>
-
-                // assert( nodesIn(r) == [r] + nodesIn(lc) + nodesIn(rc));
-                if ( k1 == 0 ) {
-                    //  ids in lc and rc have length r.id + 1
-                } else if 1 <= k1 < k2 <= |nodesIn(lc)| {
-                    //  both indices are nodes in lc
-                    assert(0 <= k1 - 1 < k2 - 1 < |nodesIn(lc)|);
-                    assert(t.Node?);
-                    match t 
-                        case Node(_, tlc, _) => 
-                            assert(lc == indexFrom(tlc, p + [0]));
-                            uniqueNodeId(tlc, lc, k1 - 1, k2 - 1, p + [0]);
-                } else if 1 + |nodesIn(lc)| <= k1 < k2 < |nodesIn(r)| {
-                    //  both indices are nodes in rc
-                    var i1 := k1 - 1 - |nodesIn(lc)|;
-                    var i2 := k2 - 1 - |nodesIn(lc)|;
-                    assert(0 <= i1 < i2 < |nodesIn(rc)|);
-                    assert(t.Node?);
-                    match t 
-                        case Node(_, _, trc) => 
-                            assert(rc == indexFrom(trc, p + [1]));
-                            uniqueNodeId(trc, rc, i1, i2, p + [1]);
-                } else {
-                    //  k1 indexed a node in lc and k2 a node in rc
-                    assert ( 1 <= k1 < 1 + |nodesIn(lc)| <= k2 < |nodesIn(r)| );
-                    assert(t.Node?);
-                    match t 
-                        case Node(_, tlc, trc) =>
-                            assert(lc == indexFrom(tlc, p + [0]));
-                            var i1 := k1 - 1;
-                            indexFromMonotonic(tlc, lc, p + [0], i1);
-
-                            assert(rc == indexFrom(trc, p + [1]));
-                            var i2 := k2 - 1 - |nodesIn(lc)|;
-                            indexFromMonotonic(trc, rc, p + [1], i2);
-
-                            assert(p + [0] <= nodesIn(r)[k1].id );
-                            assert(p + [1] <= nodesIn(r)[k2].id );
-
-                            //  Prove post condition by contradiction
-                            calc ==> {
-                                nodesIn(r)[k1].id == nodesIn(r)[k2].id ;
-                                ==>
-                                nodesIn(r)[k1].id[..|p| + 1] == nodesIn(r)[k2].id[..|p| + 1] ;
-                                ==> calc == {
-                                        p + [0] ;
-                                        ==
-                                        (p + [0])[..|p| + 1];
-                                        ==  
-                                        nodesIn(r)[k1].id[..|p| + 1];
-                                }
-                                p + [0] == nodesIn(r)[k2].id[..|p| + 1] ;
-                                ==> calc == {
-                                        p + [1] ;
-                                        ==
-                                        (p + [1])[..|p| + 1];
-                                        == 
-                                        nodesIn(r)[k2].id[..|p| + 1];
-                                }
-                                p + [0] == p + [1];
-                                ==>
-                                (p + [0])[|p|] == (p + [1])[|p|];
-                                ==>
-                                //  contradiction
-                                0 == 1;
+        if |p| == 0 {
+            //  Thanks Dafny
+        } else {
+            match r 
+                case INode(_, lc, rc, id) =>
+                    if p[0] == 0 {
+                        //  nodeAt is in lc after p[1..]
+                        nodeIdAtPathIsPath(p[1..], p' + [0], lc);
+                        calc == {
+                            nodeAt(p[1..], lc).id ;
+                            == calc {
+                                nodeAt(p, r) ;
+                                == 
+                                nodeAt(p[1..], lc);
                             }
-                }
-    }   
-    
-    // lemma {:induction r} foo32(r : ITree, p : seq<bit>) 
-    //     requires isValidIndex(r, p) 
-    //     // ensures {:induction r} forall n :: n in nodesIn(r) ==> |n.id| >= |p| 
-    //     ensures {:induction r} forall i :: 0 <= i < |nodesIn(r)| ==> |nodesIn(r)[i].id| >= |p| 
-    //     ensures p <= r.id 
-    // {
-    //     match r 
-    //         case ILeaf(_,_) =>
-    //         case INode(_, lc, rc, _) => 
-    //             var i : nat ;
-    //             if ( 0 <= i < |nodesIn(r)|) {
-    //                 if i == 0 {
-    //                     //  
-    //                 } else  {
-    //                     //  i >= nod
-    //                     assert(nodesIn(r) == [r] + nodesIn(lc) + nodesIn(rc));
-    //                     if ( 1 <= i < 1 + |nodesIn(lc)| ) {
-    //                         // assert(nodesIn(r)[i] == nodesIn(lc)[i - 1]); 
-    //                         // assert(nodesIn(r)[i].id == nodesIn(lc)[i - 1].id); 
-    //                         // assert(isValidIndex(lc,  p + [0]));
-    //                         // foo32(lc, p + [0]);
-    //                         // assert(|nodesIn(lc)[i - 1].id| >= |p + [0]|);
-    //                         // assert(|nodesIn(r)[i].id| >= |p + [0]|);
-    //                         assert(|p + [0]| > |p|);
-    //                         assert(|nodesIn(r)[i].id| >= |p|);
-    //                     } else {
-    //                         assert(nodesIn(r)[i] == nodesIn(rc)[i - 1 - |nodesIn(lc)|]); 
+                            nodeAt(p[1..], lc).id;
+                            ==
+                            p' + [0] + p[1..];
+                        }
+                    } else {   
+                         //  nodeAt is in rc after p[1..]
+                        nodeIdAtPathIsPath(p[1..], p' + [1], rc);
+                        calc == {
+                            nodeAt(p[1..], rc).id ;
+                            == calc {
+                                nodeAt(p, r) ;
+                                == 
+                                nodeAt(p[1..], rc);
+                            }
+                            nodeAt(p[1..], rc).id;
+                            ==
+                            p' + [1] + p[1..];
+                        }
+                    }
+        }
+    }
 
-    //                     }
-    //                 }
-
-    //             }
-    //             // assert(nodesIn(r) == [r] + nodesIn(lc) + nodesIn(rc)); 
-    //             // var n : ITree;
-    //             // if ( n in nodesIn(r) ) {
-    //             //     if ( n in [r] ) {
-    //             //         assert();
-    //             //     } else if n in nodesIn(lc) {
-    //             //         // assert(nodesIn(r)[k].id == nodesIn(lc)[k - 1].id);
-    //             //         // assert(isValidIndex(lc, p + [0]));
-    //             //     } else {
-    //             //         assert(n in nodesIn(rc));
-    //             //     }
-    //             // }
-
-    // }
-
-
-    lemma {:induction t} indexFromMonotonic2b(t : ITree, p : seq<bit>, n : nat)
+    /**
+     *  Index of each node of a indexed tree that is valid is >= `p`.
+     */
+    lemma {:induction t} indexFromIsMonotonic(t : ITree, p : seq<bit>, n : nat)
         requires isValidIndex(t, p) 
-        requires 1 <= n < |nodesIn(t)|
-        ensures p < nodesIn(t)[n].id 
+        requires 0 <= n < |nodesIn(t)|
+        ensures p <= nodesIn(t)[n].id 
+        /** For nodes in lc and rc, strict prefix. */
+        ensures n >= 1 ==> p < nodesIn(t)[n].id 
         decreases t 
     {
         match t 
             case ILeaf(_, _) =>
 
             case INode(_, lc, rc, _) => 
-                if ( 1 <= n <= |nodesIn(lc)|) {
-                    indexFromMonotonic2(lc, p + [0], n - 1);
+                if ( n == 0 ) {
+                    //  Thanks Dafny
+                }  else if ( 1 <= n <= |nodesIn(lc)|) {
+                    indexFromIsMonotonic(lc, p + [0], n - 1);
                 } else {
-                    indexFromMonotonic2(rc, p + [1], n - 1 - |nodesIn(lc)|);
+                    indexFromIsMonotonic(rc, p + [1], n - 1 - |nodesIn(lc)|);
                 }
     }
 
-    lemma {:induction r} uniqueNodeId2(r: ITree, k1 : nat, k2 : nat, p : seq<bit>) 
+    /**
+     *  Each node has a unique id in a validIndexed tree.
+     */
+    lemma {:induction r} eachNodesHasUniqueId(r: ITree, k1 : nat, k2 : nat, p : seq<bit>) 
         requires isValidIndex(r, p) 
         requires 0 <= k1 < k2 < |nodesIn(r)|
         ensures nodesIn(r)[k1].id !=  nodesIn(r)[k2].id
@@ -322,107 +242,55 @@ module Trees {
 
             case INode(v, lc, rc, id) =>
 
-                // assert( nodesIn(r) == [r] + nodesIn(lc) + nodesIn(rc));
                 if ( k1 == 0 ) {
-                    // foo34(r, p);
-                    // assert( nodesIn(r)[k2] );
-                    indexFromMonotonic2b(r, p, k2);
-                    assert( p <  nodesIn(r)[k2].id) ; 
-                    //  ids in lc and rc have length r.id + 1
-                    // indexFromMonotonic2(r, p, k2);
-                    // assert( k2 > 0);
-                    // assert( p < nodesIn(r)[k2].id) ;
-                    // if ( 1 <= k2 <= |nodesIn(lc)|) {
-                    //     indexFromMonotonic2(lc, p + [0], k2 -1);
-                    //     assert( nodesIn(r)[k2].id == nodesIn(lc)[k2 - 1].id);
-                    //     assert(p + [0] <= nodesIn(lc)[k2 - 1].id);
-                    // } else {
-                    //     indexFromMonotonic2(rc, p + [1], k2 -1 - |nodesIn(lc)|);  
-                    //     assert( nodesIn(r)[k2].id == nodesIn(rc)[k2 - 1 - |nodesIn(lc)|].id);
-                    //     assert(p + [1] <= nodesIn(rc)[k2 - 1 - |nodesIn(lc)|].id);          
-                    // }
+                    indexFromIsMonotonic(r, p, k2);
                 } else if 1 <= k1 < k2 <= |nodesIn(lc)| {
                     //  both indices are nodes in lc
-                    assert(isValidIndex(lc, p + [0]));
-                    assert(0 <= k1 - 1 < k2 - 1 < |nodesIn(lc)|);
-                    uniqueNodeId2(lc, k1 - 1, k2 - 1, p + [0]);
+                    eachNodesHasUniqueId(lc, k1 - 1, k2 - 1, p + [0]);
                 } else if 1 + |nodesIn(lc)| <= k1 < k2 < |nodesIn(r)| {
                     //  both indices are nodes in rc
                     var i1 := k1 - 1 - |nodesIn(lc)|;
                     var i2 := k2 - 1 - |nodesIn(lc)|;
-                    assert(isValidIndex(rc, p + [1]));
-                    assert(0 <= i1 < i2 < |nodesIn(rc)|);
-                    uniqueNodeId2(rc, i1, i2, p + [1]);   
-                } else if (1 <= k1 <= 1 + |nodesIn(lc)| <= k2 < |nodesIn(r)| ) {
-                    //  k1 indexed a node in lc and k2 a node in rc
-                    assert(isValidIndex(lc, p + [0]));
-                    assert(isValidIndex(rc, p + [1]));
-                    assert ( 1 <= k1 <= 1 + |nodesIn(lc)| <= k2 < |nodesIn(r)| );
-                        var i1 := k1 - 1;
-                        indexFromMonotonic2(lc, p + [0], i1);
-
-                        var i2 := k2 - 1 - |nodesIn(lc)|;
-                        indexFromMonotonic2(rc, p + [1], i2);
-
-                        assert(p + [0] <= nodesIn(r)[k1].id );
-                        assert(p + [1] <= nodesIn(r)[k2].id );
-
-                        //  Prove post condition by contradiction
-                        calc ==> {
-                            nodesIn(r)[k1].id == nodesIn(r)[k2].id ;
-                            ==>
-                            nodesIn(r)[k1].id[..|p| + 1] == nodesIn(r)[k2].id[..|p| + 1] ;
-                            ==> calc == {
-                                    p + [0] ;
-                                    ==
-                                    (p + [0])[..|p| + 1];
-                                    == 
-                                    nodesIn(r)[k1].id[..|p| + 1];
-                            }
-                            p + [0] == nodesIn(r)[k2].id[..|p| + 1] ;
-                            ==> calc == {
-                                    p + [1] ;
-                                    ==
-                                    (p + [1])[..|p| + 1];
-                                    == 
-                                    nodesIn(r)[k2].id[..|p| + 1];
-                            }
-                            p + [0] == p + [1];
-                            ==>
-                            (p + [0])[|p|] == (p + [1])[|p|];
-                            ==>
-                            //  contradiction
-                            0 == 1;
-                        }
+                    eachNodesHasUniqueId(rc, i1, i2, p + [1]);   
                 } else {
-                    //  All cases taken into account
-                    assert(false);
-                }
+                    //  k1 indexed a node in lc and k2 a node in rc
+                    assert ( 1 <= k1 <= 1 + |nodesIn(lc)| <= k2 < |nodesIn(r)| );
+                    var i1 := k1 - 1;
+                    indexFromIsMonotonic(lc, p + [0], i1);
+
+                    var i2 := k2 - 1 - |nodesIn(lc)|;
+                    indexFromIsMonotonic(rc, p + [1], i2);
+
+                    //  Prove post condition by contradiction
+                    calc ==> {
+                        nodesIn(r)[k1].id == nodesIn(r)[k2].id ;
+                        ==>
+                        nodesIn(r)[k1].id[..|p| + 1] == nodesIn(r)[k2].id[..|p| + 1] ;
+                        ==> calc == {
+                                p + [0] ;
+                                ==
+                                (p + [0])[..|p| + 1];
+                                == 
+                                nodesIn(r)[k1].id[..|p| + 1];
+                        }
+                        p + [0] == nodesIn(r)[k2].id[..|p| + 1] ;
+                        ==> calc == {
+                                p + [1] ;
+                                ==
+                                (p + [1])[..|p| + 1];
+                                == 
+                                nodesIn(r)[k2].id[..|p| + 1];
+                        }
+                        p + [0] == p + [1];
+                        ==>
+                        (p + [0])[|p|] == (p + [1])[|p|];
+                        ==>
+                        //  contradiction
+                        0 == 1;
+                    }
+                } 
     }
     
-    /**
-     *  The node at the end of a path.
-     *
-     *  @param  p   A path (left/right) in a binary tree.
-     *  @param  r   A complete binary tree.
-     *
-     *  @returns    The node of the tree that is the target of path `p`.
-     */
-    // function nodeAt(p : seq<bit>, r: Tree) : Tree
-    //     requires |p| < height(r) 
-    //     requires isCompleteTree(r)
-    //     ensures nodeAt(p, r) in collectNodes(r)
-    //     decreases p
-    // {
-    //     if |p| == 0 then  
-    //         r
-    //     else 
-    //         // r must be a node as height(r) > |p| >= 1
-    //         match r 
-    //             case Node(_, lc, rc, _) => 
-    //                 nodeAt(p[1..], if p[0] == 0 then lc else rc)
-    // }
-
     /**
      *  Collect nodes on the right hand-side of a full path.
      *  
@@ -518,79 +386,61 @@ module Trees {
      *  @todo           We don't really need that but only the values of the leaves.
      *
      */
-    // function method collectLeaves(root : Tree) : seq<Tree>
-    //     /** All the collected nodes are leaves. */
-    //     ensures forall i :: 0 <= i < |collectLeaves(root)| ==>  collectLeaves(root)[i].Leaf?
-    //     /** All the leaves are collected. */
-    //     ensures forall n :: n in collectNodes(root) && n.Leaf? ==> n in collectLeaves(root)
-    //     decreases root
-    // {
-    //     match root 
-    //         case Leaf(_, _) => [ root ] 
-    //         case Node(_, lc, rc, _) =>  
-    //             collectLeaves(lc) + collectLeaves(rc) 
-    // }
+    function method leavesIn(root : ITree) : seq<ITree>
+        /** All the collected nodes are leaves. */
+        ensures forall i :: 0 <= i < |leavesIn(root)| ==>  leavesIn(root)[i].ILeaf?
+        /** All the leaves are collected. */
+        ensures forall n :: n in nodesIn(root) && n.ILeaf? ==> n in leavesIn(root)
+        decreases root
+    {
+        match root 
+            case ILeaf(_, _) => [ root ] 
+            case INode(_, lc, rc, _) =>  
+                leavesIn(lc) + leavesIn(rc) 
+    }
     
-    /**
-     *  Complete trees.
-     *
-     *  @param  root    The root node of the tree.
-     *  @returns        True if and only if the tree rooted at root is complete
-     */
-    // predicate isCompleteTree(root : ITree) 
-    //     decreases root
-    // {
-    //     match root 
-    //         //  A leaf is a complete tree
-    //         case ILeaf(_, _) => true
-    //         //  From a root node, a tree is complete if both children have same height
-    //         case INode(_, lc, rc, _) => 
-    //             && height(lc) == height(rc) 
-    //             && isCompleteTree(lc) && isCompleteTree(rc)
-    // }
-
     //  Helpers lemmas.
 
     /**
      *  Relation between height and number of leaves in a complete tree.
      */
-    // lemma {:induction root} completeTreeNumberOfLeaves(root : Tree) 
-    //     ensures isCompleteTree(root) ==> |collectLeaves(root)| == power2(height(root) - 1)
-    // {   //  Thanks Dafny
-    // }
+    lemma {:induction root} completeTreeNumberOfLeaves(root : ITree) 
+        ensures isCompleteTree(root) ==> |leavesIn(root)| == power2(height(root) - 1)
+    {   //  Thanks Dafny
+    }
 
     /**
      *  Relation between height and number of nodes in a complete tree.
      */
-    // lemma {:induction root} completeTreeNumberOfNodes(root : Tree) 
-    //     ensures isCompleteTree(root) ==> |collectNodes(root)| == power2(height(root)) - 1
-    // {   //  Thanks Dafny
-    // }
+    lemma {:induction root} completeTreeNumberOfNodes(root : ITree) 
+        ensures isCompleteTree(root) ==> |nodesIn(root)| == power2(height(root)) - 1
+    {   //  Thanks Dafny
+    }
 
     /**
      *  Two complete tree of same height have same number of leaves.
      */
-    // lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: Tree, r2: Tree) 
-    //     requires isCompleteTree(r1)
-    //     requires isCompleteTree(r2)
-    //     ensures height(r1) == height(r2) ==> |collectLeaves(r1)| == |collectLeaves(r2)|
-    // {   //  Thanks Dafny
-    // }
+    lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: ITree, r2: ITree) 
+        requires isCompleteTree(r1)
+        requires isCompleteTree(r2)
+        ensures height(r1) == height(r2) ==> |leavesIn(r1)| == |leavesIn(r2)|
+    {   //  Thanks Dafny
+    }
 
     /**
      *  Children of a node in a complete tree have same number of leaves.
      */
-    // lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : Tree) 
-    //     requires isCompleteTree(r)
-    //     requires height(r) >= 2
-    //     ensures match r
-    //         case Node(_, lc, rc, _) => 
-    //             |collectLeaves(lc)| == |collectLeaves(rc)| == power2(height(r) - 1) / 2
-    // {
-    //     match r 
-    //         case Node(_, lc, rc, _) =>
-    //             completeTreesOfSameHeightHaveSameNumberOfLeaves(lc,rc);
-    // }
+    lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : ITree) 
+        requires isCompleteTree(r)
+        requires height(r) >= 2
+        ensures match r
+            case INode(_, lc, rc, _) => 
+                |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r) - 1) / 2
+    {
+        match r 
+            case INode(_, lc, rc, _) =>
+                completeTreesOfSameHeightHaveSameNumberOfLeaves(lc,rc);
+    }
 
     /**
      *  Split of sequences.
