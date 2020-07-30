@@ -103,15 +103,15 @@ module Trees {
      *              a sequence of 0 (left) and 1 (right). The id of 
      *              corresponds to the path from the root. 
      */
-    function indexFrom<T>(r : Tree<T>, p : seq<bit>) : ITree<T> 
-        ensures {:induction r} forall n :: n in nodesIn(indexFrom(r, p)) ==> |n.id| >= |p| 
-        ensures isValidIndex(indexFrom(r, p), p)
+    function toIndexed<T>(r : Tree<T>, p : seq<bit>) : ITree<T> 
+        ensures {:induction r} forall n :: n in nodesIn(toIndexed(r, p)) ==> |n.id| >= |p| 
+        ensures isValidIndex(toIndexed(r, p), p)
         decreases r
     {
         match r 
             case Leaf(v) => ILeaf(v, p)
             case Node(v, lc, rc) => 
-                INode(v, indexFrom(lc, p + [0]), indexFrom(rc, p + [1]), p)
+                INode(v, toIndexed(lc, p + [0]), toIndexed(rc, p + [1]), p)
     }
 
     /**
@@ -178,6 +178,43 @@ module Trees {
                 leavesIn(lc) + leavesIn(rc) 
     }
 
+    /**
+     *  Check that a decorated tree correctly stores the f attribute. 
+     */
+    predicate isDecoratedWith<T>(f : (T, T) -> T, root: ITree<T>)
+        decreases root
+    {
+        match root
+
+            case ILeaf(v,_) => 
+                    //  leaves define the attributes
+                    true
+
+            case INode(v, lc, rc, _) => 
+                    //  Recursive definition for an internal node: children are
+                    //  well decorated and node value if the f between children.
+                    v == f(lc.v, rc.v)
+                    && isDecoratedWith(f, lc)
+                    && isDecoratedWith(f, rc)
+    }
+
+    /**
+     *  The tree decorated with constant values.
+     *  
+     *  @param  r   A tree.
+     *  @param  c   A value.
+     *  @returns    True if and olny if all values are equal to `c`.
+     */
+    predicate isConstant<T>(r : ITree<T>, c: T) 
+        decreases r
+    {
+        match r 
+            case ILeaf(v,_) => v == c
+            case INode(v, lc, rc,_) => v == c
+                            && isConstant(lc, c) 
+                            && isConstant(rc, c)
+    }
+
     //  Properties of (indexed) trees.
 
     /**
@@ -231,7 +268,7 @@ module Trees {
     /**
      *  Index of each node of a indexed tree that is valid is >= `p`.
      */
-    lemma {:induction t} indexFromIsMonotonic(t : ITree, p : seq<bit>, n : nat)
+    lemma {:induction t} toIndexedIsMonotonic(t : ITree, p : seq<bit>, n : nat)
         requires isValidIndex(t, p) 
         requires 0 <= n < |nodesIn(t)|
         /** Weak ordering for all nodes. */
@@ -247,9 +284,9 @@ module Trees {
                 if ( n == 0 ) {
                     //  Thanks Dafny
                 }  else if ( 1 <= n <= |nodesIn(lc)|) {
-                    indexFromIsMonotonic(lc, p + [0], n - 1);
+                    toIndexedIsMonotonic(lc, p + [0], n - 1);
                 } else {
-                    indexFromIsMonotonic(rc, p + [1], n - 1 - |nodesIn(lc)|);
+                    toIndexedIsMonotonic(rc, p + [1], n - 1 - |nodesIn(lc)|);
                 }
     }
 
@@ -271,7 +308,7 @@ module Trees {
 
                 if ( k1 == 0 ) {
                     //  k2 is an index of a node in lc or rc, strict ordering applies.
-                    indexFromIsMonotonic(r, p, k2);
+                    toIndexedIsMonotonic(r, p, k2);
                 } else if 1 <= k1 < k2 <= |nodesIn(lc)| {
                     //  both indices are nodes in lc. Use induction hypothesis on lc.
                     eachNodeHasUniqueId(lc, k1 - 1, k2 - 1, p + [0]);
@@ -285,12 +322,12 @@ module Trees {
                     assert ( 1 <= k1 <= 1 + |nodesIn(lc)| <= k2 < |nodesIn(r)| );
                     var i1 := k1 - 1;
                     //  Use induction hypothesis on lc. ids on nodes in lc >= p + [0]
-                    indexFromIsMonotonic(lc, p + [0], i1);
+                    toIndexedIsMonotonic(lc, p + [0], i1);
 
                     //  k2 indexes a node in rc.
                     var i2 := k2 - 1 - |nodesIn(lc)|;
                     //  Use induction hypothesis on rc. Ids of nodes in rc >= p + [1]
-                    indexFromIsMonotonic(rc, p + [1], i2);
+                    toIndexedIsMonotonic(rc, p + [1], i2);
 
                     //  Prove post condition by contradiction. 
                     //  Idea: lc nodes start with p + [0] and rc nodes with p + [1].
