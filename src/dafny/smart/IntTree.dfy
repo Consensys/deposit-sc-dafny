@@ -109,16 +109,16 @@ module DiffTree {
          *
          *  @param  l   
          */
-        // function buildMerkle(l: seq<int>, h : nat) : Tree<int> 
-        //     requires h >= 1
-        //     /** Tree has enough leaves to store `l`. */
-        //     requires |l| <= power2(h - 1)      
+        function buildMerkle(l: seq<int>, h : nat) : ITree<int> 
+            requires h >= 1
+            /** Tree has enough leaves to store `l`. */
+            requires |l| <= power2(h - 1)      
 
-        //     ensures height(buildMerkle(l, h)) == h
-        //     ensures isCompleteTree(buildMerkle(l, h))
-        //     ensures |collectLeaves(buildMerkle(l, h))| == power2(h - 1)
-        //     ensures isDecoratedWithDiff(buildMerkle(l, h))
-        //     ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h), 0)
+            ensures height(buildMerkle(l, h)) == h
+            ensures isCompleteTree(buildMerkle(l, h))
+            ensures |leavesIn(buildMerkle(l, h))| == power2(h - 1)
+            ensures isDecoratedWithDiff(buildMerkle(l, h))
+            ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h), 0)
 
         /**
          *  The tree decorated with zeroes.
@@ -255,7 +255,7 @@ module DiffTree {
             store := store + [ e ] ;
             
             //  Define new tree for updated store
-            // root := buildMerkle(store, h);
+            root := buildMerkle(store, h);
 
             //  Compute the new diffRoot
             diffRoot := 0 ;
