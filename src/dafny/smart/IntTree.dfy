@@ -242,25 +242,23 @@ module DiffTree {
             /** Proper indexing. */
             requires isValidIndex(r, p')
 
-            /**  all leaves in rc are 0 (plus maybe some in lc). */
-            // requires k <= power2(height(r) - 1) / 2
+            /**  all leaves after the k leaf are zero. */
             requires k < |leavesIn(r)|
             requires forall i :: k < i < |l| ==> l[i] == 0
 
-            /** p is the path to leaf(k) in r. */
+            /** p is the path to k leaf in r. */
             requires |p| == height(r) - 1
-
-            // ensures |p| + |p'| == |leavesIn(r)[k].id|
-            requires p' + p == leavesIn(r)[k].id
-            // requires p[0] == 0
+            // requires p' + p == leavesIn(r)[k].id
+            requires nodeAt(p, r) == leavesIn(r)[k]
 
             /** For all right siblings on p, value is zero. */
             ensures forall i :: 0 <= i < |p| ==> 
                 p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-            // ensures match r 
-            //     case INode(_, lc, rc, _ ) => rc.v == 0
+
+            decreases r
+
         {   
-            nodeIdAtPathIsPath(p, p', r);
+            // nodeIdAtPathIsPath(p, p', r);
             // assert(leavesIn(r)[k]);
             forall ( i : nat | 0 <= i < |p|)
                 ensures p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
