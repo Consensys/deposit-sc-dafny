@@ -255,37 +255,45 @@ module DiffTree {
             // requires p[0] == 0
 
             /** For all right siblings on p, value is zero. */
-            ensures forall i :: 1 <= i < |p| ==> 
-                p[i] == 0 ==> siblingAt(p[..i], r).v == 0
+            ensures forall i :: 0 <= i < |p| ==> 
+                p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
             // ensures match r 
             //     case INode(_, lc, rc, _ ) => rc.v == 0
         {   
             nodeIdAtPathIsPath(p, p', r);
             // assert(leavesIn(r)[k]);
-            forall ( i : nat | 1 <= i < |p|)
-                ensures p[i] == 0 ==> siblingAt(p[..i], r).v == 0
+            forall ( i : nat | 0 <= i < |p|)
+                ensures p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
             {
-                // 
-                // if 
                 if (height(r) == 2) {
                     //  Thanks Dafny
+                    assume(
+                                    forall i :: 0 <= i < |p| ==> 
+                                        p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+                                    );
                 } else {
                     //  height(r) >= 3, so lc and rc have children
                     match r
                         case INode(v, lc, rc, _) => 
-                            if ( i >= 2  && p[0] == 0) {
-                                // completeTreesLeftRightChildrenLeaves(r, height(r));
+                            if (p[0] == 0) {
                                 completeTreeNumberLemmas(r);
                                 assert( k < power2(height(r) - 1));
                                 nodeLoc2(r, p, k, p');
                                 assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
+                                //  siblings in lc
+                                if ( i >= 1 ) {
+                                // completeTreesLeftRightChildrenLeaves(r, height(r));
+                               
+                                
                                 assert(height(lc) >= 2);
-                                assert(1 <= |p[..i][1..]| );
-                                assert (1 <= |p[..i][1..]| < height(lc));
+                                assert(0 <= |p[..i][1..]| );
+                                assert (0 <= |p[..i][1..]| < height(lc));
                                 assert(isCompleteTree(lc));
-                                assert(siblingAt(p[..i], r) == siblingAt(p[1..i], lc));
-
                                 assert( p == [0] + p[1..]);
+                                // assert(siblingAt(p[..i + 1], r) == siblingAt(([0] + p[1..])[1..i], lc));
+                                // assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][..i], lc));
+                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[..i + 1][1..], lc));
+
 
                                 assert(isCompleteTree(r));
                                 completeTreeNumberLemmas(r);
@@ -296,23 +304,34 @@ module DiffTree {
                                 assert( k <= |leavesIn(lc)|); 
                                 t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..], p' + [0]);
 
-                                assert(forall j :: 1 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j], lc).v == 0);
-
-                                suffixPrefixMerge(p, i - 1);    
-                                assert(siblingAt(p[..i], r) == siblingAt(p[1..][.. i - 1], lc));
-                                assert( i - 1 >= 1);
-                                assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i - 1], lc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[1..][.. i - 1], lc).v == 0);
+                                assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
 
                                 suffixPrefixMerge(p, i);    
-                                assert(p[i] == 0 ==> siblingAt(p[1..i], lc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[..i], r).v == 0);
+                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], lc));
+                                // assert( i - 1 >= 1);
+                                assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
+                                assert(p[i] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
+
+                                suffixPrefixMerge(p, i);    
+                                assert(p[i] == 0 ==> siblingAt(p[1..i + 1], lc).v == 0);
+                                assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+
+                                } else {
+                                    //  case of first sibling which is rc.
+                                    //  All leaves in rc are zero
+                                    // assume ( p[0] == 0 ==>  siblingAt(p[..1], r).v == 0) ;
+                                    p1(r, k);
+                                    // assert();
+                                    assert(k + 1 <= power2(height(r) -1 )/ 2);
+                                    p3(r, l, k + 1);
+                                    p4(r, l, k + 1);
+                                }
 
 
                             } else {
                                 assume(
-                                    forall i :: 1 <= i < |p| ==> 
-                                        p[i] == 0 ==> siblingAt(p[..i], r).v == 0
+                                    forall i :: 0 <= i < |p| ==> 
+                                        p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
                                 );
                             }
                             
