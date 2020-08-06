@@ -15,16 +15,17 @@
 include "Helpers.dfy"
 
 /**
- *  Provide tree decorated with value, level and index.
+ *  Provide tree decorated with value.
  */
 module Trees {
 
     import opened Helpers
 
-    /** Indexed/leveled Binary trees.
+    /** Binary trees.
      *
      *  Values are in a domain `T`.
      *  
+     *  @tparam T   The type of values attached to the nodes.
      *  @param  v   The value associated with a node.
      */
     datatype Tree<T> = 
@@ -48,7 +49,7 @@ module Trees {
     /**
      *  The node at the end of a path.
      *
-     *  @param  p   A path (left/right).
+     *  @param  p   A path (left/right) in a binary tree.
      *  @param  r   A complete binary tree.
      *
      *  @returns    The node of the tree that is the target of path `p`.
@@ -56,6 +57,7 @@ module Trees {
     function nodeAt(p : seq<bool>, r: Tree) : Tree
         requires |p| < height(r) 
         requires isCompleteTree(r)
+        ensures nodeAt(p, r) in collectNodes(r)
         decreases p
     {
         if |p| == 0 then  
@@ -64,7 +66,29 @@ module Trees {
             // r must be a node as height(r) > |p| >= 1
             match r 
                 case Node(_, lc, rc) => 
-                    nodeAt(p[1..], if p[0] then lc else rc)
+                    nodeAt(p[1..], if !p[0] then lc else rc)
+    }
+
+    /**
+     *  Collect nodes on the right hand-side of a full path.
+     *  
+     *  @param  p   A path.
+     *  @param  r   A complete binary tree.
+     */
+    function nodesRightOf(p: seq<bool>, r : Tree) : seq<Tree> 
+        requires |p| == height(r) - 1 
+        requires isCompleteTree(r)
+        decreases p
+    {
+        if |p| == 0 then
+            []
+        else
+            match r 
+                case Node(_, lc, rc) =>
+                    if !p[0] then
+                        collectNodes(rc) + nodesRightOf(p[1..], lc)
+                    else 
+                        nodesRightOf(p[1..], rc)
     }
 
     /**
@@ -79,15 +103,30 @@ module Trees {
 
     /**
      *  The leaf that corresponds to a path of length height(r) - 1.
+     *
+     *  @param  p   A full path.
+     *  @param  t   A complete binary tree.
+     *  @returns    The leaf at the end of the path.
      */
     function leafAt(p : seq<bool>, r: Tree) : Tree
         requires |p| == height(r) - 1 
         requires isCompleteTree(r)
         ensures leafAt(p, r).Leaf?
+        ensures leafAt(p, r) in collectLeaves(r)
     {
+        //  Proof of post-condition
         nodeAfterFullPathIsLeaf(p, r);
         nodeAt(p, r)
     }
+
+    /**
+     *  Index of a leaf on a given path.
+     */
+    // function leafInOrderIndex(p : seq<bool>) : nat 
+    //     ensures 0 <= leafInOrderIndex(p, r) < power2(|p|)
+    // {
+    //     bitListToNat(p, 0)
+    // }
     
     /**
      *  The nodes on each side of the path to a leaf.
@@ -141,7 +180,10 @@ module Trees {
      *
      */
     function method collectLeaves(root : Tree) : seq<Tree>
+        /** All the collected nodes are leaves. */
         ensures forall i :: 0 <= i < |collectLeaves(root)| ==>  collectLeaves(root)[i].Leaf?
+        /** All the leaves are collected. */
+        ensures forall n :: n in collectNodes(root) && n.Leaf? ==> n in collectLeaves(root)
         decreases root
     {
         match root 
@@ -184,6 +226,149 @@ module Trees {
     lemma {:induction root} completeTreeNumberOfNodes(root : Tree) 
         ensures isCompleteTree(root) ==> |collectNodes(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
+    }
+
+    // lemma collectLeavesIndices(r : Tree, i : nat) 
+    //     requires isCompleteTree(r)
+    //     requires r.Node?
+    //     requires 0 <= i < power2(height(r) - 1) / 2
+    //     ensures height(r) >= 2
+    //     ensures match r 
+    //         case Node(_, lc, rc) =>  
+    //             collectLeaves(r)[i] == collectLeaves(lc)[i]
+    // {
+    //     match r 
+    //         case Node(_, lc, rc) =>  
+    //             // completeTreeNumberOfLeaves(r);
+    //             completeTreeNumberOfLeaves(lc);
+    //             assert( power2(height(r) - 1) / 2 == power2(height(r) - 2));
+    //             assert( i < power2(height(lc) - 1));
+    // }
+
+    // lemma foo1(r : Tree, i : nat)
+    //     requires isCompleteTree(r)
+    //     requires r.Node?
+    //     requires 0 <= i < power2(height(r) - 1) / 2
+    //     ensures height(r) >= 2
+    //     ensures match r 
+    //         case Node(_, lc, _) =>
+    //             collectLeaves(r)[i] in collectLeaves(lc)
+    // {
+
+    // }
+
+    /**
+     *  Two complete tree of same height have same number of leaves.
+     */
+    lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: Tree, r2: Tree) 
+        requires isCompleteTree(r1)
+        requires isCompleteTree(r2)
+        ensures height(r1) == height(r2) ==> |collectLeaves(r1)| == |collectLeaves(r2)|
+    {   //  Thanks Dafny
+    }
+
+    /**
+     *  Children of a node in a complete tree have same number of leaves.
+     */
+    lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : Tree) 
+        requires isCompleteTree(r)
+        requires height(r) >= 2
+        ensures match r
+            case Node(_, lc, rc) => 
+                |collectLeaves(lc)| == |collectLeaves(rc)| == power2(height(r) - 1) / 2
+    {
+        match r 
+            case Node(_, lc, rc) =>
+                completeTreesOfSameHeightHaveSameNumberOfLeaves(lc,rc);
+    }
+
+    /**
+     *  Split of sequences.
+     */
+    lemma splitSeq<T>(s: seq<T>, t: seq<T>, u : seq<T>)
+        requires s == t + u
+        ensures s[..|t|] == t
+        ensures s[|t|..] == u
+    {   //  Thanks Dafny
+    }
+
+    /**
+     *  Leaves indices in complete trees.   
+     */
+    lemma {:induction r} leavesIndicesInCompleteTrees(r: Tree, i : nat)
+        requires isCompleteTree(r)
+        requires 0 <= i < power2(height(r) - 1)
+        requires height(r) >= 2
+        ensures |collectLeaves(r)| == power2(height(r) - 1)
+        ensures match r 
+            case Node(_, lc, rc) => 
+                collectLeaves(r)[..power2(height(r) - 1) / 2] == collectLeaves(lc) 
+                &&
+                collectLeaves(r)[power2(height(r) - 1) / 2..] == collectLeaves(rc)
+    {
+       match r 
+            case Node(_, lc, rc) => 
+                //  
+                completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                splitSeq(collectLeaves(r), collectLeaves(lc), collectLeaves(rc)); 
+    }
+     
+    /**
+     *  Location of leaf given first digit in the path.
+     */
+    lemma {:induction r} firstDigitDeterminesNodesLoc(p : seq<bool>, r : Tree) 
+        requires isCompleteTree(r)
+        requires 1 <= |p| <= height(r) - 1
+        requires height(r) >= 2
+        ensures match r
+            case Node(_, lc, rc) => 
+                (!p[0] &&  nodeAt(p, r) in collectNodes(lc))
+                ||
+                (p[0] && nodeAt(p, r) in collectNodes(rc))
+    {   //  Thanks Dafny.
+    }
+
+    lemma {:induction r} firstDigitDeterminesLeafLoc(p : seq<bool>, r : Tree) 
+        requires isCompleteTree(r)
+        requires |p| == height(r) - 1
+        requires height(r) >= 2
+        ensures match r
+            case Node(_, lc, rc) => 
+                (!p[0] && leafAt(p, r) in collectLeaves(lc))
+                ||
+                (p[0] && leafAt(p, r) in collectLeaves(rc))
+    {   //  Thanks Dafny
+    }
+
+    lemma foo45(p : seq<bool>, r : Tree) 
+        requires isCompleteTree(r)
+        requires |p| == height(r) - 1
+        requires height(r) >= 2
+        requires !p[0]
+        ensures match r
+            case Node(_, lc, _) => leafAt(p, r) in collectLeaves(lc)
+    {
+        firstDigitDeterminesLeafLoc(p, r);
+    }
+
+    lemma {:induction p} foo13(p: seq<bool>, h : nat) 
+        requires |p| == h - 1 >= 1
+        ensures bitListToNat(p) < power2(h - 1) / 2 ==> p[0] == false
+    {   //  Thanks  
+    }
+
+    lemma foo35(p: seq<bool>, r : Tree)
+        requires isCompleteTree(r)
+        requires height(r) >= 2
+        requires |p| >= 1
+        requires |p| == height(r) - 1 
+        ensures match r 
+            case Node(_, lc, rc) =>
+                (bitListToNat(p) < power2(height(r) - 1) / 2 ==> leafAt(p, r) in collectLeaves(lc))
+                &&
+                (bitListToNat(p) >= power2(height(r) - 1) / 2 ==> leafAt(p, r) in collectLeaves(rc))
+    {
+
     }
      
 } 
