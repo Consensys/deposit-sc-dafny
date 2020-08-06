@@ -267,10 +267,24 @@ module DiffTree {
             {
                 if (height(r) == 2) {
                     //  Thanks Dafny
+                    assert(|p| == 1);
+                    if (p[0] == 0) {
+                        match r 
+                            case INode(_, lc, rc, _) => 
+                                assert(siblingAt(p[..1], r) ==  rc);
+                                assert(siblingAt(p[..1], r) ==  leavesIn(r)[1]);
+                                assert(|leavesIn(r)| == 2);
+                                nodeLoc2(r, p, k, p');
+                                // assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
+                                assert(k < 1);
+                    } else {
+                        //  p[0] == 1 
+                        assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
+                    }
                     assume(
-                                    forall i :: 0 <= i < |p| ==> 
-                                        p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-                                    );
+                        forall i :: 0 <= i < |p| ==> 
+                            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+                        );
                 } else {
                     //  height(r) >= 3, so lc and rc have children
                     match r
@@ -321,20 +335,38 @@ module DiffTree {
                                     //  All leaves in rc are zero
                                     // assume ( p[0] == 0 ==>  siblingAt(p[..1], r).v == 0) ;
                                     p1(r, k);
-                                    // assert();
                                     assert(k + 1 <= power2(height(r) -1 )/ 2);
                                     p3(r, l, k + 1);
                                     p4(r, l, k + 1);
                                 }
 
-
                             } else {
-                                assume(
-                                    forall i :: 0 <= i < |p| ==> 
-                                        p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-                                );
-                            }
-                            
+                                //  p[0] == 1 
+                                //  nothing to prove for siblingAt(p[..1], r).v == 0
+                                if ( i == 0) {
+                                    assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
+                                } else {
+                                    completeTreeNumberLemmas(r);
+                                    nodeLoc2(r, p, k, p');
+                                    assert( k >= power2(height(r) - 1) / 2);
+                                    completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                                    assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
+                                    // assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
+                                    // assert( k <= |leavesIn(lc)|); 
+                                    t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..], p' + [1]);
+                                    assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
+                                    suffixPrefixMerge(p, i);    
+                                    assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], rc));
+                                    assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
+                                    assert(p[i] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
+                                    assert(p[i] == 0 ==> siblingAt(p[1..i + 1], rc).v == 0);
+                                    assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+                                    // assume(
+                                    //     forall i :: 0 <= i < |p| ==> 
+                                    //         p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+                                    // );
+                                }
+                            }   
                 }
             }
         }
