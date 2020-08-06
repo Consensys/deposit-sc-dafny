@@ -59,29 +59,70 @@ module MerkleTrees {
     }
 
     /**
+     *  Whether the tree is a Merkle Tree for a given list of elements.
+     *
+     *  The tree must be:
+     *      1.  complete
+     *      2.  the values on the internal nodes correspond to the value of
+     *          synthesised attribute `f`.
+     *      3.  the leaves (in-order) hold the values of `l`
+     *     
+     */
+    predicate isMerkle2<T>(root: ITree<T>, l: seq<T>, f : (T, T) -> T) 
+        requires |l| == |leavesIn(root)|
+    {
+        isCompleteTree(root)                                            //  1.
+        && isDecoratedWith(f, root)                                     //  2.
+        && forall i :: 0 <= i < |l| ==> l[i] == leavesIn(root)[i].v     //  3.
+           
+    }
+
+    lemma {:induction h} isMerkleChildren<T>(r: ITree<T>, l: seq<T>, f : (T, T) -> T, default: T, h : nat)
+        requires |l| == |leavesIn(r)| / 2
+        requires isMerkle(r, l, f, default)
+        requires h == height(r) >= 2
+        ensures match r 
+            case INode(_, lc, rc, _) =>
+                |leavesIn(lc)| == power2(height(r) - 1)/2
+                && |l| <=  |leavesIn(lc)|
+                && isMerkle(lc, l, f, default)
+    {
+        if h == 2 {
+            //  Thanks Dafny
+        } else {
+            completeTreesLeftRightChildrenLeaves(r, h);
+        }
+    }
+
+    /**
+     *  For tree of height >= 2, Merkle projects onto lc and rc for 
+     *  split list. 
+     */
+    lemma {:induction h} isMerkleChildren2<T>(r: ITree<T>, l: seq<T>, f : (T, T) -> T, h : nat)
+        requires |l| == |leavesIn(r)|
+        requires isMerkle2(r, l, f)
+        requires h == height(r) >= 2
+        ensures |l| == power2(height(r) - 1)
+        ensures match r 
+            case INode(_, lc, rc, _) =>
+                |leavesIn(lc)| == power2(height(r) - 1)/2
+                && |l[.. power2(height(r) - 1)/2]| <=  |leavesIn(lc)|
+                && isMerkle2(lc, l[..  power2(height(r) - 1)/2], f)
+                && |leavesIn(rc)| == power2(height(r) - 1)/2
+                && |l[power2(height(r) - 1)/2..]| <=  |leavesIn(rc)|
+                && isMerkle2(rc, l[power2(height(r) - 1)/2..], f)
+    {
+        if h == 2 {
+            //  Thanks Dafny
+        } else {
+            completeTreesLeftRightChildrenLeaves(r, h);
+        }
+    }
+
+    /**
      *  Default value for a given type.
      */
     // function default<T>() : T 
-
-    // /**
-    //  *  Check that a decorated tree correctly stores the f attribute. 
-    //  */
-    // predicate isDecoratedWith<T>(f : (T, T) -> T, root: ITree<T>)
-    //     decreases root
-    // {
-    //     match root
-
-    //         case Leaf(v) => 
-    //                 //  leaves define the attributes
-    //                 true
-
-    //         case Node(v, lc, rc) => 
-    //                 //  Recursive definition for an internal node: children are
-    //                 //  well decorated and node value if the f between children.
-    //                 v == f(lc.v, rc.v)
-    //                 && isDecoratedWith(f, lc)
-    //                 && isDecoratedWith(f, rc)
-    // }
 
    /** 
     *  Defines the Tree associated with a given sequence.
@@ -95,35 +136,19 @@ module MerkleTrees {
     *   @param  f   A function to combine two values.
     *   @param  d   A default value for the leaves not in `l`.
     */
-    // function buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : ITree<T> 
-    //     requires h >= 1
-    //     /** Tree has enough leaves to store `l`. */
-    //     requires |l| <= power2(h - 1)      
+    function buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : ITree<T> 
+        requires h >= 1
+        /** Tree has enough leaves to store `l`. */
+        requires |l| <= power2(h - 1)      
 
-    //     ensures height(buildMerkle(l, h, f, d)) == h
-    //     ensures isCompleteTree(buildMerkle(l, h, f, d))
-    //     ensures |leavesIn(buildMerkle(l, h, f, d))| == power2(h - 1)
-    //     ensures isDecoratedWith(f, buildMerkle(l, h, f, d))
-    //     ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h, f, d), d)
-
-    // /**
-    //     *  The tree decorated with constant values.
-    //     *  
-    //     *  @param  r   A tree.
-    //     *  @param  c   A value.
-    //     *  @returns    True if and olny if all values are equal to `c`.
-    //     */
-    // predicate isConstantITree<T>(r : ITree<T>, c: T) 
-    //     decreases r
-    // {
-    //     match r 
-    //         case ILeaf(v,_) => v == c
-    //         case INode(v, lc, rc,_) => v == c
-    //                         && isConstantITree(lc, c) 
-    //                         && isConstantITree(rc, c)
-    // }
+        ensures height(buildMerkle(l, h, f, d)) == h
+        ensures isCompleteTree(buildMerkle(l, h, f, d))
+        ensures |leavesIn(buildMerkle(l, h, f, d))| == power2(h - 1)
+        ensures isDecoratedWith(f, buildMerkle(l, h, f, d))
+        ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h, f, d), d)
 
     //  Helpers lemmas
 
+    
 
 }
