@@ -128,4 +128,11 @@ module Helpers {
     // {
     //     bitListToNatAccBound(p, v);
     // }
+
+    //  Seq helpers
+    lemma prefixOfSuffixCommutes<T>(r: seq<T>, k : nat) 
+        requires k < |r|
+        requires |r| >= 1
+        ensures r[..k + 1][1..] == r[1..][..k]    
+    {}
 }
