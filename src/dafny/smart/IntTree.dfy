@@ -232,7 +232,7 @@ module DiffTree {
         }
 
         
-        lemma {:induction r} t2(r: ITree<int>, l : seq<int>, k : nat, p: seq<bit>, p' : seq<bit>) 
+        lemma {:induction r} t2(r: ITree<int>, l : seq<int>, k : nat, p: seq<bit>) 
 
             /** Merkle tree. */
             requires height(r) >= 2
@@ -240,7 +240,7 @@ module DiffTree {
             requires isMerkle2(r, l, diff)
 
             /** Proper indexing. */
-            requires isValidIndex(r, p')
+            // requires isValidIndex(r, p')
 
             /**  all leaves after the k leaf are zero. */
             requires k < |leavesIn(r)|
@@ -272,7 +272,7 @@ module DiffTree {
                                 assert(siblingAt(p[..1], r) ==  rc);
                                 assert(siblingAt(p[..1], r) ==  leavesIn(r)[1]);
                                 assert(|leavesIn(r)| == 2);
-                                nodeLoc2(r, p, k, p');
+                                nodeLoc2(r, p, k);
                                 // assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
                                 assert(k < 1);
                     } else {
@@ -290,7 +290,7 @@ module DiffTree {
                             if (p[0] == 0) {
                                 completeTreeNumberLemmas(r);
                                 assert( k < power2(height(r) - 1));
-                                nodeLoc2(r, p, k, p');
+                                nodeLoc2(r, p, k);
                                 assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
                                 //  siblings in lc
                                 if ( i >= 1 ) {
@@ -314,7 +314,8 @@ module DiffTree {
                                 assert(|l[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
                                 assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
                                 assert( k <= |leavesIn(lc)|); 
-                                t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..], p' + [0]);
+                                // t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..], p' + [0]);
+                                t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..]);
 
                                 assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
 
@@ -345,13 +346,14 @@ module DiffTree {
                                     assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
                                 } else {
                                     completeTreeNumberLemmas(r);
-                                    nodeLoc2(r, p, k, p');
+                                    nodeLoc2(r, p, k);
                                     assert( k >= power2(height(r) - 1) / 2);
                                     completeTreesLeftRightHaveSameNumberOfLeaves(r);
                                     assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
                                     // assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
                                     // assert( k <= |leavesIn(lc)|); 
-                                    t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..], p' + [1]);
+                                    // t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..], p' + [1]);
+                                    t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..]);
                                     assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
                                     suffixPrefixMerge(p, i);    
                                     assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], rc));
