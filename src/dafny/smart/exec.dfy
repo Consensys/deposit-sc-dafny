@@ -247,6 +247,17 @@ include "MerkleTrees.dfy"
         }
     }
 
+    function makeB(p: seq<bit>, b: seq<int>) : seq<int> 
+        requires |p| == |b|
+        decreases p
+        ensures |makeB(p, b)| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then makeB(p,b)[i] == b[i] else makeB(p, b)[i] == 0 
+    {
+        if |p| == 0 then
+            []
+        else    
+            [if p[0] == 0 then 0 else b[0]] + makeB(p[1..], b[1..])
+    }
+
     /**
      *  Weakening of computeOnPathYieldsRootValue, requesting values on left siblings only, when
      *  merkle tree and path is not last non-null leaf.
@@ -277,8 +288,8 @@ include "MerkleTrees.dfy"
         //  define a new seq b' that holds default values for right siblings
         //  and prove that pre-conditions of computeOnPathYieldsRootValue hold.
 
-        var b' : seq<int>;
-        assume( |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ); 
+        // var b' : seq<int> :| |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ; 
+        var b' := makeB(p, b);
 
         t2(r, l, k, p);
         assert(forall i :: 0 <= i < |p| ==> 
