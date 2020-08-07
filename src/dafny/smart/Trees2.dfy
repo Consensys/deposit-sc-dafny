@@ -579,14 +579,15 @@ module Trees {
                 &&
                 p[0] == 1 ==> nodeAt(p, r) in leavesIn(rc)
 
-    lemma nodeLoc2(r : ITree, p : seq<bit>, k : nat, p' : seq<bit>) 
+    lemma nodeLoc2(r : ITree, p : seq<bit>, k : nat) 
         requires 1 <= |p| == height(r) - 1
         requires isCompleteTree(r)
-        requires isValidIndex(r, p')
+        // requires isValidIndex(r, p')
         requires k < power2(height(r) - 1)
         requires k < |leavesIn(r)|
         // requires nodeAt(p, r).id == leavesIn(r)[k].id
-        requires p' + p == leavesIn(r)[k].id
+        // requires p' + p == leavesIn(r)[k].id
+        requires nodeAt(p, r) == leavesIn(r)[k]
 
         ensures match r 
             case INode(_, lc, rc, _) =>

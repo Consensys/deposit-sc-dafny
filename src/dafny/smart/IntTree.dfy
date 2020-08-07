@@ -45,6 +45,218 @@ module DiffTree {
         isDecoratedWith(diff, r)
     } 
 
+    /** 
+     *  Defines the Int Tree associated with a given sequence.
+     *  
+     *  @note   T   his function does not compute the tree but rather
+     *              defines its properties: correctly stores the attribute
+     *              `diff` and the leftmost |l| leaves store l.
+     *
+     *  @param  l   
+     */
+    function buildMerkleDiff(l: seq<int>, h : nat) : ITree<int> 
+        requires h >= 1
+        /** Tree has enough leaves to store `l`. */
+        requires |l| <= power2(h - 1)      
+    {
+        buildMerkle(l , h, diff, 0)
+    }
+
+    /**
+     *  The tree decorated with zeroes.
+     *  
+     *  @param  r   A tree.
+     *  @returns    True if and only if all values are zero.
+     */
+    predicate isZeroTree(r : ITree<int>) 
+    {
+        isConstant(r, 0)
+    }
+
+    /**
+     *  Equivalent characterisation of zero trees.
+     */
+    lemma {:induction r} isZeroTreeiffAllNodesZero(r : ITree<int>) 
+            ensures (forall l :: l in nodesIn(r) ==> l.v == 0) <==> isZeroTree(r)
+    {   //  Thanks Dafny
+    } 
+
+    /**
+     *  If all leaves are zero and tree is decorated with diff, then
+     *  all nodes are zero.
+     */
+    lemma {:induction r} allLeavesZeroImplyAllNodesZero(r: ITree<int>) 
+        requires isDecoratedWithDiff(r)
+        requires forall l :: l in leavesIn(r) ==> l.v == 0
+        ensures forall l :: l in nodesIn(r) ==> l.v == 0 
+    {   //  Thanks Dafny
+    }
+
+    lemma {:induction r} p3(r: ITree<int>, l : seq<int>, k : nat) 
+        requires height(r) >= 2
+        requires |l| == |leavesIn(r)|
+        requires isMerkle2(r, l, diff)
+        /**  all leaves in rc are 0 (plus maybe some in lc). */
+        requires k <= power2(height(r) - 1) / 2
+        requires forall i :: k <= i < |l| ==> l[i] == 0
+
+        ensures match r 
+            case INode(_, lc, rc, _ ) =>
+                forall i :: 0 <= i < |leavesIn(rc)| ==> leavesIn(rc)[i].v == 0
+    {   
+        match r 
+            case INode(_, lc, rc, _) =>
+                forall (i : int |  0 <= i < |leavesIn(rc)|)
+                    ensures leavesIn(rc)[i].v == 0
+                    {
+                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        assert(leavesIn(r)[i + power2(height(r) - 1)/2] == leavesIn(rc)[i ]);
+                        assert(i + power2(height(r) - 1)/2 < |leavesIn(r)|);
+                    }
+    }
+
+    /**
+     *  If all leaves in rc are 0, then rc.v itself is zero.
+     */
+    lemma {:induction r} p4(r: ITree<int>, l : seq<int>, k : nat) 
+        requires height(r) >= 2
+        requires |l| == |leavesIn(r)|
+        requires isMerkle2(r, l, diff)
+        /**  all leaves in rc are 0 (plus maybe some in lc). */
+        requires k <= power2(height(r) - 1) / 2
+        requires forall i :: k <= i < |l| ==> l[i] == 0
+        
+        ensures match r 
+            case INode(_, lc, rc, _ ) => rc.v == 0
+    {   
+        match r 
+            case INode(_, lc, rc, _) =>
+                p3(r, l, k);
+                allLeavesZeroImplyAllNodesZero(rc);
+    }
+
+    lemma {:induction r} t2(r: ITree<int>, l : seq<int>, k : nat, p: seq<bit>) 
+
+        /** Merkle tree. */
+        requires height(r) >= 2
+        requires |l| == |leavesIn(r)|
+        requires isMerkle2(r, l, diff)
+
+        /** Proper indexing. */
+
+        /**  all leaves after the k leaf are zero. */
+        requires k < |leavesIn(r)|
+        requires forall i :: k < i < |l| ==> l[i] == 0
+
+        /** p is the path to k leaf in r. */
+        requires |p| == height(r) - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+
+        /** For all right siblings on p, value of diff is zero. */
+        ensures forall i :: 0 <= i < |p| ==> 
+            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+
+        decreases r
+
+    {   
+        forall ( i : nat | 0 <= i < |p|)
+            ensures p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+        {
+            if (height(r) == 2) {
+                //  Thanks Dafny
+                assert(|p| == 1);
+                if (p[0] == 0) {
+                    match r 
+                        case INode(_, lc, rc, _) => 
+                            assert(siblingAt(p[..1], r) ==  rc);
+                            assert(siblingAt(p[..1], r) ==  leavesIn(r)[1]);
+                            assert(|leavesIn(r)| == 2);
+                            nodeLoc2(r, p, k);
+                            assert(k < 1);
+                } else {
+                    //  p[0] == 1 
+                    assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
+                }
+                assume(
+                    forall i :: 0 <= i < |p| ==> 
+                        p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+                    );
+            } else {
+                //  height(r) >= 3, so lc and rc have children
+                match r
+                    case INode(v, lc, rc, _) => 
+                        if (p[0] == 0) {
+                            completeTreeNumberLemmas(r);
+                            assert( k < power2(height(r) - 1));
+                            nodeLoc2(r, p, k);
+                            assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
+                            //  siblings in lc
+                            if ( i >= 1 ) {
+                            
+                            assert(height(lc) >= 2);
+                            assert(0 <= |p[..i][1..]| );
+                            assert (0 <= |p[..i][1..]| < height(lc));
+                            assert(isCompleteTree(lc));
+                            assert( p == [0] + p[1..]);
+                            assert(siblingAt(p[..i + 1], r) == siblingAt(p[..i + 1][1..], lc));
+
+
+                            assert(isCompleteTree(r));
+                            completeTreeNumberLemmas(r);
+                            assert(|l| == power2(height(r) - 1));
+                            completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                            assert(|l[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
+                            assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
+                            assert( k <= |leavesIn(lc)|); 
+                            t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..]);
+
+                            assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
+
+                            suffixPrefixMerge(p, i);    
+                            assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], lc));
+                            assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
+                            assert(p[i] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
+
+                            suffixPrefixMerge(p, i);    
+                            assert(p[i] == 0 ==> siblingAt(p[1..i + 1], lc).v == 0);
+                            assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+
+                            } else {
+                                //  case of first sibling which is rc.
+                                //  All leaves in rc are zero
+                                // p1(r, k);
+                                assert(k + 1 <= power2(height(r) -1 )/ 2);
+                                p3(r, l, k + 1);
+                                p4(r, l, k + 1);
+                            }
+
+                        } else {
+                            //  p[0] == 1 
+                            //  nothing to prove for siblingAt(p[..1], r).v == 0
+                            if ( i == 0) {
+                                assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
+                            } else {
+                                completeTreeNumberLemmas(r);
+                                nodeLoc2(r, p, k);
+                                assert( k >= power2(height(r) - 1) / 2);
+                                completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                                assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
+                                t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..]);
+                                assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
+                                suffixPrefixMerge(p, i);    
+                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], rc));
+                                assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
+                                assert(p[i] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
+                                assert(p[i] == 0 ==> siblingAt(p[1..i + 1], rc).v == 0);
+                                assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+
+                            }
+                        }   
+            }
+        }
+    }
+
+
     /**
      *  Incremental algorithm.
      *
@@ -100,42 +312,8 @@ module DiffTree {
             ensures isCompleteTree(root)
             ensures isValid()
 
-        /** 
-         *  Defines the Int Tree associated with a given sequence.
-         *  
-         *  @note   T   his function does not compute the tree but rather
-         *              defines its properties: correctly stores the attribute
-         *              `diff` and the leftmost |l| leaves store l.
-         *
-         *  @param  l   
-         */
-        function buildMerkleDiff(l: seq<int>, h : nat) : ITree<int> 
-            requires h >= 1
-            /** Tree has enough leaves to store `l`. */
-            requires |l| <= power2(h - 1)      
-        {
-            buildMerkle(l , h, diff, 0)
-        }
-
-        /**
-         *  The tree decorated with zeroes.
-         *  
-         *  @param  r   A tree.
-         *  @returns    True if and only if all values are zero.
-         */
-        predicate isZeroTree(r : ITree<int>) 
-        {
-            isConstant(r, 0)
-        }
-
-        /**
-         *  Equivalent characterisation of zero trees.
-         */
-        lemma {:induction r} isZeroTreeiffAllNodesZero(r : ITree<int>) 
-             ensures (forall l :: l in nodesIn(r) ==> l.v == 0) <==> isZeroTree(r)
-        {   //  Thanks Dafny
-        } 
-
+        
+        
         /**
          *  The Merkle tree of height `h` for the empty list is the 
          *  zero (complete) tree of height `h`.
@@ -148,228 +326,36 @@ module DiffTree {
         //     isZeroTreeiffAllNodesZero(buildMerkle([], h));
         // }   
        
-        /**
-         *  If all leaves are zero and tree is decorated with diff, then
-         *  all nodes are zero.
-         */
-        lemma {:induction r} allLeavesZeroImplyAllNodesZero(r: ITree<int>) 
-            requires isDecoratedWithDiff(r)
-            requires forall l :: l in leavesIn(r) ==> l.v == 0
-            ensures forall l :: l in nodesIn(r) ==> l.v == 0 
-        {   //  Thanks Dafny
-        }
-
+       
         /**
          *  The leaf at index k < 2^(h - 1)/2 is in lc, and index >= 2^(h - 1)/2
          *  is in rc.
          *  @todo   Check whether this lemma is useful and not superseded by p3.
          */
-        lemma {:induction r} p1(r : ITree<int>, k : nat)
-            requires isCompleteTree(r)
-            requires height(r) >= 2
-            requires 0 <= k < power2(height(r) - 1 ) 
-            ensures match r 
-                case INode(_, lc, rc, _) => 
-                    ((0 <= k < power2(height(r) - 1 ) / 2) ==>
-                        k < |leavesIn(lc)|
-                        && leavesIn(r)[k] == leavesIn(lc)[k]
-                    )
-                    && 
-                        (power2(height(r) - 1) / 2 <= k < power2(height(r) - 1) ==> 
-                        && 0 <= k - power2(height(r) - 1)/2 < |leavesIn(rc)|
-                        && k < |leavesIn(r)|
-                        && leavesIn(r)[k] == leavesIn(rc)[k - power2(height(r) - 1)/2]
-                        )
-        {
-            completeTreesLeftRightHaveSameNumberOfLeaves(r);
-            completeTreesLeftRightChildrenLeaves(r, height(r)) ;
-        }
+        // lemma {:induction r} p1(r : ITree<int>, k : nat)
+        //     requires isCompleteTree(r)
+        //     requires height(r) >= 2
+        //     requires 0 <= k < power2(height(r) - 1 ) 
+        //     ensures match r 
+        //         case INode(_, lc, rc, _) => 
+        //             ((0 <= k < power2(height(r) - 1 ) / 2) ==>
+        //                 k < |leavesIn(lc)|
+        //                 && leavesIn(r)[k] == leavesIn(lc)[k]
+        //             )
+        //             && 
+        //                 (power2(height(r) - 1) / 2 <= k < power2(height(r) - 1) ==> 
+        //                 && 0 <= k - power2(height(r) - 1)/2 < |leavesIn(rc)|
+        //                 && k < |leavesIn(r)|
+        //                 && leavesIn(r)[k] == leavesIn(rc)[k - power2(height(r) - 1)/2]
+        //                 )
+        // {
+        //     completeTreesLeftRightHaveSameNumberOfLeaves(r);
+        //     completeTreesLeftRightChildrenLeaves(r, height(r)) ;
+        // }
 
-
-        lemma {:induction r} p3(r: ITree<int>, l : seq<int>, k : nat) 
-            requires height(r) >= 2
-            requires |l| == |leavesIn(r)|
-            requires isMerkle2(r, l, diff)
-            /**  all leaves in rc are 0 (plus maybe some in lc). */
-            requires k <= power2(height(r) - 1) / 2
-            requires forall i :: k <= i < |l| ==> l[i] == 0
-
-            ensures match r 
-                case INode(_, lc, rc, _ ) =>
-                    forall i :: 0 <= i < |leavesIn(rc)| ==> leavesIn(rc)[i].v == 0
-
-        {   
-            match r 
-                case INode(_, lc, rc, _) =>
-                    forall (i : int |  0 <= i < |leavesIn(rc)|)
-                        ensures leavesIn(rc)[i].v == 0
-                        {
-                            completeTreesLeftRightHaveSameNumberOfLeaves(r);
-                            assert(leavesIn(r)[i + power2(height(r) - 1)/2] == leavesIn(rc)[i ]);
-                            assert(i + power2(height(r) - 1)/2 < |leavesIn(r)|);
-                        }
-                    
-        }
-
-        /**
-         *  If all leaves in rc are 0, then rc.v itself is zero.
-         */
-        lemma {:induction r} p4(r: ITree<int>, l : seq<int>, k : nat) 
-            requires height(r) >= 2
-            requires |l| == |leavesIn(r)|
-            requires isMerkle2(r, l, diff)
-            /**  all leaves in rc are 0 (plus maybe some in lc). */
-            requires k <= power2(height(r) - 1) / 2
-            requires forall i :: k <= i < |l| ==> l[i] == 0
-            
-            ensures match r 
-                case INode(_, lc, rc, _ ) => rc.v == 0
-        {   
-            match r 
-                case INode(_, lc, rc, _) =>
-                    p3(r, l, k);
-                    allLeavesZeroImplyAllNodesZero(rc);
-        }
 
         
-        lemma {:induction r} t2(r: ITree<int>, l : seq<int>, k : nat, p: seq<bit>) 
-
-            /** Merkle tree. */
-            requires height(r) >= 2
-            requires |l| == |leavesIn(r)|
-            requires isMerkle2(r, l, diff)
-
-            /** Proper indexing. */
-            // requires isValidIndex(r, p')
-
-            /**  all leaves after the k leaf are zero. */
-            requires k < |leavesIn(r)|
-            requires forall i :: k < i < |l| ==> l[i] == 0
-
-            /** p is the path to k leaf in r. */
-            requires |p| == height(r) - 1
-            // requires p' + p == leavesIn(r)[k].id
-            requires nodeAt(p, r) == leavesIn(r)[k]
-
-            /** For all right siblings on p, value is zero. */
-            ensures forall i :: 0 <= i < |p| ==> 
-                p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-
-            decreases r
-
-        {   
-            // nodeIdAtPathIsPath(p, p', r);
-            // assert(leavesIn(r)[k]);
-            forall ( i : nat | 0 <= i < |p|)
-                ensures p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-            {
-                if (height(r) == 2) {
-                    //  Thanks Dafny
-                    assert(|p| == 1);
-                    if (p[0] == 0) {
-                        match r 
-                            case INode(_, lc, rc, _) => 
-                                assert(siblingAt(p[..1], r) ==  rc);
-                                assert(siblingAt(p[..1], r) ==  leavesIn(r)[1]);
-                                assert(|leavesIn(r)| == 2);
-                                nodeLoc2(r, p, k);
-                                // assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
-                                assert(k < 1);
-                    } else {
-                        //  p[0] == 1 
-                        assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
-                    }
-                    assume(
-                        forall i :: 0 <= i < |p| ==> 
-                            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-                        );
-                } else {
-                    //  height(r) >= 3, so lc and rc have children
-                    match r
-                        case INode(v, lc, rc, _) => 
-                            if (p[0] == 0) {
-                                completeTreeNumberLemmas(r);
-                                assert( k < power2(height(r) - 1));
-                                nodeLoc2(r, p, k);
-                                assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
-                                //  siblings in lc
-                                if ( i >= 1 ) {
-                                // completeTreesLeftRightChildrenLeaves(r, height(r));
-                               
-                                
-                                assert(height(lc) >= 2);
-                                assert(0 <= |p[..i][1..]| );
-                                assert (0 <= |p[..i][1..]| < height(lc));
-                                assert(isCompleteTree(lc));
-                                assert( p == [0] + p[1..]);
-                                // assert(siblingAt(p[..i + 1], r) == siblingAt(([0] + p[1..])[1..i], lc));
-                                // assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][..i], lc));
-                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[..i + 1][1..], lc));
-
-
-                                assert(isCompleteTree(r));
-                                completeTreeNumberLemmas(r);
-                                assert(|l| == power2(height(r) - 1));
-                                completeTreesLeftRightHaveSameNumberOfLeaves(r);
-                                assert(|l[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
-                                assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
-                                assert( k <= |leavesIn(lc)|); 
-                                // t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..], p' + [0]);
-                                t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..]);
-
-                                assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
-
-                                suffixPrefixMerge(p, i);    
-                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], lc));
-                                // assert( i - 1 >= 1);
-                                assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
-
-                                suffixPrefixMerge(p, i);    
-                                assert(p[i] == 0 ==> siblingAt(p[1..i + 1], lc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
-
-                                } else {
-                                    //  case of first sibling which is rc.
-                                    //  All leaves in rc are zero
-                                    // assume ( p[0] == 0 ==>  siblingAt(p[..1], r).v == 0) ;
-                                    p1(r, k);
-                                    assert(k + 1 <= power2(height(r) -1 )/ 2);
-                                    p3(r, l, k + 1);
-                                    p4(r, l, k + 1);
-                                }
-
-                            } else {
-                                //  p[0] == 1 
-                                //  nothing to prove for siblingAt(p[..1], r).v == 0
-                                if ( i == 0) {
-                                    assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
-                                } else {
-                                    completeTreeNumberLemmas(r);
-                                    nodeLoc2(r, p, k);
-                                    assert( k >= power2(height(r) - 1) / 2);
-                                    completeTreesLeftRightHaveSameNumberOfLeaves(r);
-                                    assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
-                                    // assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
-                                    // assert( k <= |leavesIn(lc)|); 
-                                    // t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..], p' + [1]);
-                                    t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..]);
-                                    assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
-                                    suffixPrefixMerge(p, i);    
-                                    assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], rc));
-                                    assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
-                                    assert(p[i] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
-                                    assert(p[i] == 0 ==> siblingAt(p[1..i + 1], rc).v == 0);
-                                    assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
-                                    // assume(
-                                    //     forall i :: 0 <= i < |p| ==> 
-                                    //         p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-                                    // );
-                                }
-                            }   
-                }
-            }
-        }
+       
 
         /**
          *  Values of the nodes on the right of a path to e in Merkle(l :+ e,h)
