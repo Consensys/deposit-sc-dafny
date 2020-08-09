@@ -13,6 +13,8 @@
  */
 
 include "Helpers.dfy"
+include "SeqOfBits.dfy"
+include "SeqHelpers.dfy"
 
 /**
  *  Provide tree decorated with value and indexed trees.
@@ -20,8 +22,8 @@ include "Helpers.dfy"
 module Trees {
 
     import opened Helpers
-
-    newtype{:nativeType "int"} bit = i:int | 0 <= i < 2
+    import opened SeqOfBits
+    import opened SeqHelpers 
 
     /** 
      *  Binary trees.
@@ -595,21 +597,7 @@ module Trees {
                 ||
                 (p[0] == 1 && k >= power2(height(r) - 1)/2)
 
-    /**
-     *  Split of sequences.
-     */
-    lemma splitSeq<T>(s: seq<T>, t: seq<T>, u : seq<T>)
-        requires s == t + u
-        ensures s[..|t|] == t
-        ensures s[|t|..] == u
-    {   //  Thanks Dafny 
-    }
-
-    lemma suffixPrefixMerge<T>(s : seq<T>, i : nat)
-        requires 1 <= i < |s|
-        ensures s[1..][..i] == s[1..i + 1]
-    {} 
-
+   
     // function binToNat(p : seq<bit>) : nat 
     //     requires |p| >= 1
     // {
@@ -642,98 +630,98 @@ module Trees {
      /**
      *  The number represented by bitvector `p` little endian). 
      */
-    function bitListToNat2(p: seq<bit>) : nat 
-        // requires |p| >= 1
-        decreases p
-        ensures 0 <= bitListToNat2(p) < power2(|p|)
-    {
-        if |p| == 0 then 
-            0
-        else 
-            if p[0] == 1 then 
-                power2(|p| - 1) + bitListToNat2(p[1..])
-            else 
-                 bitListToNat2(p[1..])
-    } 
+    // function bitListToNat(p: seq<bit>) : nat 
+    //     // requires |p| >= 1
+    //     decreases p
+    //     ensures 0 <= bitListToNat(p) < power2(|p|)
+    // {
+    //     if |p| == 0 then 
+    //         0
+    //     else 
+    //         if p[0] == 1 then 
+    //             power2(|p| - 1) + bitListToNat(p[1..])
+    //         else 
+    //              bitListToNat(p[1..])
+    // } 
 
-    lemma seqAssoc<T>(a: seq<T>, b : seq<T>, c: seq<T>) 
-        ensures a + b + c == a + (b + c) == (a + b + c)
-        ensures |a + b + c| == |a| + |b| + |c|
-    {}
+    // lemma seqAssoc<T>(a: seq<T>, b : seq<T>, c: seq<T>) 
+    //     ensures a + b + c == a + (b + c) == (a + b + c)
+    //     ensures |a + b + c| == |a| + |b| + |c|
+    // {}
 
-    lemma foo101(p: seq<bit>, a : bit) 
-        ensures bitListToNat2(p + [a]) == 2 * bitListToNat2(p) + a as nat
-    {
-        if |p| == 0 {
-            //  
-        } else {
-            if p[0] == 1 {
-                //  induction on p[1..]
-                foo101(p[1..], a);
-                assert(bitListToNat2(p[1..] + [a]) == 2 * bitListToNat2(p[1..]) + a as nat);
-                assert(p + [a] == [p[0]] + p[1..] + [a]);
-                calc {
-                    bitListToNat2(p + [a]) ;
-                    ==
-                    bitListToNat2([p[0]] + p[1..] + [a]);
-                    == { seqAssoc([p[0]], p[1..], [a]) ; }
-                    bitListToNat2(([p[0]] + p[1..] + [a]));
-                    == calc {
-                        ([p[0]] + p[1..] + [a])[0] ;
-                        == 
-                        p[0];
-                    }
-                    power2(|([p[0]] + p[1..] + [a])| - 1) + bitListToNat2(([p[0]] + p[1..] + [a])[1..]);
-                    == calc {
-                        |([p[0]] + p[1..] + [a])| ;
-                        == 
-                        |p| + 1;
-                    }
-                    power2((|p| + 1) - 1) + bitListToNat2(([p[0]] + p[1..] + [a])[1..]);
-                    == calc {
-                        ([p[0]] + p[1..] + [a])[1..] ;
-                        == 
-                        ([p[0]] + (p[1..] + [a]))[1..];
-                        ==
-                        p[1..] + [a];
-                    }
-                    power2((|p| + 1) - 1) + bitListToNat2(p[1..] + [a]);
-                }
+    // lemma foo101(p: seq<bit>, a : bit) 
+    //     ensures bitListToNat(p + [a]) == 2 * bitListToNat(p) + a as nat
+    // {
+    //     if |p| == 0 {
+    //         //  
+    //     } else {
+    //         if p[0] == 1 {
+    //             //  induction on p[1..]
+    //             foo101(p[1..], a);
+    //             assert(bitListToNat(p[1..] + [a]) == 2 * bitListToNat(p[1..]) + a as nat);
+    //             assert(p + [a] == [p[0]] + p[1..] + [a]);
+    //             calc {
+    //                 bitListToNat(p + [a]) ;
+    //                 ==
+    //                 bitListToNat([p[0]] + p[1..] + [a]);
+    //                 == { seqAssoc([p[0]], p[1..], [a]) ; }
+    //                 bitListToNat(([p[0]] + p[1..] + [a]));
+    //                 == calc {
+    //                     ([p[0]] + p[1..] + [a])[0] ;
+    //                     == 
+    //                     p[0];
+    //                 }
+    //                 power2(|([p[0]] + p[1..] + [a])| - 1) + bitListToNat(([p[0]] + p[1..] + [a])[1..]);
+    //                 == calc {
+    //                     |([p[0]] + p[1..] + [a])| ;
+    //                     == 
+    //                     |p| + 1;
+    //                 }
+    //                 power2((|p| + 1) - 1) + bitListToNat(([p[0]] + p[1..] + [a])[1..]);
+    //                 == calc {
+    //                     ([p[0]] + p[1..] + [a])[1..] ;
+    //                     == 
+    //                     ([p[0]] + (p[1..] + [a]))[1..];
+    //                     ==
+    //                     p[1..] + [a];
+    //                 }
+    //                 power2((|p| + 1) - 1) + bitListToNat(p[1..] + [a]);
+    //             }
 
-            } else {
-                //  p[0] == 0
-                foo101(p[1..], a);
-                assert(bitListToNat2(p[1..] + [a]) == 2 * bitListToNat2(p[1..]) + a as nat);
-                assert(p + [a] == [p[0]] + p[1..] + [a]);
-                calc {
-                    bitListToNat2(p + [a]) ;
-                    == 
-                    bitListToNat2([p[0]] + p[1..] + [a]);
-                    ==
-                    bitListToNat2(([p[0]] + p[1..] + [a]));
-                    == calc {
-                        ([p[0]] + p[1..] + [a])[0] ;
-                        == 
-                        p[0];
-                    }
-                    bitListToNat2(([p[0]] + p[1..] + [a])[1..]);
-                    == calc {
-                        ([p[0]] + p[1..] + [a])[1..] ;
-                        == 
-                        ([p[0]] + (p[1..] + [a]))[1..];
-                        ==
-                        p[1..] + [a];
-                    }
-                    bitListToNat2(p[1..] + [a]);
-                }
-            }
-        }
-    }
+    //         } else {
+    //             //  p[0] == 0
+    //             foo101(p[1..], a);
+    //             assert(bitListToNat(p[1..] + [a]) == 2 * bitListToNat(p[1..]) + a as nat);
+    //             assert(p + [a] == [p[0]] + p[1..] + [a]);
+    //             calc {
+    //                 bitListToNat(p + [a]) ;
+    //                 == 
+    //                 bitListToNat([p[0]] + p[1..] + [a]);
+    //                 ==
+    //                 bitListToNat(([p[0]] + p[1..] + [a]));
+    //                 == calc {
+    //                     ([p[0]] + p[1..] + [a])[0] ;
+    //                     == 
+    //                     p[0];
+    //                 }
+    //                 bitListToNat(([p[0]] + p[1..] + [a])[1..]);
+    //                 == calc {
+    //                     ([p[0]] + p[1..] + [a])[1..] ;
+    //                     == 
+    //                     ([p[0]] + (p[1..] + [a]))[1..];
+    //                     ==
+    //                     p[1..] + [a];
+    //                 }
+    //                 bitListToNat(p[1..] + [a]);
+    //             }
+    //         }
+    //     }
+    // }
 
     // lemma foo(p : seq<bit>) 
-    //     ensures bitListToNat2([1,0]) == 2
-    //     ensures |p| >= 1 && p[0] == 0 ==> bitListToNat2(p) == bitListToNat2(p[1..])
-    //     ensures |p| >= 1 && p[0] == 1 ==> bitListToNat2(p) == power2(|p| - 1) + bitListToNat2(p[1..])
+    //     ensures bitListToNat([1,0]) == 2
+    //     ensures |p| >= 1 && p[0] == 0 ==> bitListToNat(p) == bitListToNat(p[1..])
+    //     ensures |p| >= 1 && p[0] == 1 ==> bitListToNat(p) == power2(|p| - 1) + bitListToNat(p[1..])
     // {}
 
     lemma foo302(p : seq<bit>, r : ITree, k : nat) 
@@ -741,19 +729,19 @@ module Trees {
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
         requires nodeAt(p, r) == leavesIn(r)[k]
-        ensures bitListToNat2(p) == k
+        ensures bitListToNat(p) == k
     {
         if |p| == 1 {
             if p[0] == 0 {
                 nodeLoc2(r, p, k);
                 assert(k == 0);
-                assert(bitListToNat2(p) == 0);
+                assert(bitListToNat(p) == 0);
                 assert(nodeAt(p, r) == leavesIn(r)[0]);
             } else {
                 assert(p[0] == 1);
                 nodeLoc2(r, p, k);
                 assert(k == 1);
-                assert(bitListToNat2(p) == 1);
+                assert(bitListToNat(p) == 1);
                 assert(nodeAt(p, r) == leavesIn(r)[k]);
             }
         } else {
@@ -786,7 +774,7 @@ module Trees {
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
-        requires bitListToNat2(p) == k
+        requires bitListToNat(p) == k
         ensures nodeAt(p, r) == leavesIn(r)[k]
         decreases p 
     {
@@ -794,13 +782,13 @@ module Trees {
             if p[0] == 0 {
                 nodeLoc2(r, p, k);
                 assert(k == 0);
-                assert(bitListToNat2(p) == 0);
+                assert(bitListToNat(p) == 0);
                 assert(nodeAt(p, r) == leavesIn(r)[0]);
             } else {
                 assert(p[0] == 1);
                 nodeLoc2(r, p, k);
                 assert(k == 1);
-                assert(bitListToNat2(p) == 1);
+                assert(bitListToNat(p) == 1);
                 assert(nodeAt(p, r) == leavesIn(r)[k]);
             }
         } else {
@@ -834,9 +822,9 @@ module Trees {
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
-        ensures bitListToNat2(p) == k <==> nodeAt(p, r) == leavesIn(r)[k]
+        ensures bitListToNat(p) == k <==> nodeAt(p, r) == leavesIn(r)[k]
     {
-        if (bitListToNat2(p) == k) {
+        if (bitListToNat(p) == k) {
             foo203(p, r, k);
         } else if ( nodeAt(p, r) == leavesIn(r)[k]) {
             foo302(p, r, k);
@@ -907,7 +895,7 @@ module Trees {
         requires |p| >= 1
         /** Note the path 1+ that has no successors. */
         requires exists i :: 0 <= i < |p| && p[i] == 0
-        ensures bitListToNat2(nextPath(p)) == bitListToNat2(p) + 1
+        ensures bitListToNat(nextPath(p)) == bitListToNat(p) + 1
     {
         if |p| == 1 {
             //  Thanks Dafny
@@ -916,9 +904,9 @@ module Trees {
                 assert(nextPath(p) == p[..|p| - 1] + [1]);
                 assert( p == p[..|p| - 1] + [0]);
                 foo101(p[..|p| - 1], 0);
-                assert(bitListToNat2(p) == 2 * bitListToNat2(p[..|p| - 1]));
+                assert(bitListToNat(p) == 2 * bitListToNat(p[..|p| - 1]));
                 foo101(p[..|p| - 1], 1);
-                assert(bitListToNat2(nextPath(p)) == 2 * bitListToNat2(p[..|p| - 1]) + 1);
+                assert(bitListToNat(nextPath(p)) == 2 * bitListToNat(p[..|p| - 1]) + 1);
             } else {
                 //  last of p is 1
                 assert( p == p[..|p| - 1] + [1]);
@@ -932,25 +920,25 @@ module Trees {
                 assert(exists i :: 0 <= i < |p| - 1 && p[i] == 0);
                 assert(exists i :: 0 <= i < |p[..|p| - 1]| && p[..|p| - 1][i] == 0);
                 // //  Induction on p[..|p| - 1]
-                assert(bitListToNat2(nextPath(p[..|p| - 1])) == bitListToNat2(p[..|p| - 1]) + 1);
+                assert(bitListToNat(nextPath(p[..|p| - 1])) == bitListToNat(p[..|p| - 1]) + 1);
                 // //  binListToNat2 suffix
                 foo101(p[..|p| - 1], 1);
-                assert( bitListToNat2(p) == 2 * bitListToNat2(p[..|p| - 1]) + 1);
+                assert( bitListToNat(p) == 2 * bitListToNat(p[..|p| - 1]) + 1);
 
                 calc {
-                    bitListToNat2(nextPath(p));
+                    bitListToNat(nextPath(p));
                     == 
-                    bitListToNat2(nextPath(p[..|p| - 1]) + [0]);
+                    bitListToNat(nextPath(p[..|p| - 1]) + [0]);
                     == { foo101(nextPath(p[..|p| - 1]), 0);}
-                    2 * bitListToNat2(nextPath(p[..|p| - 1]));
+                    2 * bitListToNat(nextPath(p[..|p| - 1]));
                     == { nextPathIsSucc(p[..|p| - 1]) ; } 
-                    2 * (bitListToNat2(p[..|p| - 1]) + 1) ;
+                    2 * (bitListToNat(p[..|p| - 1]) + 1) ;
                     ==
-                    2 * bitListToNat2(p[..|p| - 1]) + 2 ;
+                    2 * bitListToNat(p[..|p| - 1]) + 2 ;
                     ==
-                    (2 * bitListToNat2(p[..|p| - 1]) + 1) + 1 ;
+                    (2 * bitListToNat(p[..|p| - 1]) + 1) + 1 ;
                     ==
-                    bitListToNat2(p) + 1;
+                    bitListToNat(p) + 1;
                 }
             }
         }
@@ -1032,10 +1020,10 @@ module Trees {
         foo450(p, r, k);
         //   proof of P2
         nextPathIsSucc(p);
-        assert(bitListToNat2(nextPath(p)) == bitListToNat2(p) + 1);
+        assert(bitListToNat(nextPath(p)) == bitListToNat(p) + 1);
         foo200(p, r, k);
-        assert(bitListToNat2(p) == k);
-        assert(bitListToNat2(nextPath(p)) == k + 1);
+        assert(bitListToNat(p) == k);
+        assert(bitListToNat(nextPath(p)) == k + 1);
         foo200(nextPath(p), r, k + 1);
 
 
