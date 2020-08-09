@@ -164,11 +164,11 @@ module SeqOfBits {
                 assert(bitListToNat(nextPath(p)) == 2 * bitListToNat(p[..|p| - 1]) + 1);
             } else {
                 //  last of p is 1
+                assert(p[|p| - 1] == 1);
                 assert( p == p[..|p| - 1] + [1]);
 
                 //  def of next path
                 assert(nextPath(p) == nextPath(p[..|p| - 1]) + [0]);
-                assert(p[|p| - 1] == 1);
 
                 assert(exists i :: 0 <= i < |p| && i != |p| - 1 && p[i] == 0);
               
