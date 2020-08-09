@@ -17,7 +17,7 @@ include "Helpers.dfy"
 /**
  *  Provide tree decorated with value.
  */
-module Trees {
+module Trees2 {
 
     import opened Helpers
 
