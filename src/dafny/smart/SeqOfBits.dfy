@@ -118,4 +118,85 @@ module SeqOfBits {
         }
     }
 
+    //  Some properties of seq<bit> that encode paths in a binary tree.
+
+    /** 
+     *  Compute a path (to next leaf) recursively from end.
+     *  
+     *  @note   Lemma nextPathIsSucc provides a property of nextPath.
+     */
+    function nextPath(p : seq<bit>) : seq<bit> 
+        /** Path has at least on element. */
+        requires |p| >= 1
+        /** Not the path 1+ that has no successors. */
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        ensures |nextPath(p)| == |p|
+
+        decreases p
+    {
+        if p[|p| - 1] == 0 then 
+            p[..|p| - 1] + [1]
+        else 
+           nextPath(p[.. |p| - 1]) + [0]
+    }
+
+    /**
+     *  The number represented by nextPath(p) is the successor of the
+     *  number represented by `p`.
+     */
+    lemma {:induction p} nextPathIsSucc(p : seq<bit>)
+         /** Path has at least on element. */
+        requires |p| >= 1
+        /** It is not the path 1+ that has no successors. */
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        ensures bitListToNat(nextPath(p)) == bitListToNat(p) + 1
+        decreases p
+    {
+        if |p| == 1 {
+            //  Thanks Dafny
+        } else {
+            if p[|p| - 1] == 0 {
+                assert(nextPath(p) == p[..|p| - 1] + [1]);
+                assert( p == p[..|p| - 1] + [0]);
+                foo101(p[..|p| - 1], 0);
+                assert(bitListToNat(p) == 2 * bitListToNat(p[..|p| - 1]));
+                foo101(p[..|p| - 1], 1);
+                assert(bitListToNat(nextPath(p)) == 2 * bitListToNat(p[..|p| - 1]) + 1);
+            } else {
+                //  last of p is 1
+                assert( p == p[..|p| - 1] + [1]);
+
+                //  def of next path
+                assert(nextPath(p) == nextPath(p[..|p| - 1]) + [0]);
+                assert(p[|p| - 1] == 1);
+
+                assert(exists i :: 0 <= i < |p| && i != |p| - 1 && p[i] == 0);
+              
+                assert(exists i :: 0 <= i < |p| - 1 && p[i] == 0);
+                // This implies the pre-condition of this lemma on |p[..|p| - 1]|
+                // Induction on p[..|p| - 1]
+                assert(bitListToNat(nextPath(p[..|p| - 1])) == bitListToNat(p[..|p| - 1]) + 1);
+                // //  binListToNat suffix
+                foo101(p[..|p| - 1], 1);
+                assert( bitListToNat(p) == 2 * bitListToNat(p[..|p| - 1]) + 1);
+
+                calc {
+                    bitListToNat(nextPath(p));
+                    == 
+                    bitListToNat(nextPath(p[..|p| - 1]) + [0]);
+                    == { foo101(nextPath(p[..|p| - 1]), 0);}
+                    2 * bitListToNat(nextPath(p[..|p| - 1]));
+                    == { nextPathIsSucc(p[..|p| - 1]) ; } 
+                    2 * (bitListToNat(p[..|p| - 1]) + 1) ;
+                    ==
+                    2 * bitListToNat(p[..|p| - 1]) + 2 ;
+                    ==
+                    (2 * bitListToNat(p[..|p| - 1]) + 1) + 1 ;
+                    ==
+                    bitListToNat(p) + 1;
+                }
+            }
+        }
+    } 
+
 }

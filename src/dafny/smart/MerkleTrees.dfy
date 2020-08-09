@@ -14,11 +14,13 @@
 
 include "Helpers.dfy"
 include "Trees2.dfy"
+include "CompleteTrees.dfy"
 
 module MerkleTrees {
 
     import opened Helpers
     import opened Trees
+    import opened CompleteTrees
  
     /**
      *  
@@ -77,22 +79,22 @@ module MerkleTrees {
            
     }
 
-    lemma {:induction h} isMerkleChildren<T>(r: ITree<T>, l: seq<T>, f : (T, T) -> T, default: T, h : nat)
-        requires |l| == |leavesIn(r)| / 2
-        requires isMerkle(r, l, f, default)
-        requires h == height(r) >= 2
-        ensures match r 
-            case INode(_, lc, rc, _) =>
-                |leavesIn(lc)| == power2(height(r) - 1)/2
-                && |l| <=  |leavesIn(lc)|
-                && isMerkle(lc, l, f, default)
-    {
-        if h == 2 {
-            //  Thanks Dafny
-        } else {
-            completeTreesLeftRightChildrenLeaves(r, h);
-        }
-    }
+    // lemma {:induction h} isMerkleChildren<T>(r: ITree<T>, l: seq<T>, f : (T, T) -> T, default: T, h : nat)
+    //     requires |l| == |leavesIn(r)| / 2
+    //     requires isMerkle(r, l, f, default)
+    //     requires h == height(r) >= 2
+    //     ensures match r 
+    //         case INode(_, lc, rc, _) =>
+    //             |leavesIn(lc)| == power2(height(r) - 1)/2
+    //             && |l| <=  |leavesIn(lc)|
+    //             && isMerkle(lc, l, f, default)
+    // {
+    //     if h == 2 {
+    //         //  Thanks Dafny
+    //     } else {
+    //         completeTreesLeftRightChildrenLeaves(r, h);
+    //     }
+    // }
 
     /**
      *  For tree of height >= 2, Merkle projects onto lc and rc for 

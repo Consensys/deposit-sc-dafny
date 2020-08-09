@@ -2,6 +2,12 @@
  include "./Helpers.dfy"
  include "./IntTree.dfy"
 include "MerkleTrees.dfy"
+include "SeqOfBits.dfy"
+include "CompleteTrees.dfy"
+include "PathInCompleteTrees.dfy"
+include "SeqHelpers.dfy"
+
+
 
  module Foo {
  
@@ -9,6 +15,10 @@ include "MerkleTrees.dfy"
     import opened Helpers
     import opened DiffTree
     import opened MerkleTrees
+    import opened SeqOfBits
+    import opened CompleteTrees
+    import opened PathInCompleteTrees
+    import opened SeqHelpers
 
 
     // function foo1<T>(p : seq<bit>, r : ITree<T>, b : seq<T>) : int 
@@ -78,7 +88,7 @@ include "MerkleTrees.dfy"
                             siblingAt(p[..k + 1 + 1], r).v;
                             ==
                             siblingAt(p[..k + 1 + 1][1..], lc).v;
-                            == { prefixOfSuffixCommutes(p, k + 1); }
+                            == { prefixOfSuffix(p, k + 1); }
                             siblingAt(p[1..][..k + 1], lc).v;
                         }
                     } else {
@@ -90,7 +100,7 @@ include "MerkleTrees.dfy"
                             siblingAt(p[..k + 1 + 1], r).v;
                             ==
                             siblingAt(p[..k + 1 + 1][1..], rc).v;
-                            == { prefixOfSuffixCommutes(p, k + 1); }
+                            == { prefixOfSuffix(p, k + 1); }
                             siblingAt(p[1..][..k + 1], rc).v;
                         }
                     }

@@ -1,0 +1,330 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may 
+ * not use this file except in compliance with the License. You may obtain 
+ * a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software dis-
+ * tributed under the License is distributed on an "AS IS" BASIS, WITHOUT 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations 
+ * under the License.
+ */
+
+include "Trees2.dfy"
+include "CompleteTrees.dfy"
+include "SeqOfBits.dfy"
+include "Helpers.dfy"
+
+module PathInCompleteTrees {
+
+    import opened Trees 
+    import opened CompleteTrees
+    import opened SeqOfBits
+    import opened Helpers
+
+    /**
+     *  The node at the end of a path.
+     *
+     *  @param  p   A path (left/right) in a binary tree.
+     *  @param  r   A complete binary tree.
+     *
+     *  @returns    The node of the tree that is the target of path `p`.
+     */
+    function nodeAt(p : seq<bit>, r: ITree) : ITree
+        requires |p| < height(r) 
+        requires isCompleteTree(r)
+        ensures nodeAt(p, r) in nodesIn(r)
+        decreases p
+    {
+        if |p| == 0 then  
+            r
+        else 
+            // r must be a node as height(r) > |p| >= 1
+            match r 
+                case INode(_, lc, rc, _) => 
+                    nodeAt(p[1..], if p[0] == 0 then lc else rc)
+    }
+
+    /**
+     *  The siblings (left or roght) of each node (except root) on the path.
+     */
+    function siblingAt(p : seq<bit>, r :ITree) : ITree
+        requires 1 <= |p| < height(r) 
+        requires isCompleteTree(r)
+        decreases p
+    {
+        if |p| == 1 then
+            match r 
+                case INode(_, lc, rc, _) =>
+                    if p[0] == 0 then rc
+                    else lc
+        else 
+            match r 
+                case INode(_, lc, rc, _) => 
+                    if p[0] == 0 then 
+                        siblingAt(p[1..], lc)
+                    else 
+                        siblingAt(p[1..], rc)
+    }
+
+    lemma nodeLoc(r : ITree, p : seq<bit>) 
+        requires 1 <= |p| == height(r) - 1
+        requires isCompleteTree(r)
+
+        ensures match r 
+            case INode(_, lc, rc, _) =>
+                p[0] == 0 ==> nodeAt(p, r) in leavesIn(lc)
+                &&
+                p[0] == 1 ==> nodeAt(p, r) in leavesIn(rc)
+
+    lemma nodeLoc2(r : ITree, p : seq<bit>, k : nat) 
+        requires 1 <= |p| == height(r) - 1
+        requires isCompleteTree(r)
+        // requires isValidIndex(r, p')
+        requires k < power2(height(r) - 1)
+        requires k < |leavesIn(r)|
+        // requires nodeAt(p, r).id == leavesIn(r)[k].id
+        // requires p' + p == leavesIn(r)[k].id
+        // requires nodeAt(p, r) == leavesIn(r)[k]
+
+        ensures match r 
+            case INode(_, lc, rc, _) =>
+                (p[0] == 0 && k < power2(height(r) - 1)/2)
+                ||
+                (p[0] == 1 && k >= power2(height(r) - 1)/2)
+
+
+    lemma foo302(p : seq<bit>, r : ITree, k : nat) 
+        requires isCompleteTree(r)
+        requires 1 <= |p| == height(r) - 1 
+        requires k < |leavesIn(r)|
+        requires nodeAt(p, r) == leavesIn(r)[k]
+        ensures bitListToNat(p) == k
+    {
+        if |p| == 1 {
+            if p[0] == 0 {
+                nodeLoc2(r, p, k);
+                assert(k == 0);
+                assert(bitListToNat(p) == 0);
+                assert(nodeAt(p, r) == leavesIn(r)[0]);
+            } else {
+                assert(p[0] == 1);
+                nodeLoc2(r, p, k);
+                assert(k == 1);
+                assert(bitListToNat(p) == 1);
+                assert(nodeAt(p, r) == leavesIn(r)[k]);
+            }
+        } else {
+            //  r is not a leaf
+            match r 
+                case INode(_, lc, rc, _) => 
+                    if p[0] == 0 {
+                        //  left lc
+                        assert(nodeAt(p, r) == nodeAt(p[1..], lc));
+                        //  HI on rc
+                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        nodeLoc2(r, p, k);
+                        assert( k < power2(height(r) - 1)/ 2);
+                        assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
+                        // foo302(p[1..], lc, k);
+                    } else {
+                        //  p[0] == 1
+                        assert(nodeAt(p, r) == nodeAt(p[1..], rc));
+                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        nodeLoc2(r, p, k);
+                        assert( k >= power2(height(r) - 1)/ 2);
+                        assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
+                        var k' := k - power2(height(r) - 1)/ 2 ;
+                        foo302(p[1..], rc, k');
+                    }
+        }
+    }
+
+     lemma foo203(p : seq<bit>, r : ITree, k : nat) 
+        requires isCompleteTree(r)
+        requires 1 <= |p| == height(r) - 1 
+        requires k < |leavesIn(r)|
+        requires bitListToNat(p) == k
+        ensures nodeAt(p, r) == leavesIn(r)[k]
+        decreases p 
+    {
+        if |p| == 1 {
+            if p[0] == 0 {
+                nodeLoc2(r, p, k);
+                assert(k == 0);
+                assert(bitListToNat(p) == 0);
+                assert(nodeAt(p, r) == leavesIn(r)[0]);
+            } else {
+                assert(p[0] == 1);
+                nodeLoc2(r, p, k);
+                assert(k == 1);
+                assert(bitListToNat(p) == 1);
+                assert(nodeAt(p, r) == leavesIn(r)[k]);
+            }
+        } else {
+            //  r is not a leaf
+            match r 
+                case INode(_, lc, rc, _) => 
+                    if p[0] == 0 {
+                        //  left lc
+                        assert(nodeAt(p, r) == nodeAt(p[1..], lc));
+                        //  HI on rc
+                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        nodeLoc2(r, p, k);
+                        assert( k < power2(height(r) - 1)/ 2);
+                        assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
+                        // foo302(p[1..], lc, k);
+                    } else {
+                        //  p[0] == 1
+                        assert(nodeAt(p, r) == nodeAt(p[1..], rc));
+                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        nodeLoc2(r, p, k);
+                        assert( k >= power2(height(r) - 1)/ 2);
+                        assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
+                        var k' := k - power2(height(r) - 1)/ 2 ;
+                        foo203(p[1..], rc, k');
+                        // assume( nodeAt(p, r) == leavesIn(r)[k]);
+                    }
+        }
+    }
+
+     lemma foo200(p : seq<bit>, r : ITree, k : nat) 
+        requires isCompleteTree(r)
+        requires 1 <= |p| == height(r) - 1 
+        requires k < |leavesIn(r)|
+        ensures bitListToNat(p) == k <==> nodeAt(p, r) == leavesIn(r)[k]
+    {
+        if (bitListToNat(p) == k) {
+            foo203(p, r, k);
+        } else if ( nodeAt(p, r) == leavesIn(r)[k]) {
+            foo302(p, r, k);
+        }
+        
+    }
+
+    /**
+     *  A path to a leaf of index < |leavesin{r)| -1 has a zero in it.
+     */
+    lemma {:induction p} pathToLeafInInitHasZero(p: seq<bit>, r : ITree, k : nat)
+        requires |p| == height(r) - 1
+        requires isCompleteTree(r)
+        requires k < |leavesIn(r)| - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+        ensures exists i :: 0 <= i < |p| && p[i] == 0
+        decreases p 
+    {
+        if |p| == 1 {
+            //  k < |leavesIn(r)| <==> k < 1 <==> k == 0, apply nodeLoc2 ==> p[0] == 0
+            nodeLoc2(r, p, k);
+        } else {
+            if p[0] == 0 {
+                //  p[0] is a witness
+            } else {
+                //  r is a node (not a leaf) and path leads to a node in rc
+                match r
+                    case INode(_, lc, rc, _) =>
+                        completeTreeNumberLemmas(r);
+                        assert(|leavesIn(r)| == power2(height(r) - 1));
+                        assert( k < power2(height(r) - 1));
+                        //  k >= power2(height(r) -1 ) /2 by
+                        nodeLoc2(r, p, k);
+                        //  leavesIn(r)[k] == leavesIn(rc)[k - power2(height(r) - 1)/2]
+                        completeTreesLeftRightChildrenLeaves(r, height(r));
+                        var k' := k - power2(height(r) - 1) / 2;
+                        assert(leavesIn(r)[k] == leavesIn(rc)[k']);
+                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        //  induction on rc
+                        pathToLeafInInitHasZero(p[1..], rc, k');
+            }
+        }
+    }
+
+    /**
+     *  A path to a leaf which is not the rightmost one must have 
+     *  a zero.
+     */
+    lemma {:induction p} foo450(p: seq<bit>, r : ITree, k : nat) 
+        requires isCompleteTree(r)
+        requires 1 <= |p| == height(r) - 1
+        requires 0 <= k < |leavesIn(r)| - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+        ensures  exists i ::  0 <= i < |p| && p[i] == 0 
+        decreases p 
+    {
+        if |p| == 1 {
+            //  Thanks Dafny
+            assert(k == 0);
+            nodeLoc2(r, p, k);
+            assert(p[0] == 0);
+        } else {
+            if p[0] == 0 {
+                //  
+            } else {
+                // p[0] == 1, apply to rc
+                match r
+                    case INode(_, _, rc, _) =>
+                        assert(isCompleteTree(rc));
+                        assert(1 <= |p[1..]|);
+                        assert(nodeAt(p, r) == nodeAt(p[1..], rc));
+                        // assert(|leavesIn(rc)| == )
+                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        assert(p[0] == 1);
+                        nodeLoc2(r, p, k);
+                        assert( 0 <= k - power2(height(r) - 1) / 2);
+                        assert( k - power2(height(r) - 1)/ 2 < |leavesIn(rc)| - 1);
+                        foo450(p[1..], rc, k - power2(height(r) - 1)/2);
+                        assert(exists i ::  0 <= i < |p[1..]| && p[1..][i] == 0); 
+                        // var i :|  0 <= i < |p[1..]| && p[1..][i] == 0 ;
+            }
+        }
+    } 
+
+    // lemma foo201(p: seq<bit>, r : ITree, k : nat )
+    //     requires isCompleteTree(r)
+    //     requires 2 <= |p| == height(r) - 1
+    //     requires 0 <= k < (|leavesIn(r)| - 1)/2 - 1
+    //     requires nodeAt(p, r) == leavesIn(r)[k]
+    //     // ensures  exists i ::  0 <= i < |p| && p[i] == 0 
+    //     decreases p 
+    //     ensures exists i ::  0 <= i < |p| && p[i] == 0 
+    //     ensures match r 
+    //         case INode(_, lc, rc, _) =>
+    //             (exists i ::  0 <= i < |p| && p[i] == 0 )
+    //             && nodeAt(nextPath(p), r) == nodeAt(nextPath(p[1..]), lc)
+    // {
+    //     foo450(p, r, k);
+    //     if |p| == 2 {
+    //         //  
+    //     } else {
+
+    //     }
+    // }
+
+    /**
+     *  Next path from a leaf must go to the next leaf
+     */
+     lemma {:induction r} nextPathNextLeaf(p: seq<bit>, r : ITree, k : nat) 
+        requires isCompleteTree(r)                              // 1.
+        requires 1 <= |p| == height(r) - 1                      // 2.
+        requires 0 <= k < |leavesIn(r)| - 1                     // 3.
+        requires nodeAt(p, r) == leavesIn(r)[k]                 // 4.
+        ensures exists i ::  0 <= i < |p| && p[i] == 0          //  P1
+        ensures  nodeAt(nextPath(p), r) == leavesIn(r)[k + 1]   //  P2
+    {
+        //  proof of P1
+        foo450(p, r, k);
+        //   proof of P2
+        nextPathIsSucc(p);
+        assert(bitListToNat(nextPath(p)) == bitListToNat(p) + 1);
+        foo200(p, r, k);
+        assert(bitListToNat(p) == k);
+        assert(bitListToNat(nextPath(p)) == k + 1);
+        foo200(nextPath(p), r, k + 1);
+
+
+    }
+   
+
+}

@@ -15,12 +15,20 @@
 include "Helpers.dfy"
 include "Trees2.dfy"
 include "MerkleTrees.dfy"
+include "SeqOfBits.dfy"
+include "CompleteTrees.dfy"
+include "PathInCompleteTrees.dfy"
+include "SeqHelpers.dfy"
 
 module DiffTree {
 
     import opened Helpers
     import opened Trees
     import opened MerkleTrees
+    import opened SeqOfBits
+    import opened CompleteTrees
+    import opened PathInCompleteTrees
+    import opened SeqHelpers
 
     //  Trees holding integer values as attribute.
     type Intnode = Tree<int>
@@ -212,12 +220,12 @@ module DiffTree {
 
                             assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
 
-                            suffixPrefixMerge(p, i);    
+                            prefixOfSuffix(p, i);    
                             assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], lc));
                             assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
                             assert(p[i] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
 
-                            suffixPrefixMerge(p, i);    
+                            prefixOfSuffix(p, i);    
                             assert(p[i] == 0 ==> siblingAt(p[1..i + 1], lc).v == 0);
                             assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
@@ -243,7 +251,7 @@ module DiffTree {
                                 assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
                                 t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..]);
                                 assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
-                                suffixPrefixMerge(p, i);    
+                                prefixOfSuffix(p, i);    
                                 assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], rc));
                                 assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
                                 assert(p[i] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
