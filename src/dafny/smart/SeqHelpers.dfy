@@ -43,5 +43,8 @@ module SeqHelpers {
         ensures s[1..][..i] == s[1..i + 1]
     {} 
 
+    lemma fullSliceIsSeq<T>(s : seq<T>)
+        ensures s[..|s|] == s
+    {}
 
 }
