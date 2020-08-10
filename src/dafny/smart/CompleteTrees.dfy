@@ -24,6 +24,13 @@ module CompleteTrees {
     import opened Helpers
 
     /**
+     *  Each type T has a default value.
+     */
+    function method default<T>() : T 
+
+    type compTree<T> = r: ITree<T> | isCompleteTree(r) witness ILeaf(default<T>(),[])
+ 
+    /**
      *  Complete trees.
      *
      *  @param  root    The root node of the tree.
@@ -50,6 +57,12 @@ module CompleteTrees {
     lemma {:induction root} completeTreeNumberLemmas(root : ITree) 
         ensures isCompleteTree(root) ==> |leavesIn(root)| == power2(height(root) - 1)
         ensures isCompleteTree(root) ==> |nodesIn(root)| == power2(height(root)) - 1
+    {   //  Thanks Dafny
+    }
+
+     lemma {:induction root} completeTreeNumberLemmas2(root : compTree) 
+        ensures |leavesIn(root)| == power2(height(root) - 1)
+        ensures |nodesIn(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
     }
 
