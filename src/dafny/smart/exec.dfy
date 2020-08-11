@@ -20,15 +20,6 @@ include "SeqHelpers.dfy"
     import opened PathInCompleteTrees
     import opened SeqHelpers
 
-
-    // function foo1<T>(p : seq<bit>, r : ITree<T>, b : seq<T>) : int 
-    //     requires |p| == height(r) - 1
-    //     requires isCompleteTree(r)
-    //     requires |b| == |siblings(p, r)|
-    // {
-    //     0
-    // }
-
     /**
      *  Compute the value of attribute `f` on a path.
      *  
@@ -79,31 +70,20 @@ include "SeqHelpers.dfy"
                             else 
                                 b[1..][k] == siblingAt(p[1..][..k + 1], rc).v   
                 {
-                    if p[0] == 0 {
-                        calc == {
+                    //  Select child to use in induction according to p[0]
+                    var child := if p[0] == 0 then lc else rc ;
+                    calc == {   //  These terms are equal
                             b[1..][k] ;
-                            == 
                             b[k + 1];
-                            ==
                             siblingAt(p[..k + 1 + 1], r).v;
-                            ==
-                            siblingAt(p[..k + 1 + 1][1..], lc).v;
-                            == { prefixOfSuffix(p, k + 1); }
-                            siblingAt(p[1..][..k + 1], lc).v;
+                            siblingAt(p[..k + 1 + 1][1..], child).v;
+                            //  Next step holds because of this equality:
+                            calc == {
+                                p[..k + 1 + 1][1..];
+                                p[1..][..k + 1];
+                            }
+                            siblingAt(p[1..][..k + 1], child).v;
                         }
-                    } else {
-                        calc == {
-                            b[1..][k] ;
-                            == 
-                            b[k + 1];
-                            ==
-                            siblingAt(p[..k + 1 + 1], r).v;
-                            ==
-                            siblingAt(p[..k + 1 + 1][1..], rc).v;
-                            == { prefixOfSuffix(p, k + 1); }
-                            siblingAt(p[1..][..k + 1], rc).v;
-                        }
-                    }
                 }
     }
 
@@ -162,13 +142,13 @@ include "SeqHelpers.dfy"
         ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v
     {
         t2(r, l, k, p);
-        // forall ( i :: 0 <= i < |b'| )
-        //     ensures b'[i] == siblingAt(p[..i + 1], r).v
-        // {
-        //     if p[i] == 
-        // }
+        
     }
 
+    /**
+     *  Same as computeRootPath but uses default value 0 on 
+     *  right sibling to compute value at root.
+     */
      function computeRootPathDiff(p : seq<bit>, b : seq<int>, seed: int) : int
         requires |p| == |b|
         decreases p
@@ -183,41 +163,166 @@ include "SeqHelpers.dfy"
                 diff(b[0], r)
     }
 
+    /*
+        assume all p[i] == 0
+       seed
+       diff(seed, 0)
+       diff(diff(seed), 0)
+       diff(diff(diff(seed), 0),0) and so on
+    */
+
+    lemma foo506(p : seq<bit>, b : seq<int>, seed: int) 
+        requires 1 <= |p| == |b|
+        ensures computeRootPathDiff(p, b, seed) == 
+            computeRootPathDiff(p[..|p| - 1], b[..|b| - 1], 
+                if p[|p| - 1] == 0 then diff(seed, 0)
+                else diff(b[|b| - 1], seed)
+                )
+    {
+        if |p| == 1 {
+            // Thansk Dafny
+        } else {
+            if p[0] == 0 {
+                calc == {
+                    computeRootPathDiff(p, b, seed);
+                    diff(computeRootPathDiff(p[1..], b[1..], seed), 0);
+                    diff(
+                        computeRootPathDiff(p[1..][..|p[1..]| - 1], b[1..][..|b[1..]| - 1], 
+                        if p[1..][|p[1..]| - 1] == 0 then diff(seed, 0)
+                        else diff(b[1..][|b[1..]| - 1], seed)
+                        ), 0
+                    );
+                    calc == {
+                        p[1..][..|p[1..]| - 1];
+                        p[1..|p| - 1];
+                    }
+                    diff(
+                        computeRootPathDiff(p[1..|p| - 1], b[1..][..|b[1..]| - 1], 
+                        if p[|p| - 1] == 0 then diff(seed, 0)
+                        else diff(b[1..][|b[1..]| - 1], seed)
+                        ), 0
+                    );
+                    calc == {
+                        b[1..][..|b[1..]| - 1];
+                        b[1..|b| - 1];
+                    }
+                    diff(
+                        computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
+                        if p[|p| - 1] == 0 then diff(seed, 0)
+                        else diff(b[|b| - 1], seed)
+                        ), 0
+                    );
+                }
+            }
+            else {
+                calc == {
+                    computeRootPathDiff(p, b, seed);
+                    diff(b[0], computeRootPathDiff(p[1..], b[1..], seed));
+                    diff(
+                        b[0],
+                        computeRootPathDiff(p[1..][..|p[1..]| - 1], b[1..][..|b[1..]| - 1], 
+                        if p[1..][|p[1..]| - 1] == 0 then diff(seed, 0)
+                        else diff(b[1..][|b[1..]| - 1], seed)
+                        )
+                    );
+                    calc == {
+                        p[1..][..|p[1..]| - 1];
+                        p[1..|p| - 1];
+                    }
+                    diff(
+                        b[0],
+                        computeRootPathDiff(p[1..|p| - 1], b[1..][..|b[1..]| - 1], 
+                        if p[|p| - 1] == 0 then diff(seed, 0)
+                        else diff(b[1..][|b[1..]| - 1], seed)
+                        )
+                    );
+                    calc == {
+                        b[1..][..|b[1..]| - 1];
+                        b[1..|b| - 1];
+                    }
+                    diff(
+                        b[0],
+                        computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
+                        if p[|p| - 1] == 0 then diff(seed, 0)
+                        else diff(b[|b| - 1], seed)
+                        )
+                    );
+                }            
+            }
+        }
+    }
+
+
+
+    /**
+     *  Compute root value starting from end of path.
+     */
+    function computeRootUp(p : seq<bit>, b : seq<int>, seed: int) : int
+        requires |p| == |b|
+        decreases p
+    {
+     if |p| == 0 then
+        seed 
+    else 
+        if p[|p| - 1] == 0 then
+            computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0))
+        else        
+            computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed))
+    }
+
+    // lemma foo506(p : seq<bit>, b : seq<int>, seed: int) 
+    //     requires |p| == |b|
+    //     ensures computeRootUp(p, b, seed) == computeRootPathDiff(p, b, seed)
+    // {
+    //     if |p| <= 1 {
+    //         //  Thanks Dafny
+    //     } else {    
+    //         //  |p| >= 2
+    //         //  consider 4 cases
+    //         if (p[0] == 0 && p[|p| - 1] == 0) {
+    //             calc == {
+    //                 computeRootUp(p, b, seed);
+    //                 computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
+    //                 computeRootPathDiff(p[.. |p| - 1],  b[..|b| - 1], diff(seed, 0));
+    //                 // diff(p[.. |p| - 1][1..],  b[..|b| - 1][1..], 0);
+    //             }
+    //         } else {
+
+    //         }
+    //         // calc == {
+    //         //     computeRootUp(p, b, seed);
+                
+    //         // }
+    //     }
+    // }
+
+
+    /**
+     *  Show that if right sibling values are zero,  computeRootPathDiff
+     *  computes the same result as computeRootPath.
+     */
     lemma {:induction p} foo304(p : seq<bit>, b : seq<int>, seed: int) 
         requires |b| == |p| 
         requires forall i :: 0 <= i < |b| ==> p[i] == 0 ==> b[i] == 0
         ensures computeRootPathDiff(p, b, seed) == computeRootPath(p, b, diff, seed)
+        decreases p
     {
         if |p| == 0 {
-            //
+            //  Thanks Dafny
         } else {
+            //  Compute result on suffixes p[1..], b[1..]
             var r := computeRootPathDiff(p[1..], b[1..], seed);
             var r' := computeRootPath(p[1..], b[1..], diff, seed);
+
+            //  Use inductive assumption on p[1..], b[1..]
             foo304(p[1..], b[1..], seed);
-            assert(r == r');
-            // HI: r == r'
+            // HI implies r == r'
             
-            if p[0] == 0 {
-                calc {
-                    computeRootPathDiff(p, b, seed) ;
-                    ==
-                    diff(r, 0);
-                    == 
-                    diff(r', 0);
-                    == 
-                    computeRootPath(p, b, diff, seed);
-                }
-            } else {
-                //  p[0] == 1
-                calc {
-                    computeRootPathDiff(p, b, seed) ;
-                    ==
-                    diff(b[0], r);
-                    == 
-                    diff(b[0], r');
-                    == 
-                    computeRootPath(p, b, diff, seed);
-                }
+            calc == {   //  These terms are equal
+                computeRootPathDiff(p, b, seed) ;
+                if p[0] == 0 then diff(r, 0) else  diff(b[0], r);
+                if p[0] == 0 then diff(r', 0) else  diff(b[0], r');
+                computeRootPath(p, b, diff, seed);
             }
         }
     }
