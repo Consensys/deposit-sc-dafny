@@ -98,9 +98,8 @@ module PathInCompleteTrees {
                             siblingAt(p + [a], r) ;
                             ==
                             siblingAt((p + [a])[1..], lc);
-                            == calc {
+                            == calc == {    //  These terms are equal
                                 (p + [a])[1..] ;
-                                ==
                                 p[1..] + [a];
                             }
                             siblingAt((p[1..] + [a]), lc);
@@ -561,11 +560,9 @@ module PathInCompleteTrees {
         ensures (s[.. |s| - 1] + [a])[..|s|] ==  s[.. |s| - 1] + [a]
     {}
 
-    function computeLeftSiblingOnNextPath <T>(p: seq<bit>, r : ITree<T>, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, r : ITree<T>, v1 : seq<T>, v2 : seq<T>) : seq<T>
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1      
-        // requires 0 <= k < |nodesIn(r)|    - 1                     
-        // requires nodeAt(p, r) == nodesIn(r)[k]   
         requires exists i :: 0 <= i < |p| && p[i] == 0
         requires |v1| == |v2| == |p|
         requires forall i :: 0 <= i < |p| ==>
@@ -574,19 +571,10 @@ module PathInCompleteTrees {
             p[i] == 1 ==> v2[i] == siblingAt(p[.. i + 1],r).v 
 
         ensures |computeLeftSiblingOnNextPath(p, r, v1, v2)| == |v1|
-        // ensures forall i :: 0 <= i < |p| ==>
-        //     nextPath(p)[i] == 1 ==> 
-        //         computeLeftSiblingOnNextPath(p, r, k, v1, v2)[i] == siblingAt(nextPath(p)[..i + 1],r).v
     {
         if |p| == 1 then
             assert(p[0] == 0);
                 v1
-            // if p[|p| - 1] == 0 then 
-            //     //  Next path is p[..|p| - 1] + [1]
-            //     //  nextPath(p) and p agree on first |p| - 1 steps 
-            //     //  Collect values from v2[..|p| - 1 ] and add value at NodeAt(p,r)
-            //     v2[..|p| - 1] + [v1[|p| - 1 ]]
-            // else 
         else 
             assert(|p| >= 2);
             if p[|p| - 1] == 0 then 
@@ -598,22 +586,10 @@ module PathInCompleteTrees {
                 //  Nextpath is nextPath(p[.. |p| - 1]) + [0]
                 //  p[|p| - 1] == 0, next path will lead to another branch from ancestor
                 //  At that level in the tree nextPath(p)[|p| - 1] == 0 so whatever is good
-                // assert(exists i :: 0 <= i < |p| - 1 && p[i] == 0);
-                // assert(|v1[..|p| - 1]| == |v2[..|p| - 1]| == |p[.. |p| - 1]|);
-                // assert(forall i :: 0 <= i < |p| - 1 ==>
-                //         v1[i] == nodeAt(p[.. i + 1],r).v );
-
                 assert(forall i :: 0 <= i < |p| - 1 ==>
                         p[.. i + 1] == p[..|p| - 1][.. i + 1]);
 
-                // assert(forall i :: 0 <= i < |p[..|p| - 1]|  ==>
-                        // v1[i] == nodeAt(p[..|p| - 1][.. i + 1],r).v );
-                // assert();
-                // assert(forall i :: 0 <= i < |p| ==>
-                //     p[i] == 1 ==> v2[i] == siblingAt(p[.. i + 1],r).v 
-                // );
                 computeLeftSiblingOnNextPath(p[.. |p| - 1], r, v1[..|p| - 1], v2[..|p| - 1]) + [v1[|p| - 1 ]]
-                // v1
     } 
 
     lemma foo500<T>(p: seq<bit>, r : ITree<T>, v1 : seq<T>, v2 : seq<T>)
@@ -672,9 +648,8 @@ module PathInCompleteTrees {
                         // i == |p| - 1
                         calc {
                             siblingAt(nextPath(p)[..i + 1],r).v ;
-                            == calc {
+                            == calc == {
                                 i ;
-                                ==
                                 |p| - 1;
                             }
                             siblingAt(nextPath(p)[..|p|],r).v ;
