@@ -180,7 +180,7 @@ include "SeqHelpers.dfy"
                 )
     {
         if |p| == 1 {
-            // Thansk Dafny
+            // Thanks Dafny
         } else {
             if p[0] == 0 {
                 calc == {
