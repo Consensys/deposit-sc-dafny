@@ -440,7 +440,7 @@ module PathInCompleteTrees {
 
     }
 
-    lemma foo707(p: seq<bit>, r : ITree, k : nat)
+    lemma {:induction p} foo707(p: seq<bit>, r : ITree, k : nat)
         requires isCompleteTree(r)                              
         requires 1 <= |p| == height(r) - 1                      
         requires 0 <= k < |leavesIn(r)| - 1                     
@@ -530,7 +530,7 @@ module PathInCompleteTrees {
                     assert(p[|p| - 1] == 1);
                     assert(exists i ::  0 <= i < |p| - 1  && p[i] == 0 );
                     // assert(p[.. |p| - 1] == )
-                    assert(exists i ::  0 <= i < |p[.. |p| - 1]|   && p[.. |p| - 1][i] == 0 );
+                    assert(exists i {:trigger p[.. |p| - 1][i]} ::  0 <= i < |p[.. |p| - 1]|   && p[.. |p| - 1][i] == 0 );
 
                     if ( i < |p| - 1) {
                         //  induction on p[..|p| - 1]
@@ -586,7 +586,7 @@ module PathInCompleteTrees {
                 //  Nextpath is nextPath(p[.. |p| - 1]) + [0]
                 //  p[|p| - 1] == 0, next path will lead to another branch from ancestor
                 //  At that level in the tree nextPath(p)[|p| - 1] == 0 so whatever is good
-                assert(forall i :: 0 <= i < |p| - 1 ==>
+                assert(forall i {:trigger p[.. i + 1]} :: 0 <= i < |p| - 1 ==>
                         p[.. i + 1] == p[..|p| - 1][.. i + 1]);
 
                 computeLeftSiblingOnNextPath(p[.. |p| - 1], r, v1[..|p| - 1], v2[..|p| - 1]) + [v1[|p| - 1 ]]

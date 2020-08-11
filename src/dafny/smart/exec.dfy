@@ -148,6 +148,7 @@ include "SeqHelpers.dfy"
     /**
      *  Same as computeRootPath but uses default value 0 on 
      *  right sibling to compute value at root.
+     *  Compute the value on a path by computing on child first.
      */
      function computeRootPathDiff(p : seq<bit>, b : seq<int>, seed: int) : int
         requires |p| == |b|
@@ -163,20 +164,19 @@ include "SeqHelpers.dfy"
                 diff(b[0], r)
     }
 
-    /*
-        assume all p[i] == 0
-       seed
-       diff(seed, 0)
-       diff(diff(seed), 0)
-       diff(diff(diff(seed), 0),0) and so on
-    */
-
-    lemma foo506(p : seq<bit>, b : seq<int>, seed: int) 
+    /**
+     *  Compute computeRootPathDiff by pre-computing the last 
+     *  step.
+     */
+    lemma {:induction p, b} foo506(p : seq<bit>, b : seq<int>, seed: int) 
         requires 1 <= |p| == |b|
         ensures computeRootPathDiff(p, b, seed) == 
-            computeRootPathDiff(p[..|p| - 1], b[..|b| - 1], 
-                if p[|p| - 1] == 0 then diff(seed, 0)
-                else diff(b[|b| - 1], seed)
+            computeRootPathDiff(
+                p[..|p| - 1], b[..|b| - 1], 
+                if p[|p| - 1] == 0 then 
+                    diff(seed, 0)
+                else 
+                    diff(b[|b| - 1], seed)
                 )
     {
         if |p| == 1 {
@@ -252,8 +252,6 @@ include "SeqHelpers.dfy"
         }
     }
 
-
-
     /**
      *  Compute root value starting from end of path.
      */
@@ -270,32 +268,37 @@ include "SeqHelpers.dfy"
             computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed))
     }
 
-    // lemma foo506(p : seq<bit>, b : seq<int>, seed: int) 
-    //     requires |p| == |b|
-    //     ensures computeRootUp(p, b, seed) == computeRootPathDiff(p, b, seed)
-    // {
-    //     if |p| <= 1 {
-    //         //  Thanks Dafny
-    //     } else {    
-    //         //  |p| >= 2
-    //         //  consider 4 cases
-    //         if (p[0] == 0 && p[|p| - 1] == 0) {
-    //             calc == {
-    //                 computeRootUp(p, b, seed);
-    //                 computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
-    //                 computeRootPathDiff(p[.. |p| - 1],  b[..|b| - 1], diff(seed, 0));
-    //                 // diff(p[.. |p| - 1][1..],  b[..|b| - 1][1..], 0);
-    //             }
-    //         } else {
-
-    //         }
-    //         // calc == {
-    //         //     computeRootUp(p, b, seed);
-                
-    //         // }
-    //     }
-    // }
-
+    lemma {:induction p, b, seed} foo510(p : seq<bit>, b : seq<int>, seed: int) 
+        requires |p| == |b|
+        ensures computeRootUp(p, b, seed) == computeRootPathDiff(p, b, seed)
+    {
+        if |p| <= 1 {
+            //  Thanks Dafny
+        } else {    
+            //  |p| >= 2
+            //  Split on values of p[|p| - 1]
+            if p[|p| - 1] == 0 {
+                calc == {
+                    computeRootUp(p, b, seed);
+                    computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
+                    //  Induction assumption
+                    computeRootPathDiff(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
+                    { foo506(p, b, seed); }
+                    computeRootPathDiff(p, b, seed);
+                }
+            } else  {
+                assert(p[|p| - 1] == 1 );
+                calc == {
+                    computeRootUp(p, b, seed);
+                     computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed));
+                    //  Induction assumption
+                    computeRootPathDiff(p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed));
+                    { foo506(p, b, seed); }
+                    computeRootPathDiff(p, b, seed);
+                }
+            }
+        }
+    }
 
     /**
      *  Show that if right sibling values are zero,  computeRootPathDiff
@@ -327,10 +330,16 @@ include "SeqHelpers.dfy"
         }
     }
 
+    /**
+     *  When two vectors b and b' have the same values for i such that p[i] == 1,
+     *  i.e. for every left sibling b and b' coincide, then 
+     *  computeRootPathDiff(p, b, seed) == computeRootPathDiff(p, b', seed)
+     */
     lemma {:induction p} sameComputeDiffPath(p : seq<bit>, b : seq<int>, b': seq<int>, seed: int)
         requires |b| == |p| == |b'|
         requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == b'[i]
         ensures computeRootPathDiff(p, b, seed) == computeRootPathDiff(p, b', seed)
+        decreases p 
     {
         if |p| == 0 {
             //
@@ -338,24 +347,21 @@ include "SeqHelpers.dfy"
             var r := computeRootPathDiff(p[1..], b[1..], seed);
             var r' := computeRootPathDiff(p[1..], b'[1..], seed);
             if p[0] == 0 {
-                //
-                calc {
+                calc == {
                     computeRootPathDiff(p, b, seed) ;
-                    ==
                     diff(r, 0) ;
-                    == { sameComputeDiffPath(p[1..], b[1..], b'[1..], seed); }  
+                    // Induction on p[1..], b[1..], b'[1..], seed
+                    { sameComputeDiffPath(p[1..], b[1..], b'[1..], seed); }  
                     diff(r', 0);
-                    ==
                     computeRootPathDiff(p, b', seed);
                 }
             } else {
-                calc {
+                calc == {
                     computeRootPathDiff(p, b, seed) ;
-                    ==
                     diff(b[0], r) ;
-                    == { sameComputeDiffPath(p[1..], b[1..], b'[1..], seed); }  
+                    // Induction on p[1..], b[1..], b'[1..], seed
+                    { sameComputeDiffPath(p[1..], b[1..], b'[1..], seed); }  
                     diff(b'[0], r');
-                    == 
                     computeRootPathDiff(p, b', seed);
                 }
             }
@@ -422,4 +428,35 @@ include "SeqHelpers.dfy"
 
         sameComputeDiffPath(p, b, b', leavesIn(r)[k].v);
     }
+
+    /**
+     *  Main function to compute the root value.
+     */
+     function computeRootDiffUp(p : seq<bit>, l : seq<int>, r : ITree<int>, b : seq<int>, k : nat) : int
+        /** Merkle tree. */
+        requires height(r) >= 2
+        requires |l| == |leavesIn(r)|
+        requires isMerkle2(r, l, diff)
+
+        /**  all leaves after the k leaf are zero. */
+        requires k < |leavesIn(r)|
+        requires forall i :: k < i < |l| ==> l[i] == 0
+
+        /** p is the path to k leaf in r. */
+        requires |p| == height(r) - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+
+        requires |b| == |p|
+        /** `b` contains values at left siblings on path `p`. */
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+
+        ensures r.v == computeRootDiffUp(p, l, r, b, k)
+    {
+        //  Values on left sibling are enough to compuute r.v using computeRootPathDiff
+        computeOnPathYieldsRootValueDiff(p, l, r, b, k);
+        //  Compute computeRootUp yields same value as computeRootPathDiff
+        foo510(p, b, leavesIn(r)[k].v);
+        computeRootUp(p, b, leavesIn(r)[k].v)
+    }
+
  }
