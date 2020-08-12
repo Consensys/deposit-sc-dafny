@@ -48,7 +48,73 @@ module SeqOfBits {
                  bitListToNat(p[1..])
     } 
 
+    /**
+     *  Encode a natural on b bits
+     */
+    function natToBitList(n: nat, length: nat) : seq<bit> 
+        requires length >= 1
+        requires n < power2(length)
+        ensures |natToBitList(n, length)| == length
+        decreases length
+    {
+        if length == 1 then
+            [n as bit] 
+        else 
+            natToBitList(n / 2, length - 1) +  [(n % 2) as bit]
+    }
     
+    /**
+     *  bitListToNat(natToBitList(.)) is identity.
+     */
+    lemma {:induction n} foo909(n : nat, length: nat) 
+        requires length >= 1
+        requires n < power2(length)
+        ensures bitListToNat(natToBitList(n, length)) == n 
+        decreases length
+    {
+        if length <= 1 {
+            //  Thanks Dafny
+        } else {
+            calc == {
+                bitListToNat(natToBitList(n, length));
+                bitListToNat(natToBitList ( n / 2 , length - 1) + [(n % 2) as bit]);
+                { foo101(natToBitList ( n / 2 , length - 1), (n % 2) as bit ); }
+                2 * bitListToNat(natToBitList ( n / 2, length - 1 )) + ((n % 2) as bit) as nat;
+                { foo909( n / 2, length - 1 ); }
+                2 * ( n / 2) + ((n % 2) as bit) as nat;
+            }
+        }
+    }
+
+    // lemma foo777(p: seq<bit>, length : nat)
+    //     ensures natToBitList( power2(k) + )
+
+    // lemma {:induction p} foo919(p: seq<bit>, k : nat)
+    //     requires 1 <= |p| 
+    //     requires 
+    //     ensures natToBitList(bitListToNat(p), |p|) == p
+    // {
+    //     if |p| == 1 {
+    //         //  Thanks Dafny
+    //     } else {
+    //         if p[0] == 1 {
+    //             calc == {
+    //                 natToBitList(bitListToNat(p), |p|);
+    //                 natToBitList(bitListToNat(p) / 2, |p| - 1) +  [(bitListToNat(p) % 2) as bit];
+                     
+    //                 // natToBitList ( (power2(|p| - 1) + bitListToNat(p[1..])) / 2 ) + 
+    //                     // [( (power2(|p| - 1) + bitListToNat(p[1..])) % 2) as bit];
+    //                 //  Induction on p[1..]
+    //                 //  natToBitList ( (power2(|p| - 1) + bitListToNat(p[1..])) / 2 ) + 
+    //                     // [( (power2(|p| - 1) + bitListToNat(p[1..])) % 2) as bit];
+    //             }
+    //         } else {
+    //             //  Direct induction
+    //         }
+            
+    //     }
+    // }
+
     /**
      *  Relation between bitListToNat( p + x) and bitListToNat(x).
      */
