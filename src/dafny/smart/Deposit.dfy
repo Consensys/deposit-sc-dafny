@@ -12,7 +12,7 @@
  * under the License.
  */
 
-include "Trees.dfy"
+include "Trees2.dfy"
 include "MerkleTrees.dfy"
 
 module DepositTree {
@@ -29,13 +29,13 @@ module DepositTree {
     /**
      *  Check that a decorated tree correctly stores the diff attribute. 
      */
-    predicate isDecoratedWithHash<T>(root: Tree<T>)
-    {
-        match root
-            case Leaf(v, _, _) => true
+    // predicate isDecoratedWithHash<T>(root: Tree<T>)
+    // {
+    //     match root
+    //         case Leaf(v, _, _) => true
 
-            case Node(v, lc, rc, _, _) => v == hash(lc.v, rc.v)
-    }
+    //         case Node(v, lc, rc, _, _) => v == hash(lc.v, rc.v)
+    // }
 
     /**
      *  Incremental algorithm.
