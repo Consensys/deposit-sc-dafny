@@ -42,9 +42,9 @@ module Trees {
      *  @param  v   The value associated with a node.
      *  @param  id  A sequence that corresponds to the node id.
      */
-    datatype ITree<T> = 
-            ILeaf(v: T, ghost id: seq<bit>)
-        |   INode(v: T, left: ITree, right: ITree, ghost id : seq<bit>)
+    // datatype Tree<T> = 
+    //         Leaf(v: T, ghost id: seq<bit>)
+    //     |   Node(v: T, left: Tree, right: ITree, ghost id : seq<bit>)
 
     /**
      *  Height of a tree.
@@ -52,13 +52,13 @@ module Trees {
      *  @param  root    The root of the tree.
      *  @returns        The height of the tree.
      */
-    function height(root : ITree) : nat 
+    function height(root : Tree) : nat 
         ensures height(root) >= 1
         decreases root
     {
         match root 
-            case ILeaf(_, _) => 1
-            case INode(_, lc, rc, _) => 1 + max(height(lc), height(rc))
+            case Leaf(_) => 1
+            case Node(_, lc, rc) => 1 + max(height(lc), height(rc))
     }
     
     /**
@@ -70,16 +70,16 @@ module Trees {
      *              a sequence of 0 (left) and 1 (right). The id of 
      *              corresponds to the path from the root. 
      */
-    function toIndexed<T>(r : Tree<T>, p : seq<bit>) : ITree<T> 
-        ensures {:induction r} forall n :: n in nodesIn(toIndexed(r, p)) ==> |n.id| >= |p| 
-        ensures isValidIndex(toIndexed(r, p), p)
-        decreases r
-    {
-        match r 
-            case Leaf(v) => ILeaf(v, p)
-            case Node(v, lc, rc) => 
-                INode(v, toIndexed(lc, p + [0]), toIndexed(rc, p + [1]), p)
-    }
+    // function toIndexed<T>(r : Tree<T>, p : seq<bit>) : Tree<T> 
+    //     ensures {:induction r} forall n :: n in nodesIn(toIndexed(r, p)) ==> |n.id| >= |p| 
+    //     ensures isValidIndex(toIndexed(r, p), p)
+    //     decreases r
+    // {
+    //     match r 
+    //         case Leaf(v) => Leaf(v, p)
+    //         case Node(v, lc, rc) => 
+    //             Node(v, toIndexed(lc, p + [0]), toIndexed(rc, p + [1]), p)
+    // }
 
     /**
      *  The nodes of a tree (pre-order traversal).    .
@@ -90,12 +90,12 @@ module Trees {
      *                  (node, left, right) traversal of a tree.
      *  @todo           We don't really need that but only the number of nodes.
      */
-    function method nodesIn(root : ITree) : seq<ITree>
+    function method nodesIn(root : Tree) : seq<Tree>
         decreases root
     {
         match root 
-            case ILeaf(_, _) => [ root ] 
-            case INode(_, lc, rc, _) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
+            case Leaf(_) => [ root ] 
+            case Node(_, lc, rc) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
     }
 
     /**
@@ -109,16 +109,16 @@ module Trees {
      *  @todo           We don't really need that but only the values of the leaves.
      *
      */
-    function method leavesIn(root : ITree) : seq<ITree>
+    function method leavesIn(root : Tree) : seq<Tree>
         /** All the collected nodes are leaves. */
-        ensures forall i :: 0 <= i < |leavesIn(root)| ==>  leavesIn(root)[i].ILeaf?
+        ensures forall i :: 0 <= i < |leavesIn(root)| ==>  leavesIn(root)[i].Leaf?
         /** All the leaves are collected. */
-        ensures forall n :: n in nodesIn(root) && n.ILeaf? ==> n in leavesIn(root)
+        ensures forall n :: n in nodesIn(root) && n.Leaf? ==> n in leavesIn(root)
         decreases root
     {
         match root 
-            case ILeaf(_, _) => [ root ] 
-            case INode(_, lc, rc, _) =>  
+            case Leaf(_) => [ root ] 
+            case Node(_, lc, rc) =>  
                 leavesIn(lc) + leavesIn(rc) 
     }
 
@@ -132,15 +132,15 @@ module Trees {
      *  @param  r   The root of the tree.
      *  @param  p   The prefix used for the id. 
      */
-    predicate isValidIndex(r: ITree, p : seq<bit>) 
-        decreases r
-    {
-       match r 
-            case ILeaf(_, id) => id == p
+    // predicate isValidIndex(r: Tree, p : seq<bit>) 
+    //     decreases r
+    // {
+    //    match r 
+    //         case Leaf(_, id) => id == p
 
-            case INode(_, lc, rc, id) =>
-                id == p && isValidIndex(lc, p + [0]) && isValidIndex(rc, p + [1]) 
-    }
+    //         case Node(_, lc, rc, id) =>
+    //             id == p && isValidIndex(lc, p + [0]) && isValidIndex(rc, p + [1]) 
+    // }
 
     /**
      *  Complete trees.
@@ -148,14 +148,14 @@ module Trees {
      *  @param  root    The root node of the tree.
      *  @returns        True if and only if the tree rooted at root is complete
      */
-    // predicate isCompleteTree(root : ITree) 
+    // predicate isCompleteTree(root : Tree) 
     //     decreases root
     // {
     //     match root 
     //         //  A leaf is a complete tree
-    //         case ILeaf(_, _) => true
+    //         case Leaf(_) => true
     //         //  From a root node, a tree is complete if both children have same height
-    //         case INode(_, lc, rc, _) => 
+    //         case Node(_, lc, rc) => 
     //             && height(lc) == height(rc) 
     //             && isCompleteTree(lc) && isCompleteTree(rc)
     // }
@@ -163,16 +163,16 @@ module Trees {
     /**
      *  Check that a decorated tree correctly stores the f attribute. 
      */
-    predicate isDecoratedWith<T>(f : (T, T) -> T, root: ITree<T>)
+    predicate isDecoratedWith<T>(f : (T, T) -> T, root: Tree<T>)
         decreases root
     {
         match root
 
-            case ILeaf(v,_) => 
+            case Leaf(v) => 
                     //  leaves define the attributes
                     true
 
-            case INode(v, lc, rc, _) => 
+            case Node(v, lc, rc) => 
                     //  Recursive definition for an internal node: children are
                     //  well decorated and node value if the f between children.
                     v == f(lc.v, rc.v)
@@ -187,12 +187,12 @@ module Trees {
      *  @param  c   A value.
      *  @returns    True if and olny if all values are equal to `c`.
      */
-    predicate isConstant<T>(r : ITree<T>, c: T) 
+    predicate isConstant<T>(r : Tree<T>, c: T) 
         decreases r
     {
         match r 
-            case ILeaf(v,_) => v == c
-            case INode(v, lc, rc,_) => v == c
+            case Leaf(v) => v == c
+            case Node(v, lc, rc) => v == c
                             && isConstant(lc, c) 
                             && isConstant(rc, c)
     }
@@ -203,7 +203,7 @@ module Trees {
      *  The node obtained after a path is the id of rhe node in 
      *  a validIndex tree.
      */
-    // lemma {:induction p} nodeIdAtPathIsPath(p : seq<bit>, p': seq<bit>, r: ITree) 
+    // lemma {:induction p} nodeIdAtPathIsPath(p : seq<bit>, p': seq<bit>, r: Tree) 
     //     requires |p| < height(r) 
     //     requires isCompleteTree(r)
     //     requires isValidIndex(r, p') 
@@ -214,7 +214,7 @@ module Trees {
     //         //  Thanks Dafny
     //     } else {
     //         match r 
-    //             case INode(_, lc, rc, id) =>
+    //             case Node(_, lc, rc, id) =>
     //                 if p[0] == 0 {
     //                     //  nodeAt is in lc after p[1..]
     //                     nodeIdAtPathIsPath(p[1..], p' + [0], lc);
@@ -247,7 +247,7 @@ module Trees {
     //     }
     // }
 
-    // lemma leaveIdAtPathIsPath(p : seq<bit>, p': seq<bit>, r: ITree) 
+    // lemma leaveIdAtPathIsPath(p : seq<bit>, p': seq<bit>, r: Tree) 
     //     requires |p| == height(r) - 1 
     //     requires isCompleteTree(r)
     //     requires isValidIndex(r, p') 
@@ -259,7 +259,7 @@ module Trees {
     /**
      *  Index of each node of a indexed tree that is valid is >= `p`.
      */
-    // lemma {:induction t} toIndexedIsMonotonic(t : ITree, p : seq<bit>, n : nat)
+    // lemma {:induction t} toIndexedIsMonotonic(t : Tree, p : seq<bit>, n : nat)
     //     requires isValidIndex(t, p) 
     //     requires 0 <= n < |nodesIn(t)|
     //     /** Weak ordering for all nodes. */
@@ -269,9 +269,9 @@ module Trees {
     //     decreases t 
     // {
     //     match t 
-    //         case ILeaf(_, _) =>
+    //         case Leaf(_) =>
 
-    //         case INode(_, lc, rc, _) => 
+    //         case Node(_, lc, rc) => 
     //             if ( n == 0 ) {
     //                 //  Thanks Dafny
     //             }  else if ( 1 <= n <= |nodesIn(lc)|) {
@@ -284,7 +284,7 @@ module Trees {
     /**
      *  Each node has a unique id in a validIndexed tree.
      */
-    // lemma {:induction r} eachNodeHasUniqueId(r: ITree, k1 : nat, k2 : nat, p : seq<bit>) 
+    // lemma {:induction r} eachNodeHasUniqueId(r: Tree, k1 : nat, k2 : nat, p : seq<bit>) 
     //     requires isValidIndex(r, p) 
     //     /** Two arbitrary strictly ordered indices within the range of nodesIn  */
     //     requires 0 <= k1 < k2 < |nodesIn(r)|
@@ -293,9 +293,9 @@ module Trees {
     //     decreases r
     // { 
     //     match r 
-    //         case ILeaf(v, id) => // Vacuously true. Thanks Dafny
+    //         case Leaf(v, id) => // Vacuously true. Thanks Dafny
 
-    //         case INode(v, lc, rc, id) =>
+    //         case Node(v, lc, rc, id) =>
 
     //             if ( k1 == 0 ) {
     //                 //  k2 is an index of a node in lc or rc, strict ordering applies.
@@ -440,7 +440,7 @@ module Trees {
     // /**
     //  *  Relation between height and number of leaves in a complete tree.
     //  */
-    // lemma {:induction root} completeTreeNumberLemmas(root : ITree) 
+    // lemma {:induction root} completeTreeNumberLemmas(root : Tree) 
     //     ensures isCompleteTree(root) ==> |leavesIn(root)| == power2(height(root) - 1)
     //     ensures isCompleteTree(root) ==> |nodesIn(root)| == power2(height(root)) - 1
     // {   //  Thanks Dafny
@@ -449,7 +449,7 @@ module Trees {
     // /**
     //  *  Two complete tree of same height have same number of leaves.
     //  */
-    // lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: ITree, r2: ITree) 
+    // lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: Tree, r2: Tree) 
     //     requires isCompleteTree(r1)
     //     requires isCompleteTree(r2)
     //     ensures height(r1) == height(r2) ==> |leavesIn(r1)| == |leavesIn(r2)|
@@ -459,24 +459,24 @@ module Trees {
     // /**
     //  *  Children of a node in a complete tree have same number of leaves.
     //  */
-    // lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : ITree) 
+    // lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : Tree) 
     //     requires isCompleteTree(r)
     //     requires height(r) >= 2
     //     ensures match r
-    //         case INode(_, lc, rc, _) => 
+    //         case Node(_, lc, rc) => 
     //             |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r) - 1) / 2
     // {
     //     match r 
-    //         case INode(_, lc, rc, _) =>
+    //         case Node(_, lc, rc) =>
     //             completeTreesOfSameHeightHaveSameNumberOfLeaves(lc,rc);
     // }
 
-    // lemma {:induction r} completeTreesLeftRightChildrenLeaves(r : ITree, h : nat) 
+    // lemma {:induction r} completeTreesLeftRightChildrenLeaves(r : Tree, h : nat) 
     //     requires isCompleteTree(r)
     //     requires h == height(r) >= 2
     //     ensures |leavesIn(r)| == power2(h - 1)
     //     ensures match r
-    //         case INode(_, lc, rc, _) => 
+    //         case Node(_, lc, rc) => 
     //             leavesIn(lc) == leavesIn(r)[.. power2(h - 1) / 2]
     //             && leavesIn(rc) == leavesIn(r)[power2(height(r) - 1) / 2 ..]
     // {
@@ -484,7 +484,7 @@ module Trees {
     //         //  Thanks Dafny
     //     } else {
     //         match r
-    //             case INode(_, lc, rc, _) => 
+    //             case Node(_, lc, rc) => 
     //                 completeTreesLeftRightHaveSameNumberOfLeaves(r);
     //     }
     // }
@@ -493,7 +493,7 @@ module Trees {
      *  If the id of root is [], then each node n.id is the path
      *  from root to n.
      */
-    // lemma {:induction r} nodeAtCanonicalPath(p : seq<bit>, r : ITree) 
+    // lemma {:induction r} nodeAtCanonicalPath(p : seq<bit>, r : Tree) 
     //      requires |p| < height(r) 
     //     requires isCompleteTree(r)
     //     requires isValidIndex(r, [])
@@ -502,7 +502,7 @@ module Trees {
     //     nodeIdAtPathIsPath(p, [], r);
     // } 
 
-    // lemma {:induction r} foo201(r: ITree, p: seq<bit>, lc1: ITree) 
+    // lemma {:induction r} foo201(r: Tree, p: seq<bit>, lc1: Tree) 
     //     requires height(r) >= 2
     //     requires isCompleteTree(r)
     //     requires isValidIndex(r, [])
@@ -513,7 +513,7 @@ module Trees {
     //     requires p[0] == 0 
 
     //     ensures match r     
-    //         case INode(_, lc, rc, _) =>
+    //         case Node(_, lc, rc) =>
     //             // if p[0] == 0 then
     //                 nodeAt(p[1..], lc).id == nodeAt(p[1..], lc1).id
     //                 // && nodeAt(p[1..], lc).id == p[1..]
@@ -522,7 +522,7 @@ module Trees {
 
     // {   //  Thanks Dafny
     //     match r     
-    //         case INode(_, lc, rc, _) =>
+    //         case Node(_, lc, rc) =>
     //                 assert(isValidIndex(lc, [0]));
     //                 nodeAtCanonicalPath(p[1..], lc);   
     // }
@@ -655,7 +655,7 @@ module Trees {
     //     ensures |p| >= 1 && p[0] == 1 ==> bitListToNat(p) == power2(|p| - 1) + bitListToNat(p[1..])
     // {}
 
-    // lemma foo302(p : seq<bit>, r : ITree, k : nat) 
+    // lemma foo302(p : seq<bit>, r : Tree, k : nat) 
     //     requires isCompleteTree(r)
     //     requires 1 <= |p| == height(r) - 1 
     //     requires k < |leavesIn(r)|
@@ -678,7 +678,7 @@ module Trees {
     //     } else {
     //         //  r is not a leaf
     //         match r 
-    //             case INode(_, lc, rc, _) => 
+    //             case Node(_, lc, rc) => 
     //                 if p[0] == 0 {
     //                     //  left lc
     //                     assert(nodeAt(p, r) == nodeAt(p[1..], lc));
@@ -706,7 +706,7 @@ module Trees {
    
     //  Synthesised attibutes Helpers
 
-    // function decoratePath(r: ITree, l : seq<bit>, )
+    // function decoratePath(r: Tree, l : seq<bit>, )
 
     
 
