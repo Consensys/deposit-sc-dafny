@@ -18,11 +18,13 @@
 module SeqHelpers {
 
     /** 
-     *  Concatenation is associative and length sums up.
+     *  Concatenation is associative and lengths sum up.
      */
     lemma seqAssoc<T>(a: seq<T>, b : seq<T>, c: seq<T>) 
         ensures a + b + c == (a + b) + c == a + (b + c) == (a + b + c)
         ensures |a + b + c| == |a| + |b| + |c|
-    {}
+    {
+        //  Thanks Dafny.
+    }
 
 }
