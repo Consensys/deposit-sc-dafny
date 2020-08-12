@@ -132,7 +132,7 @@ include "SeqHelpers.dfy"
         if |p| <= 1 {
             //  Thanks Dafny
         } else {  
-            restrictValuesOnChild(p, r, b);
+            
             
             match r
                 case Node(_, lc, rc) =>
@@ -144,6 +144,10 @@ include "SeqHelpers.dfy"
                 var child := if p[0] == 0 then lc else rc ;
                 var a := if p[0] == 0 then 1 else 0;
 
+                //  this ensures we can use computeOnPathYieldsRootValue inductively
+                //  it proves that b[1..][i] == siblingAt(p[1..][.. i + 1], r).v
+                restrictValuesOnChild(p, r, b);
+                
                 //  Induction on lc or rc depending on p[0]
                 computeOnPathYieldsRootValue(p[1..], child, b[1..], f, seed);
                 // this implies that if p[0] == 0 then lc.v else rc.v == 
