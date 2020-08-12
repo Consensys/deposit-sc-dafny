@@ -25,26 +25,4 @@ module SeqHelpers {
         ensures |a + b + c| == |a| + |b| + |c|
     {}
 
-     /**
-     *  Split of sequences.
-     */
-    lemma splitSeq<T>(s: seq<T>, t: seq<T>, u : seq<T>)
-        requires s == t + u
-        ensures s[..|t|] == t
-        ensures s[|t|..] == u
-    {   //  Thanks Dafny 
-    }
-
-    /**
-     *  Prefixes of tail of sequence are slices 1.. 
-     */
-    lemma prefixOfSuffix<T>(s : seq<T>, i : nat)
-        requires 1 <= i < |s|
-        ensures s[1..][..i] == s[1..i + 1]
-    {} 
-
-    lemma fullSliceIsSeq<T>(s : seq<T>)
-        ensures s[..|s|] == s
-    {}
-
 }
