@@ -46,14 +46,14 @@ include "SeqHelpers.dfy"
     /**
      *  Relate values on siblings of child to suffix of b.
      */
-    lemma {:induction r} restrictValuesOnChild<T>(p : seq<bit>, r : ITree<T>, b : seq<T>)  
+    lemma {:induction r} restrictValuesOnChild<T>(p : seq<bit>, r : Tree<T>, b : seq<T>)  
         requires 1 <= |p| < height(r) 
         requires isCompleteTree(r)
         requires |b| == |p|
         requires forall k :: 0 <= k < |b| ==> b[k] == siblingAt(p[..k + 1], r).v
         /** Depending on p[0], `b` projects onto `lc or `rc`. */
         ensures match r
-            case INode(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
                 forall k :: 0 <= k < |b| - 1 ==>
                 if p[0] == 0 then
                     b[1..][k] == siblingAt(p[1..][..k + 1], lc).v
@@ -61,7 +61,7 @@ include "SeqHelpers.dfy"
                     b[1..][k] == siblingAt(p[1..][..k + 1], rc).v
     {
         match r 
-            case INode(_, lc, rc,_) => 
+            case Node(_, lc, rc)=> 
                 forall (k : nat | 0 <= k < |b| - 1) 
                     ensures 
                         0 <= k < |b| - 1 ==> 
@@ -71,11 +71,19 @@ include "SeqHelpers.dfy"
                                 b[1..][k] == siblingAt(p[1..][..k + 1], rc).v   
                 {
                     //  Select child to use in induction according to p[0]
-                    var child := if p[0] == 0 then lc else rc ;
-                    calc == {   //  These terms are equal
+                    if ( k == 0 ) {
+                        assume(if p[0] == 0 then
+                                b[1..][0] == siblingAt(p[1..][..0 + 1], lc).v
+                            else 
+                                b[1..][0] == siblingAt(p[1..][..0 + 1], rc).v   );
+                    } else {
+                        assert( k >= 1 );
+                        var child := if p[0] == 0 then lc else rc ;
+                        calc == {   //  These terms are equal
                             b[1..][k] ;
                             b[k + 1];
                             siblingAt(p[..k + 1 + 1], r).v;
+                            { foo119(p[..k + 1 + 1], r) ; }
                             siblingAt(p[..k + 1 + 1][1..], child).v;
                             //  Next step holds because of this equality:
                             calc == {
@@ -83,7 +91,16 @@ include "SeqHelpers.dfy"
                                 p[1..][..k + 1];
                             }
                             siblingAt(p[1..][..k + 1], child).v;
+                            // (if p[0] == 0 then
+                            //     b[1..][k] == siblingAt(p[1..][..k + 1], lc).v
+                            // else 
+                            //     b[1..][k] == siblingAt(p[1..][..k + 1], rc).v)  ;
                         }
+                        // assume(if p[0] == 0 then
+                        //         b[1..][0] == siblingAt(p[1..][..0 + 1], lc).v
+                        //     else 
+                        //         b[1..][0] == siblingAt(p[1..][..0 + 1], rc).v   );
+                    }
                 }
     }
 
@@ -97,7 +114,7 @@ include "SeqHelpers.dfy"
      *  @param  f       A binary operation.
      *  @param  seed    A value.
      */
-    lemma {:induction p, r, b} computeOnPathYieldsRootValue<T>(p : seq<bit>, r : ITree<T>, b : seq<T>, f : (T,T) -> T, seed: T) 
+    lemma {:induction p, r, b} computeOnPathYieldsRootValue<T>(p : seq<bit>, r : Tree<T>, b : seq<T>, f : (T,T) -> T, seed: T) 
         requires 1 <= |p| == height(r) - 1
         requires isCompleteTree(r)
         /** `r` is deccorated with attribute `f`. */
@@ -112,14 +129,61 @@ include "SeqHelpers.dfy"
 
         decreases p
     {
-        if |p| == 1 {
+        if |p| <= 1 {
             //  Thanks Dafny
         } else {  
             restrictValuesOnChild(p, r, b);
-        }   
+            
+            match r
+                case Node(_, lc, rc) =>
+                assert(r.v == f(lc.v, rc.v));
+
+            if p[0] == 0 {
+                computeOnPathYieldsRootValue(p[1..], lc, b[1..], f, seed);
+                assert(lc.v == computeRootPath(p[1..], b[1..], f, seed));
+
+                //  def of f
+                assert(computeRootPath(p,b,f,seed) == f(lc.v, b[0]));
+
+                assert(b[0] == siblingAt(p[..0 + 1], r).v);
+                assert(b[0] == siblingAt(p[..1], r).v);
+                assert(b[0] == siblingAt([0], r).v);
+                // foo119(p[..1], r);
+                assert(b[0] == nodeAt([] + [1], r).v);
+                calc {
+                    [] + [1];
+                    [1];
+                }
+                assert(b[0] == nodeAt([1], r).v);
+                assert(b[0] == rc.v);
+                // assert(siblingAt([p[0]], r) == rc);
+               
+            } else {
+                computeOnPathYieldsRootValue(p[1..], rc, b[1..], f, seed);
+                assert(rc.v == computeRootPath(p[1..], b[1..], f, seed));
+                assert(computeRootPath(p,b,f,seed) == f(b[0], rc.v));
+
+                assert(b[0] == siblingAt(p[..0 + 1], r).v);
+                assert(b[0] == siblingAt(p[..1], r).v);
+                assert(b[0] == siblingAt([1], r).v);
+                // foo119(p[..1], r);
+                assert(b[0] == nodeAt([] + [0], r).v);
+                calc {
+                    [] + [0];
+                    [0];
+                }
+                assert(b[0] == nodeAt([0], r).v);
+                assert(b[0] == lc.v);
+                // assume(r.v == computeRootPath(p, b, f, seed));
+            }
+        }
     }
 
-    lemma siblingsLeft(p : seq<bit>, l : seq<int>, r : ITree<int>, b : seq<int>, b': seq<int>, k : nat) 
+    /**
+     *  If b and b' agree on values at which p[i] == 1 and b has siblings at p[..], then 
+     *  b' has siblings at same location.  
+     */
+    lemma siblingsLeft(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat) 
         /** Merkle tree. */
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
@@ -150,7 +214,7 @@ include "SeqHelpers.dfy"
      *  right sibling to compute value at root.
      *  Compute the value on a path by computing on child first.
      */
-     function computeRootPathDiff(p : seq<bit>, b : seq<int>, seed: int) : int
+    function computeRootPathDiff(p : seq<bit>, b : seq<int>, seed: int) : int
         requires |p| == |b|
         decreases p
     {
@@ -268,6 +332,7 @@ include "SeqHelpers.dfy"
             computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed))
     }
 
+    
     lemma {:induction p, b, seed} foo510(p : seq<bit>, b : seq<int>, seed: int) 
         requires |p| == |b|
         ensures computeRootUp(p, b, seed) == computeRootPathDiff(p, b, seed)
@@ -383,7 +448,7 @@ include "SeqHelpers.dfy"
      *  Weakening of computeOnPathYieldsRootValue, requesting values on left siblings only, when
      *  merkle tree and path is not last non-null leaf.
      */
-     lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff(p : seq<bit>, l : seq<int>, r : ITree<int>, b : seq<int>, k : nat) 
+     lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) 
         /** Merkle tree. */
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
@@ -432,7 +497,7 @@ include "SeqHelpers.dfy"
     /**
      *  Main function to compute the root value.
      */
-     function computeRootDiffUp(p : seq<bit>, l : seq<int>, r : ITree<int>, b : seq<int>, k : nat) : int
+     function computeRootDiffUp(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) : int
         /** Merkle tree. */
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
@@ -458,5 +523,50 @@ include "SeqHelpers.dfy"
         foo510(p, b, leavesIn(r)[k].v);
         computeRootUp(p, b, leavesIn(r)[k].v)
     }
+
+    /**
+     *  The binary encoding of k of height(r) - 1 is the path leading to leaf k.
+     */
+    lemma {:induction r} foo111(r : Tree<int>, k : nat) 
+
+        requires isCompleteTree(r)
+        requires height(r) >= 2
+        requires k < |leavesIn(r)|
+
+        ensures k < power2(height(r) - 1) 
+        ensures nodeAt(natToBitList(k, height(r) - 1), r) ==  leavesIn(r)[k]
+    {
+        completeTreeNumberLemmas(r);
+        foo909(k, height(r) - 1);
+        assert(bitListToNat(natToBitList(k, height(r) - 1)) == k);
+        foo200(natToBitList(k, height(r) - 1), r, k);
+    }
+
+    function incMerkle(p: seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) : (int, seq<int>) 
+        //  current leaf is not the last one
+        requires height(r) >= 2
+        requires  isCompleteTree(r)
+        requires |l| == |leavesIn(r)|
+        requires k < |leavesIn(r)| - 1
+        requires forall i :: k < i < |l| ==> l[i] == 0
+
+        requires k < power2(height(r) - 1) 
+        requires |b| == |p|
+        requires isMerkle2(r, l, diff)
+
+        requires p == natToBitList(k, height(r) - 1)
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+
+        ensures r.v == incMerkle(p, l, r, b, k).0
+    {
+        // var p := natToBitList(k, height(r) - 1);
+        assert(|p| == height(r) - 1);
+        foo111(r,k);
+        // foo200(natToBitList(k, height(r) - 1), r, k);
+
+        assert(nodeAt(p, r) == leavesIn(r)[k]);
+        (computeRootDiffUp(p, l, r, b, k), [])
+    }
+
 
  }
