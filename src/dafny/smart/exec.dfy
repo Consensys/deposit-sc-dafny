@@ -136,46 +136,29 @@ include "SeqHelpers.dfy"
             
             match r
                 case Node(_, lc, rc) =>
-                assert(r.v == f(lc.v, rc.v));
 
-            if p[0] == 0 {
-                computeOnPathYieldsRootValue(p[1..], lc, b[1..], f, seed);
-                assert(lc.v == computeRootPath(p[1..], b[1..], f, seed));
+                // cby definition r.v == f(lc.v, rc.v)
+                //  We show that whatever child is on path `p`  we have 
+                //  the value of the sibling.
 
-                //  def of f
-                assert(computeRootPath(p,b,f,seed) == f(lc.v, b[0]));
+                var child := if p[0] == 0 then lc else rc ;
+                var a := if p[0] == 0 then 1 else 0;
 
-                assert(b[0] == siblingAt(p[..0 + 1], r).v);
-                assert(b[0] == siblingAt(p[..1], r).v);
-                assert(b[0] == siblingAt([0], r).v);
-                // foo119(p[..1], r);
-                assert(b[0] == nodeAt([] + [1], r).v);
-                calc {
-                    [] + [1];
-                    [1];
+                //  Induction on lc or rc depending on p[0]
+                computeOnPathYieldsRootValue(p[1..], child, b[1..], f, seed);
+                // this implies that if p[0] == 0 then lc.v else rc.v == 
+                //                           computeRootPath(p[1..], b[1..], f, seed))
+
+                calc == {
+                    b[0] ;
+                    nodeAt([] + [a], r).v;
+                    calc {  //  simplify
+                        [] + [a];
+                        [a];
+                    }
+                    nodeAt([a], r).v;
+                    (if p[0] == 0 then rc.v else lc.v);
                 }
-                assert(b[0] == nodeAt([1], r).v);
-                assert(b[0] == rc.v);
-                // assert(siblingAt([p[0]], r) == rc);
-               
-            } else {
-                computeOnPathYieldsRootValue(p[1..], rc, b[1..], f, seed);
-                assert(rc.v == computeRootPath(p[1..], b[1..], f, seed));
-                assert(computeRootPath(p,b,f,seed) == f(b[0], rc.v));
-
-                assert(b[0] == siblingAt(p[..0 + 1], r).v);
-                assert(b[0] == siblingAt(p[..1], r).v);
-                assert(b[0] == siblingAt([1], r).v);
-                // foo119(p[..1], r);
-                assert(b[0] == nodeAt([] + [0], r).v);
-                calc {
-                    [] + [0];
-                    [0];
-                }
-                assert(b[0] == nodeAt([0], r).v);
-                assert(b[0] == lc.v);
-                // assume(r.v == computeRootPath(p, b, f, seed));
-            }
         }
     }
 
