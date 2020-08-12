@@ -34,7 +34,7 @@ module MerkleTrees {
      *                  of collectleaves (returns the seq of values directly) and then
      *                  no need for `x.v`.
      */
-    predicate treeLeftmostLeavesMatchList<T>(l: seq<T>, root: ITree<T>, default: T)
+    predicate treeLeftmostLeavesMatchList<T>(l: seq<T>, root: Tree<T>, default: T)
         requires |l| <= |leavesIn(root)|
     {
         forall i:: 
@@ -52,7 +52,7 @@ module MerkleTrees {
      *      3.  the values on the internal nodes correspond to the value of
      *          synthesied attribute `f`.
      */
-    predicate isMerkle<T>(root: ITree<T>, l: seq<T>, f : (T, T) -> T, default: T) 
+    predicate isMerkle<T>(root: Tree<T>, l: seq<T>, f : (T, T) -> T, default: T) 
         requires |l| <= |leavesIn(root)|
     {
         isCompleteTree(root)
@@ -70,7 +70,7 @@ module MerkleTrees {
      *      3.  the leaves (in-order) hold the values of `l`
      *     
      */
-    predicate isMerkle2<T>(root: ITree<T>, l: seq<T>, f : (T, T) -> T) 
+    predicate isMerkle2<T>(root: Tree<T>, l: seq<T>, f : (T, T) -> T) 
         requires |l| == |leavesIn(root)|
     {
         isCompleteTree(root)                                            //  1.
@@ -79,7 +79,7 @@ module MerkleTrees {
            
     }
 
-    // lemma {:induction h} isMerkleChildren<T>(r: ITree<T>, l: seq<T>, f : (T, T) -> T, default: T, h : nat)
+    // lemma {:induction h} isMerkleChildren<T>(r: Tree<T>, l: seq<T>, f : (T, T) -> T, default: T, h : nat)
     //     requires |l| == |leavesIn(r)| / 2
     //     requires isMerkle(r, l, f, default)
     //     requires h == height(r) >= 2
@@ -100,13 +100,13 @@ module MerkleTrees {
      *  For tree of height >= 2, Merkle projects onto lc and rc for 
      *  split list. 
      */
-    lemma {:induction h} isMerkleChildren2<T>(r: ITree<T>, l: seq<T>, f : (T, T) -> T, h : nat)
+    lemma {:induction h} isMerkleChildren2<T>(r: Tree<T>, l: seq<T>, f : (T, T) -> T, h : nat)
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, f)
         requires h == height(r) >= 2
         ensures |l| == power2(height(r) - 1)
         ensures match r 
-            case INode(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
                 |leavesIn(lc)| == power2(height(r) - 1)/2
                 && |l[.. power2(height(r) - 1)/2]| <=  |leavesIn(lc)|
                 && isMerkle2(lc, l[..  power2(height(r) - 1)/2], f)
@@ -138,7 +138,7 @@ module MerkleTrees {
     *   @param  f   A function to combine two values.
     *   @param  d   A default value for the leaves not in `l`.
     */
-    function buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : ITree<T> 
+    function buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : Tree<T> 
         requires h >= 1
         /** Tree has enough leaves to store `l`. */
         requires |l| <= power2(h - 1)      
