@@ -28,7 +28,7 @@ module CompleteTrees {
      */
     function method default<T>() : T 
 
-    type compTree<T> = r: Tree<T> | isCompleteTree(r) witness Leaf(default<T>())
+    type CompTree<T> = r: Tree<T> | isCompleteTree(r) witness Leaf(default<T>())
  
     /**
      *  Complete trees.
@@ -54,7 +54,7 @@ module CompleteTrees {
     /**
      *  Relation between height and number of leaves in a complete tree.
      */
-    lemma {:induction root} completeTreeNumberLemmas(root : compTree) 
+    lemma {:induction root} completeTreeNumberLemmas(root : CompTree) 
         ensures |leavesIn(root)| == power2(height(root) - 1)
         ensures |nodesIn(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
@@ -63,7 +63,7 @@ module CompleteTrees {
     /**
      *  Two complete tree of same height have same number of leaves.
      */
-    lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: compTree, r2: compTree) 
+    lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: CompTree, r2: CompTree) 
         ensures height(r1) == height(r2) ==> |leavesIn(r1)| == |leavesIn(r2)|
     {   //  Thanks Dafny
     }
@@ -71,7 +71,7 @@ module CompleteTrees {
     /**
      *  Children of a node in a complete tree have same number of leaves.
      */
-    lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : compTree) 
+    lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : CompTree) 
         requires height(r) >= 2
         ensures match r
             case Node(_, lc, rc) => 
@@ -82,7 +82,7 @@ module CompleteTrees {
                 completeTreesOfSameHeightHaveSameNumberOfLeaves(lc,rc);
     }
 
-    lemma {:induction r} completeTreesLeftRightChildrenLeaves(r : compTree, h : nat) 
+    lemma {:induction r} completeTreesLeftRightChildrenLeaves(r : CompTree, h : nat) 
         requires h == height(r) >= 2
         ensures |leavesIn(r)| == power2(h - 1)
         ensures match r
