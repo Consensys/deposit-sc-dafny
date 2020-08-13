@@ -168,14 +168,16 @@ module DiffTree {
         decreases r
 
     {   
+        childrenCompTreeValidIndex(r, height(r), j);
+
         forall ( i : nat | 0 <= i < |p|)
             ensures p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
         {
             if (height(r) == 2) {
                 //  Thanks Dafny
                 assert(|p| == 1);
-                assume(isValidIndex(r,j));
-                assert(isCompleteTree(r));
+                // assume(isValidIndex(r,j));
+                // assert(isCompleteTree(r));
                 childrenCompTreeValidIndex(r, height(r), j);
                 if (p[0] == 0) {
                     match r 

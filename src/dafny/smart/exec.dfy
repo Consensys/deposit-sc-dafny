@@ -526,9 +526,17 @@ module Foo {
         ensures nodeAt(natToBitList(k, height(r) - 1), r) ==  leavesIn(r)[k]
     {
         completeTreeNumberLemmas(r);
+        assert(k < |leavesIn(r)| == power2(height(r) - 1) );
+
         bitToNatToBitsIsIdentity(k, height(r) - 1);
-        assert(bitListToNat(natToBitList(k, height(r) - 1)) == k);
-        foo200(natToBitList(k, height(r) - 1), r, k, 0);
+
+        var p := natToBitList(k, height(r) - 1) ;
+
+        assert(bitListToNat(p) == k);
+        assert(1 <= |p| == height(r) - 1);
+        foo200(p, r, k, 0);
+        assert(bitListToNat(p) == k ==> nodeAt(p, r) == leavesIn(r)[k]);
+        assert(nodeAt(p, r) == leavesIn(r)[k]);
     }
 
     function incMerkle(p: seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) : (int, seq<int>) 
