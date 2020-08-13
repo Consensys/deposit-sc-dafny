@@ -194,7 +194,7 @@ module SeqOfBits {
      *  number represented by `p`.
      */
     lemma {:induction p} nextPathIsSucc(p : seq<bit>)
-         /** Path has at least on element. */
+         /** Path has at least one element. */
         requires |p| >= 1
         /** It is not the path 1+ that has no successors. */
         requires exists i :: 0 <= i < |p| && p[i] == 0
