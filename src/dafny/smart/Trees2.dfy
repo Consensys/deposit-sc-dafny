@@ -13,8 +13,6 @@
  */
 
 include "Helpers.dfy"
-include "SeqOfBits.dfy"
-include "SeqHelpers.dfy"
 
 /**
  *  Provide tree decorated with value and indexed trees.
@@ -22,8 +20,6 @@ include "SeqHelpers.dfy"
 module Trees {
 
     import opened Helpers
-    import opened SeqOfBits
-    import opened SeqHelpers 
 
     /** 
      *  Binary trees.
