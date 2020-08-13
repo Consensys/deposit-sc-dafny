@@ -85,23 +85,6 @@ module MerkleTrees {
         && forall i :: 0 <= i < |l| ==> l[i] == leavesIn(root)[i].v                
     }
 
-    // lemma {:induction h} isMerkleChildren<T>(r: Tree<T>, l: seq<T>, f : (T, T) -> T, default: T, h : nat)
-    //     requires |l| == |leavesIn(r)| / 2
-    //     requires isMerkle(r, l, f, default)
-    //     requires h == height(r) >= 2
-    //     ensures match r 
-    //         case INode(_, lc, rc, _) =>
-    //             |leavesIn(lc)| == power2(height(r) - 1)/2
-    //             && |l| <=  |leavesIn(lc)|
-    //             && isMerkle(lc, l, f, default)
-    // {
-    //     if h == 2 {
-    //         //  Thanks Dafny
-    //     } else {
-    //         completeTreesLeftRightChildrenLeaves(r, h);
-    //     }
-    // }
-
     /**
      *  For tree of height >= 2, Merkle projects onto lc and rc for 
      *  split list. 
@@ -127,11 +110,7 @@ module MerkleTrees {
                 && |l[power2(height(r) - 1)/2..]| <=  |leavesIn(rc)|
                 && isMerkle2(rc, l[power2(height(r) - 1)/2..], f)
     {
-        if h == 2 {
-            //  Thanks Dafny
-        } else {
-            childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
-        }
+        childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
     }
 
    /** 
@@ -156,9 +135,5 @@ module MerkleTrees {
         ensures |leavesIn(buildMerkle(l, h, f, d))| == power2(h - 1)
         ensures isDecoratedWith(f, buildMerkle(l, h, f, d))
         ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h, f, d), d)
-
-    //  Helpers lemmas
-
-    
 
 }
