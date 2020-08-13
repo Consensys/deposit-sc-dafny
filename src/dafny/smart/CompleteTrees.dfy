@@ -104,6 +104,9 @@ module CompleteTrees {
         }
     }
 
+    /**
+     *  Children of indexed node are indexed.
+     */
     lemma {:induction r} childrenCompTreeValidIndex(r : Tree, h : nat, i : nat)
         requires hasLeavesIndexedFrom(r, i)
         requires h == height(r) >= 2
@@ -114,29 +117,18 @@ module CompleteTrees {
                 && hasLeavesIndexedFrom(rc, i + power2(height(r) - 1) / 2)
     {
         if h == 2 {
-            //  
             match r
             case Node(_, lc, rc) => 
-                // assert(lc.Leaf?);
-                // assert(rc.Leaf?);
-                assert(leavesIn(r) == [lc, rc]);
-                assert(leavesIn(r)[1] == rc);
-                // assert(leavesIn(r)[1].index == i + 1);
-                assert(rc.index == i + 1);
-                assert( (power2(height(r) - 1) / 2) == 1);
-                // assert(isValidIndex(rc, i + 1));
-
-                assert(leavesIn(r)[0] == lc);
-                // assert(leavesIn(r)[0].index == i + 0);
-                assert(leavesIn(r)[0].index == i);
-
-                // assert(isValidIndex(lc, i));
-                // isValidIndex(lc, i)
-                // && isValidIndex(rc, i + power2(height(r) - 1) / 2)
+                calc == {
+                    leavesIn(r) == [lc, rc];
+                    leavesIn(r)[0] == lc;                
+                    leavesIn(r)[0].index == i ;
+                    leavesIn(r)[1] == rc;
+                    leavesIn(r)[1].index == i + 1;
+                    power2(height(r) - 1) / 2 == 1;
+                }
         } else {
             childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
         }
     }            
-    
-
 }
