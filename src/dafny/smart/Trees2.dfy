@@ -13,6 +13,7 @@
  */
 
 include "Helpers.dfy"
+include "SeqOfBits.dfy"
 
 /**
  *  Provide tree decorated with attribute values.
@@ -20,6 +21,7 @@ include "Helpers.dfy"
 module Trees {
 
     import opened Helpers
+    import opened SeqOfBits
 
     /** 
      *  Binary trees.
@@ -28,8 +30,8 @@ module Trees {
      *  @param  v   The value associated with a node.
      */
     datatype Tree<T> = 
-            Leaf(v: T)
-        |   Node(v: T, left: Tree, right: Tree)
+            Leaf(v: T, ghost index : nat)
+        |   Node(v: T, left: Tree, right: Tree, ghost id : seq<bit>)
 
     /**
      *  Height of a tree.
@@ -42,8 +44,8 @@ module Trees {
         decreases root
     {
         match root 
-            case Leaf(_) => 1
-            case Node(_, lc, rc) => 1 + max(height(lc), height(rc))
+            case Leaf(_, _) => 1
+            case Node(_, lc, rc, _) => 1 + max(height(lc), height(rc))
     }
     
     /**
@@ -58,8 +60,8 @@ module Trees {
         decreases root
     {
         match root 
-            case Leaf(_) => [ root ] 
-            case Node(_, lc, rc) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
+            case Leaf(_, _) => [ root ] 
+            case Node(_, lc, rc, _) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
     }
 
     /**
@@ -79,8 +81,8 @@ module Trees {
         decreases root
     {
         match root 
-            case Leaf(_) => [ root ] 
-            case Node(_, lc, rc) =>  
+            case Leaf(_,_) => [ root ] 
+            case Node(_, lc, rc, _) =>  
                 leavesIn(lc) + leavesIn(rc) 
     }
 
@@ -100,9 +102,9 @@ module Trees {
         decreases root
     {
         match root
-            case Leaf(v) => true
+            case Leaf(v, _) => true
 
-            case Node(v, lc, rc) => 
+            case Node(v, lc, rc, _) => 
                     //  Recursive definition for an internal node: children 
                     //  are well decorated and node's value is f applied to children.
                     v == f(lc.v, rc.v)
@@ -121,9 +123,30 @@ module Trees {
         decreases r
     {
         match r 
-            case Leaf(v) => v == c
-            case Node(v, lc, rc) => v == c
+            case Leaf(v,_) => v == c
+            case Node(v, lc, rc,_) => v == c
                             && isConstant(lc, c) 
                             && isConstant(rc, c)
     }
+
+     /**
+     *  Whether a tree is properly indexed (lexicographic order)
+     *  from an initial value `p`.   
+     *  
+     *  @param  r   The root of the tree.
+     *  @param  p   The prefix used for the id. 
+     */
+    predicate isValidIndex(r: Tree, i : nat) 
+        // decreases r
+    {
+        forall k::0 <= k < |leavesIn(r)|  ==> 
+            leavesIn(r)[k].index == k + i
+    //    match r 
+    //         case Leaf(_, id) => id == p
+
+    //         case Node(_, lc, rc, id) =>
+    //             id == p && isValidIndex(lc, p + [0]) && isValidIndex(rc, p + [1]) 
+    }
+
+    
 }

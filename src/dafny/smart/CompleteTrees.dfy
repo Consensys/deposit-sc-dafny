@@ -14,6 +14,7 @@
 
 include "Trees2.dfy"
 include "Helpers.dfy"
+include "SeqOfBits.dfy"
 
 /**
  *  Provide complete trees.
@@ -25,6 +26,7 @@ module CompleteTrees {
 
     import opened Trees
     import opened Helpers
+    import opened SeqOfBits
 
     /**
      *  Complete trees.
@@ -37,9 +39,9 @@ module CompleteTrees {
     {
         match root 
             //  A leaf is a complete tree
-            case Leaf(_) => true
+            case Leaf(_, _) => true
             //  From a root node, a tree is complete if both children have same height
-            case Node(_, lc, rc) => 
+            case Node(_, lc, rc, _) => 
                 && height(lc) == height(rc) 
                 && isCompleteTree(lc) && isCompleteTree(rc)
     }
@@ -73,11 +75,11 @@ module CompleteTrees {
         requires height(r) >= 2
         requires isCompleteTree(r)
         ensures match r
-            case Node(_, lc, rc) => 
+            case Node(_, lc, rc, _) => 
                 |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r) - 1) / 2
     {
         match r 
-            case Node(_, lc, rc) =>
+            case Node(_, lc, rc, _) =>
                 completeTreesOfSameHeightHaveSameNumberOfLeaves(lc, rc);
     }
 
@@ -89,7 +91,7 @@ module CompleteTrees {
         requires isCompleteTree(r)
         ensures |leavesIn(r)| == power2(h - 1)
         ensures match r
-            case Node(_, lc, rc) => 
+            case Node(_, lc, rc, _) => 
                 leavesIn(lc) == leavesIn(r)[.. power2(h - 1) / 2]
                 && leavesIn(rc) == leavesIn(r)[power2(height(r) - 1) / 2 ..]
     {
@@ -97,8 +99,44 @@ module CompleteTrees {
             //  Thanks Dafny
         } else {
             match r
-                case Node(_, lc, rc) => 
+                case Node(_, lc, rc, _) => 
                     childrenInCompTreesHaveSameNumberOfLeaves(r);
         }
     }
+
+    lemma {:induction r} childrenCompTreeValidIndex(r : Tree, h : nat, i : nat)
+        requires isValidIndex(r, i)
+        requires h == height(r) >= 2
+        requires isCompleteTree(r)
+        ensures match r
+            case Node(_, lc, rc, _) => 
+                isValidIndex(lc, i)
+                && isValidIndex(rc, i + power2(height(r) - 1) / 2)
+    {
+        if h == 2 {
+            //  
+            match r
+            case Node(_, lc, rc, _) => 
+                // assert(lc.Leaf?);
+                // assert(rc.Leaf?);
+                assert(leavesIn(r) == [lc, rc]);
+                assert(leavesIn(r)[1] == rc);
+                // assert(leavesIn(r)[1].index == i + 1);
+                assert(rc.index == i + 1);
+                assert( (power2(height(r) - 1) / 2) == 1);
+                // assert(isValidIndex(rc, i + 1));
+
+                assert(leavesIn(r)[0] == lc);
+                // assert(leavesIn(r)[0].index == i + 0);
+                assert(leavesIn(r)[0].index == i);
+
+                // assert(isValidIndex(lc, i));
+                // isValidIndex(lc, i)
+                // && isValidIndex(rc, i + power2(height(r) - 1) / 2)
+        } else {
+            childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
+        }
+    }            
+    
+
 }

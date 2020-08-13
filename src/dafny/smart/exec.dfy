@@ -4,7 +4,7 @@
 include "MerkleTrees.dfy"
 include "SeqOfBits.dfy"
 include "CompleteTrees.dfy"
-include "PathInCompleteTrees.dfy"
+include "PathInCompleteTrees2.dfy"
 include "SeqHelpers.dfy"
 
 module Foo {
@@ -51,7 +51,7 @@ module Foo {
         requires forall k :: 0 <= k < |b| ==> b[k] == siblingAt(p[..k + 1], r).v
         /** Depending on p[0], `b` projects onto `lc or `rc`. */
         ensures match r
-            case Node(_, lc, rc) =>
+            case Node(_, lc, rc, _) =>
                 forall k :: 0 <= k < |b| - 1 ==>
                 if p[0] == 0 then
                     b[1..][k] == siblingAt(p[1..][..k + 1], lc).v
@@ -59,7 +59,7 @@ module Foo {
                     b[1..][k] == siblingAt(p[1..][..k + 1], rc).v
     {
         match r 
-            case Node(_, lc, rc)=> 
+            case Node(_, lc, rc, _)=> 
                 forall (k : nat | 0 <= k < |b| - 1) 
                     ensures 
                         0 <= k < |b| - 1 ==> 
@@ -81,7 +81,7 @@ module Foo {
                             b[1..][k] ;
                             b[k + 1];
                             siblingAt(p[..k + 1 + 1], r).v;
-                            { foo119(p[..k + 1 + 1], r) ; }
+                            { simplifySiblingAtFirstBit(p[..k + 1 + 1], r) ; }
                             siblingAt(p[..k + 1 + 1][1..], child).v;
                             //  Next step holds because of this equality:
                             calc == {
@@ -133,7 +133,7 @@ module Foo {
             
             
             match r
-                case Node(_, lc, rc) =>
+                case Node(_, lc, rc, _) =>
 
                 // cby definition r.v == f(lc.v, rc.v)
                 //  We show that whatever child is on path `p`  we have 
@@ -173,6 +173,7 @@ module Foo {
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
+        requires isValidIndex(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -190,7 +191,7 @@ module Foo {
 
         ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v
     {
-        t2(r, l, k, p);
+        t2(r, l, k, p, 0);
         
     }
 
@@ -438,6 +439,7 @@ module Foo {
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
+        requires isValidIndex(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -462,7 +464,7 @@ module Foo {
         // var b' : seq<int> :| |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ; 
         var b' := makeB(p, b);
 
-        t2(r, l, k, p);
+        t2(r, l, k, p, 0);
         assert(forall i :: 0 <= i < |p| ==> 
             p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
@@ -487,6 +489,7 @@ module Foo {
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
+        requires isValidIndex(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -515,6 +518,7 @@ module Foo {
     lemma {:induction r} foo111(r : Tree<int>, k : nat) 
 
         requires isCompleteTree(r)
+        requires isValidIndex(r, 0)
         requires height(r) >= 2
         requires k < |leavesIn(r)|
 
@@ -522,15 +526,16 @@ module Foo {
         ensures nodeAt(natToBitList(k, height(r) - 1), r) ==  leavesIn(r)[k]
     {
         completeTreeNumberLemmas(r);
-        foo909(k, height(r) - 1);
+        bitToNatToBitsIsIdentity(k, height(r) - 1);
         assert(bitListToNat(natToBitList(k, height(r) - 1)) == k);
-        foo200(natToBitList(k, height(r) - 1), r, k);
+        foo200(natToBitList(k, height(r) - 1), r, k, 0);
     }
 
     function incMerkle(p: seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) : (int, seq<int>) 
         //  current leaf is not the last one
         requires height(r) >= 2
         requires  isCompleteTree(r)
+        requires isValidIndex(r, 0)
         requires |l| == |leavesIn(r)|
         requires k < |leavesIn(r)| - 1
         requires forall i :: k < i < |l| ==> l[i] == 0
