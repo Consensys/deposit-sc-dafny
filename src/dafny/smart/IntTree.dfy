@@ -117,7 +117,7 @@ module DiffTree {
                 forall (i : int |  0 <= i < |leavesIn(rc)|)
                     ensures leavesIn(rc)[i].v == 0
                     {
-                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         assert(leavesIn(r)[i + power2(height(r) - 1)/2] == leavesIn(rc)[i ]);
                         assert(i + power2(height(r) - 1)/2 < |leavesIn(r)|);
                     }
@@ -212,7 +212,7 @@ module DiffTree {
                                 assert(isCompleteTree(r));
                                 completeTreeNumberLemmas(r);
                                 assert(|l| == power2(height(r) - 1));
-                                completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                                childrenInCompTreesHaveSameNumberOfLeaves(r);
                                 assert(|l[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
                                 assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
                                 assert( k <= |leavesIn(lc)|); 
@@ -261,7 +261,7 @@ module DiffTree {
                                 completeTreeNumberLemmas(r);
                                 nodeLoc2(r, p, k);
                                 assert( k >= power2(height(r) - 1) / 2);
-                                completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                                childrenInCompTreesHaveSameNumberOfLeaves(r);
                                 assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
                                 t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..]);
                                 assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);

@@ -7,9 +7,7 @@ include "CompleteTrees.dfy"
 include "PathInCompleteTrees.dfy"
 include "SeqHelpers.dfy"
 
-
-
- module Foo {
+module Foo {
  
     import opened Trees
     import opened Helpers

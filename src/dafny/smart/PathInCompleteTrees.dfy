@@ -34,9 +34,9 @@ module PathInCompleteTrees {
      *
      *  @returns    The node of the tree that is the target of path `p`.
      */
-    function nodeAt(p : seq<bit>, r: CompTree) : CompTree
+    function nodeAt(p : seq<bit>, r: Tree) : Tree
         requires |p| < height(r) 
-        // requires isCompleteTree(r)
+        requires isCompleteTree(r)
         ensures nodeAt(p, r) in nodesIn(r)
         decreases p
     {
@@ -77,7 +77,7 @@ module PathInCompleteTrees {
     // }
     
 
-    function siblingAt(p : seq<bit>, r :CompTree) : CompTree
+    function siblingAt(p : seq<bit>, r :Tree) : Tree
         requires 1 <= |p| < height(r) 
         requires isCompleteTree(r)
     {
@@ -87,7 +87,7 @@ module PathInCompleteTrees {
             nodeAt(p[..|p| - 1] + [0], r)
     }      
 
-    // lemma {:induction p} foo222(p : seq<bit>, r :CompTree)
+    // lemma {:induction p} foo222(p : seq<bit>, r :Tree)
     //     requires 1 <= |p| < height(r) 
     //     ensures siblingAt(p, r)  == nodeAt(p[..|p| - 1] + [1 - p[|p| - 1]], r)
     // {}
@@ -98,8 +98,9 @@ module PathInCompleteTrees {
      *   
      *  @note   The proof of this lemma was extremelly tedious. 
      */
-    lemma {:induction r} foo119(p : seq<bit>, r :CompTree)
+    lemma {:induction r} foo119(p : seq<bit>, r :Tree)
         requires 2 <= |p| < height(r) 
+        requires isCompleteTree(r)
         ensures match r 
             case Node(_, lc, rc) =>
                 siblingAt(p, r) == 
@@ -162,7 +163,7 @@ module PathInCompleteTrees {
     // }
 
 
-    // lemma foo900(p : seq<bit>, r : CompTree, a : bit) 
+    // lemma foo900(p : seq<bit>, r : Tree, a : bit) 
     //     requires 0 <= |p| < height(r) - 1
     //     requires isCompleteTree(r)
     //     ensures siblingAt(p + [a], r) == nodeAt(p + [1 - a], r)      
@@ -211,7 +212,7 @@ module PathInCompleteTrees {
     //     }
     // }  
 
-    lemma foo901(p : seq<bit>, r : CompTree) 
+    lemma foo901(p : seq<bit>, r : Tree) 
         requires 1 <= |p| < height(r) 
         requires isCompleteTree(r)
         
@@ -219,7 +220,7 @@ module PathInCompleteTrees {
         // && nodeAt(p + [0], r) == nodeAt([0], nodeAt(p, r))
     { }
 
-    lemma foo902(p : seq<bit>, r : CompTree, a : bit) 
+    lemma foo902(p : seq<bit>, r : Tree, a : bit) 
         requires 1 <= |p| < height(r) - 1
         requires isCompleteTree(r)
         
@@ -264,7 +265,7 @@ module PathInCompleteTrees {
     }
 
    
-    lemma nodeLoc(r :  CompTree, p : seq<bit>) 
+    lemma nodeLoc(r :  Tree, p : seq<bit>) 
         requires 1 <= |p| == height(r) - 1
         requires isCompleteTree(r)
 
@@ -274,7 +275,7 @@ module PathInCompleteTrees {
                 &&
                 p[0] == 1 ==> nodeAt(p, r) in leavesIn(rc)
 
-    lemma nodeLoc2(r :  CompTree, p : seq<bit>, k : nat) 
+    lemma nodeLoc2(r :  Tree, p : seq<bit>, k : nat) 
         requires 1 <= |p| == height(r) - 1
         requires isCompleteTree(r)
         // requires isValidIndex(r, p')
@@ -291,7 +292,7 @@ module PathInCompleteTrees {
                 (p[0] == 1 && k >= power2(height(r) - 1)/2)
 
 
-    lemma foo302(p : seq<bit>, r :  CompTree, k : nat) 
+    lemma foo302(p : seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
@@ -319,7 +320,7 @@ module PathInCompleteTrees {
                         //  left lc
                         assert(nodeAt(p, r) == nodeAt(p[1..], lc));
                         //  HI on rc
-                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         nodeLoc2(r, p, k);
                         assert( k < power2(height(r) - 1)/ 2);
                         assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
@@ -327,7 +328,7 @@ module PathInCompleteTrees {
                     } else {
                         //  p[0] == 1
                         assert(nodeAt(p, r) == nodeAt(p[1..], rc));
-                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         nodeLoc2(r, p, k);
                         assert( k >= power2(height(r) - 1)/ 2);
                         assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
@@ -337,7 +338,7 @@ module PathInCompleteTrees {
         }
     }
 
-     lemma foo203(p : seq<bit>, r :  CompTree, k : nat) 
+     lemma foo203(p : seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
@@ -366,7 +367,7 @@ module PathInCompleteTrees {
                         //  left lc
                         assert(nodeAt(p, r) == nodeAt(p[1..], lc));
                         //  HI on rc
-                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         nodeLoc2(r, p, k);
                         assert( k < power2(height(r) - 1)/ 2);
                         assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
@@ -374,7 +375,7 @@ module PathInCompleteTrees {
                     } else {
                         //  p[0] == 1
                         assert(nodeAt(p, r) == nodeAt(p[1..], rc));
-                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         nodeLoc2(r, p, k);
                         assert( k >= power2(height(r) - 1)/ 2);
                         assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
@@ -385,7 +386,7 @@ module PathInCompleteTrees {
         }
     }
 
-     lemma {:induction r} foo200(p : seq<bit>, r :  CompTree, k : nat) 
+     lemma {:induction r} foo200(p : seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
@@ -402,7 +403,7 @@ module PathInCompleteTrees {
     /**
      *  A path to a leaf of index < |leavesin{r)| -1 has a zero in it.
      */
-    lemma {:induction p} pathToLeafInInitHasZero(p: seq<bit>, r :  CompTree, k : nat)
+    lemma {:induction p} pathToLeafInInitHasZero(p: seq<bit>, r :  Tree, k : nat)
         requires |p| == height(r) - 1
         requires isCompleteTree(r)
         requires k < |leavesIn(r)| - 1
@@ -426,10 +427,10 @@ module PathInCompleteTrees {
                         //  k >= power2(height(r) -1 ) /2 by
                         nodeLoc2(r, p, k);
                         //  leavesIn(r)[k] == leavesIn(rc)[k - power2(height(r) - 1)/2]
-                        completeTreesLeftRightChildrenLeaves(r, height(r));
+                        childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
                         var k' := k - power2(height(r) - 1) / 2;
                         assert(leavesIn(r)[k] == leavesIn(rc)[k']);
-                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         //  induction on rc
                         pathToLeafInInitHasZero(p[1..], rc, k');
             }
@@ -440,7 +441,7 @@ module PathInCompleteTrees {
      *  A path to a leaf which is not the rightmost one must have 
      *  a zero.
      */
-    lemma {:induction p} foo450(p: seq<bit>, r :  CompTree, k : nat) 
+    lemma {:induction p} foo450(p: seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1
         requires 0 <= k < |leavesIn(r)| - 1
@@ -464,11 +465,12 @@ module PathInCompleteTrees {
                         assert(1 <= |p[1..]|);
                         assert(nodeAt(p, r) == nodeAt(p[1..], rc));
                         // assert(|leavesIn(rc)| == )
-                        completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                        childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
                         assert(p[0] == 1);
                         nodeLoc2(r, p, k);
                         assert( 0 <= k - power2(height(r) - 1) / 2);
                         assert( k - power2(height(r) - 1)/ 2 < |leavesIn(rc)| - 1);
+                        // assert(nodeAt(p[1..],rc) == );
                         foo450(p[1..], rc, k - power2(height(r) - 1)/2);
                         assert(exists i ::  0 <= i < |p[1..]| && p[1..][i] == 0); 
                         // var i :|  0 <= i < |p[1..]| && p[1..][i] == 0 ;
@@ -476,7 +478,7 @@ module PathInCompleteTrees {
         }
     } 
 
-    // lemma foo201(p: seq<bit>, r :  CompTree, k : nat )
+    // lemma foo201(p: seq<bit>, r :  Tree, k : nat )
     //     requires isCompleteTree(r)
     //     requires 2 <= |p| == height(r) - 1
     //     requires 0 <= k < (|leavesIn(r)| - 1)/2 - 1
@@ -500,7 +502,7 @@ module PathInCompleteTrees {
     /**
      *  Next path from a leaf must go to the next leaf
      */
-     lemma {:induction r} nextPathNextLeaf(p: seq<bit>, r :  CompTree, k : nat) 
+     lemma {:induction r} nextPathNextLeaf(p: seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)                              // 1.
         requires 1 <= |p| == height(r) - 1                      // 2.
         requires 0 <= k < |leavesIn(r)| - 1                     // 3.
@@ -521,7 +523,7 @@ module PathInCompleteTrees {
 
     }
 
-    lemma {:induction p} foo707(p: seq<bit>, r :  CompTree, k : nat)
+    lemma {:induction p} foo707(p: seq<bit>, r :  Tree, k : nat)
         requires isCompleteTree(r)                              
         requires 1 <= |p| == height(r) - 1                      
         requires 0 <= k < |leavesIn(r)| - 1                     
@@ -540,7 +542,7 @@ module PathInCompleteTrees {
        foo707b(p, r);
     }
 
-     lemma foo707b(p: seq<bit>, r :  CompTree)
+     lemma foo707b(p: seq<bit>, r :  Tree)
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1                      
         // requires 0 <= k < |nodesIn(r)| - 1                     
@@ -660,7 +662,7 @@ module PathInCompleteTrees {
         ensures (s[.. |s| - 1] + [a])[..|s|] ==  s[.. |s| - 1] + [a]
     {}
 
-    function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, r :  CompTree<T>, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>) : seq<T>
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1      
         requires exists i :: 0 <= i < |p| && p[i] == 0
@@ -692,7 +694,7 @@ module PathInCompleteTrees {
                 computeLeftSiblingOnNextPath(p[.. |p| - 1], r, v1[..|p| - 1], v2[..|p| - 1]) + [v1[|p| - 1 ]]
     } 
 
-    lemma foo500<T>(p: seq<bit>, r :  CompTree<T>, v1 : seq<T>, v2 : seq<T>)
+    lemma foo500<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>)
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1      
 

@@ -16,7 +16,10 @@ include "Trees2.dfy"
 include "Helpers.dfy"
 
 /**
- *     Provide complete trees.
+ *  Provide complete trees.
+ *  
+ *  A complete tree is a leaf of a node such that every outgoing branch
+ *  has the same height.    
  */
 module CompleteTrees { 
 
@@ -24,17 +27,20 @@ module CompleteTrees {
     import opened Helpers
 
     /**
-     *  Each type T has a default value.
+     *  We assume each type T has a default value i.e. is inhabited.
      */
-    function method default<T>() : T 
+    // function method default<T>() : T 
 
-    type CompTree<T> = r: Tree<T> | isCompleteTree(r) witness Leaf(default<T>())
+    /**
+     *   A complete tree is a tree that satisfies the `isCompleteTree` predicate.
+     */
+    // type CompTree<T> = r: Tree<T> | isCompleteTree(r) witness Leaf(default<T>())
  
     /**
      *  Complete trees.
      *
      *  @param  root    The root node of the tree.
-     *  @returns        True if and only if the tree rooted at root is complete
+     *  @returns        True if and only if the tree rooted at root is complete.
      */
     predicate isCompleteTree(root : Tree) 
         decreases root
@@ -48,13 +54,13 @@ module CompleteTrees {
                 && isCompleteTree(lc) && isCompleteTree(rc)
     }
 
-    
     //  Helper lemmas for complete trees.
 
     /**
      *  Relation between height and number of leaves in a complete tree.
      */
-    lemma {:induction root} completeTreeNumberLemmas(root : CompTree) 
+    lemma {:induction root} completeTreeNumberLemmas(root : Tree) 
+        requires isCompleteTree(root)
         ensures |leavesIn(root)| == power2(height(root) - 1)
         ensures |nodesIn(root)| == power2(height(root)) - 1
     {   //  Thanks Dafny
@@ -63,7 +69,9 @@ module CompleteTrees {
     /**
      *  Two complete tree of same height have same number of leaves.
      */
-    lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: CompTree, r2: CompTree) 
+    lemma {:induction r1, r2} completeTreesOfSameHeightHaveSameNumberOfLeaves(r1: Tree, r2: Tree) 
+        requires isCompleteTree(r1)
+        requires isCompleteTree(r2)
         ensures height(r1) == height(r2) ==> |leavesIn(r1)| == |leavesIn(r2)|
     {   //  Thanks Dafny
     }
@@ -71,19 +79,24 @@ module CompleteTrees {
     /**
      *  Children of a node in a complete tree have same number of leaves.
      */
-    lemma {:induction r} completeTreesLeftRightHaveSameNumberOfLeaves(r : CompTree) 
+    lemma {:induction r} childrenInCompTreesHaveSameNumberOfLeaves(r : Tree) 
         requires height(r) >= 2
+        requires isCompleteTree(r)
         ensures match r
             case Node(_, lc, rc) => 
                 |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r) - 1) / 2
     {
         match r 
             case Node(_, lc, rc) =>
-                completeTreesOfSameHeightHaveSameNumberOfLeaves(lc,rc);
+                completeTreesOfSameHeightHaveSameNumberOfLeaves(lc, rc);
     }
 
-    lemma {:induction r} completeTreesLeftRightChildrenLeaves(r : CompTree, h : nat) 
+    /**
+     *  Children of a node r in a complete tree evenly partition leavesIn(r).
+     */
+    lemma {:induction r} childrenInCompTreesHaveHalfNumberOfLeaves(r : Tree, h : nat) 
         requires h == height(r) >= 2
+        requires isCompleteTree(r)
         ensures |leavesIn(r)| == power2(h - 1)
         ensures match r
             case Node(_, lc, rc) => 
@@ -95,10 +108,7 @@ module CompleteTrees {
         } else {
             match r
                 case Node(_, lc, rc) => 
-                    completeTreesLeftRightHaveSameNumberOfLeaves(r);
+                    childrenInCompTreesHaveSameNumberOfLeaves(r);
         }
     }
-
- 
-
 }

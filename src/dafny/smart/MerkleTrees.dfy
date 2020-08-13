@@ -62,21 +62,27 @@ module MerkleTrees {
 
     /**
      *  Whether the tree is a Merkle Tree for a given list of elements.
+     *  
+     *  @param  root    A complete tree.
+     *  @param  l       A list of values.
+     *  @param  f       A binary operation.
+     *  @returns        True if and only if the tree is decorated with f
+     *                  and the leaves's values agree with `l`.
      *
      *  The tree must be:
      *      1.  complete
      *      2.  the values on the internal nodes correspond to the value of
      *          synthesised attribute `f`.
      *      3.  the leaves (in-order) hold the values of `l`
-     *     
+     *
+     *  @todo   Change the name at some point as Merkle is used for hash attribute.
      */
     predicate isMerkle2<T>(root: Tree<T>, l: seq<T>, f : (T, T) -> T) 
         requires |l| == |leavesIn(root)|
     {
-        isCompleteTree(root)                                            //  1.
-        && isDecoratedWith(f, root)                                     //  2.
-        && forall i :: 0 <= i < |l| ==> l[i] == leavesIn(root)[i].v     //  3.
-           
+        isCompleteTree(root)
+        && isDecoratedWith(f, root)                                     
+        && forall i :: 0 <= i < |l| ==> l[i] == leavesIn(root)[i].v                
     }
 
     // lemma {:induction h} isMerkleChildren<T>(r: Tree<T>, l: seq<T>, f : (T, T) -> T, default: T, h : nat)
@@ -99,8 +105,15 @@ module MerkleTrees {
     /**
      *  For tree of height >= 2, Merkle projects onto lc and rc for 
      *  split list. 
+     *  @param  root    A complete tree.
+     *  @param  l       A list of values.
+     *  @param  f       A binary operation.
+     *  @param  h       The height of the tree.
+     *  @returns        True if and only if the tree is decorated with f
+     *                  and the leaves's values agree with `l`.
+     *
      */
-    lemma {:induction h} isMerkleChildren2<T>(r: Tree<T>, l: seq<T>, f : (T, T) -> T, h : nat)
+    lemma {:induction h} treeIsMerkleImpliesChildrenAreMerkle<T>(r: Tree<T>, l: seq<T>, f : (T, T) -> T, h : nat)
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, f)
         requires h == height(r) >= 2
@@ -117,14 +130,9 @@ module MerkleTrees {
         if h == 2 {
             //  Thanks Dafny
         } else {
-            completeTreesLeftRightChildrenLeaves(r, h);
+            childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
         }
     }
-
-    /**
-     *  Default value for a given type.
-     */
-    // function default<T>() : T 
 
    /** 
     *  Defines the Tree associated with a given sequence.
