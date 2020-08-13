@@ -27,16 +27,6 @@ module CompleteTrees {
     import opened Helpers
 
     /**
-     *  We assume each type T has a default value i.e. is inhabited.
-     */
-    // function method default<T>() : T 
-
-    /**
-     *   A complete tree is a tree that satisfies the `isCompleteTree` predicate.
-     */
-    // type CompTree<T> = r: Tree<T> | isCompleteTree(r) witness Leaf(default<T>())
- 
-    /**
      *  Complete trees.
      *
      *  @param  root    The root node of the tree.
