@@ -136,16 +136,10 @@ module Trees {
      *  @param  r   The root of the tree.
      *  @param  p   The prefix used for the id. 
      */
-    predicate isValidIndex(r: Tree, i : nat) 
-        // decreases r
+    predicate hasLeavesIndexedFrom(r: Tree, i : nat) 
     {
         forall k::0 <= k < |leavesIn(r)|  ==> 
             leavesIn(r)[k].index == k + i
-    //    match r 
-    //         case Leaf(_, id) => id == p
-
-    //         case Node(_, lc, rc, id) =>
-    //             id == p && isValidIndex(lc, p + [0]) && isValidIndex(rc, p + [1]) 
     }
 
     
