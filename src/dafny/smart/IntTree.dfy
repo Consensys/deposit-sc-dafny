@@ -185,7 +185,7 @@ module DiffTree {
                             assert(siblingAt(p[..1], r) ==  rc);
                             assert(siblingAt(p[..1], r) ==  leavesIn(r)[1]);
                             assert(|leavesIn(r)| == 2);
-                            nodeLoc2(r, p, k, j);
+                            initPathDeterminesIndex(r, p, k, j);
                             assert(k < 1);
                 } else {
                     //  p[0] == 1 
@@ -199,7 +199,7 @@ module DiffTree {
                         if (p[0] == 0) {
                             completeTreeNumberLemmas(r);
                             assert( k < power2(height(r) - 1));
-                            nodeLoc2(r, p, k, j);
+                            initPathDeterminesIndex(r, p, k, j);
                             assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
                             //  siblings in lc
                             if ( i >= 1 ) {
@@ -266,7 +266,7 @@ module DiffTree {
                                 assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
                             } else {
                                 completeTreeNumberLemmas(r);
-                                nodeLoc2(r, p, k, j);
+                                initPathDeterminesIndex(r, p, k, j);
                                 assert( k >= power2(height(r) - 1) / 2);
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
                                 assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);

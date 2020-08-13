@@ -151,12 +151,17 @@ module PathInCompleteTrees {
         }
     }
 
-    lemma nodeLoc2(r :  Tree, p : seq<bit>, k : nat, i : nat) 
-        requires 1 <= |p| == height(r) - 1
+    /**
+     *  Initial path determines index range.
+     */
+    lemma {:induction r} initPathDeterminesIndex(r : Tree, p : seq<bit>, k : nat, i : nat) 
         requires isCompleteTree(r)
-        requires k < power2(height(r) - 1)
-        requires k < |leavesIn(r)|
+        /** Path to a leaf. */
+        requires 1 <= |p| == height(r) - 1
+        requires k < power2(height(r) - 1) == |leavesIn(r)|
+        /** p is a path to the k-th leaf. */
         requires hasLeavesIndexedFrom(r, i)
+
         requires nodeAt(p,r) == leavesIn(r)[k]
 
         ensures match r 
@@ -168,26 +173,24 @@ module PathInCompleteTrees {
         childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
     }
 
-    lemma foo302(p : seq<bit>, r :  Tree, k : nat, i : nat) 
+    /**
+     *  A path to the k-th leaf is the binary encoding of k.
+     */
+    lemma {:induction p} pathToIndexIsBinaryOfIndex(p : seq<bit>, r :  Tree, k : nat, i : nat) 
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
         requires hasLeavesIndexedFrom(r, i)
         requires nodeAt(p, r) == leavesIn(r)[k]
         ensures bitListToNat(p) == k
+        decreases p 
     {
         if |p| == 1 {
+            initPathDeterminesIndex(r, p, k, i);
             if p[0] == 0 {
-                nodeLoc2(r, p, k, i);
-                assert(k == 0);
-                assert(bitListToNat(p) == 0);
-                assert(nodeAt(p, r) == leavesIn(r)[0]);
+                assert(bitListToNat(p) == 0 == k);
             } else {
-                assert(p[0] == 1);
-                nodeLoc2(r, p, k, i);
-                assert(k == 1);
-                assert(bitListToNat(p) == 1);
-                assert(nodeAt(p, r) == leavesIn(r)[k]);
+                assert(bitListToNat(p) == 1 == k);
             }
         } else {
             //  r is not a leaf
@@ -198,20 +201,20 @@ module PathInCompleteTrees {
                         assert(nodeAt(p, r) == nodeAt(p[1..], lc));
                         //  HI on rc
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
-                        nodeLoc2(r, p, k, i);
+                        initPathDeterminesIndex(r, p, k, i);
                         assert( k < power2(height(r) - 1)/ 2);
                         assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
 
                         childrenCompTreeValidIndex(r, height(r), i);
 
-                        foo302(p[1..], lc, k, i);
+                        pathToIndexIsBinaryOfIndex(p[1..], lc, k, i);
                     } else {
                         //  p[0] == 1
                         assert(nodeAt(p, r) == nodeAt(p[1..], rc));
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
                         assert(nodeAt(p, r) == nodeAt(p, r));
 
-                        nodeLoc2(r, p, k, i);
+                        initPathDeterminesIndex(r, p, k, i);
                         assert( k >= power2(height(r) - 1)/ 2);
                         assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
                         // assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
@@ -220,17 +223,16 @@ module PathInCompleteTrees {
                         //  induction on 
                         var k' := k - power2(height(r) - 1)/ 2 ;
                         assert(leavesIn(r)[k] == leavesIn(rc)[k']);
-                        foo302(p[1..], rc, k',  i + power2(height(r) - 1) / 2);
+                        pathToIndexIsBinaryOfIndex(p[1..], rc, k',  i + power2(height(r) - 1) / 2);
 
-                        // assert(leavesIn(r)[k] == leavesIn(rc)[k']);
-                        
-
-                        // foo302(p[1..], rc, k');
                     }
         }
     }
 
-lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat) 
+    /**
+     *  Leaf at path is indexed by intvalue of path.
+     */
+    lemma leafAtPathIsIntValueOfPath(p : seq<bit>, r :  Tree, k : nat, i : nat) 
         requires isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, i)
         requires 1 <= |p| == height(r) - 1 
@@ -241,13 +243,13 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
     {
         if |p| == 1 {
             if p[0] == 0 {
-                nodeLoc2(r, p, k, i);
+                initPathDeterminesIndex(r, p, k, i);
                 assert(k == 0);
                 assert(bitListToNat(p) == 0);
                 assert(nodeAt(p, r) == leavesIn(r)[0]);
             } else {
                 assert(p[0] == 1);
-                nodeLoc2(r, p, k, i);
+                initPathDeterminesIndex(r, p, k, i);
                 assert(k == 1);
                 assert(bitListToNat(p) == 1);
                 assert(nodeAt(p, r) == leavesIn(r)[k]);
@@ -262,7 +264,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
                         assert(nodeAt(p, r) == nodeAt(p[1..], lc));
                         //  HI on rc
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
-                        nodeLoc2(r, p, k, i);
+                        initPathDeterminesIndex(r, p, k, i);
                         assert( k < power2(height(r) - 1)/ 2);
                         assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
                         // foo302(p[1..], lc, k);
@@ -281,28 +283,30 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
                         assert(nodeAt(p[1..], rc) == nodeAt(p, r));
                         // assert(nodeAt(p, r) == leavesIn(r)[k]);
 
-                        foo203(p[1..], rc, k', i + power2(height(r) - 1) / 2);
+                        leafAtPathIsIntValueOfPath(p[1..], rc, k', i + power2(height(r) - 1) / 2);
                         assert(nodeAt(p[1..], rc) == leavesIn(rc)[k']);
                         assert( leavesIn(rc)[k'] == leavesIn(r)[k]);
-                        nodeLoc2(rc, p[1..], k', i + power2(height(r) - 1) / 2);
+                        initPathDeterminesIndex(rc, p[1..], k', i + power2(height(r) - 1) / 2);
                         // assume( nodeAt(p, r) == leavesIn(r)[k]);
                     }
         }
     }
 
-    lemma {:induction r} foo200(p : seq<bit>, r :  Tree, k : nat, i : nat) 
+    /**
+     *  One-to-one correspondence between path an index of leaf.
+     */
+    lemma {:induction r} indexOfLeafisIntValueOfPath(p : seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)
-        requires hasLeavesIndexedFrom(r, i)
+        requires hasLeavesIndexedFrom(r, 0)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
         ensures bitListToNat(p) == k <==> nodeAt(p, r) == leavesIn(r)[k]
     {
         if (bitListToNat(p) == k) {
-            foo203(p, r, k, i);
+            leafAtPathIsIntValueOfPath(p, r, k, 0);
         } else if ( nodeAt(p, r) == leavesIn(r)[k]) {
-            foo302(p, r, k, i);
+            pathToIndexIsBinaryOfIndex(p, r, k, 0);
         }
-        
     }
 
     /**
@@ -318,8 +322,8 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
         decreases p 
     {
         if |p| == 1 {
-            //  k < |leavesIn(r)| <==> k < 1 <==> k == 0, apply nodeLoc2 ==> p[0] == 0
-            nodeLoc2(r, p, k, i);
+            //  k < |leavesIn(r)| <==> k < 1 <==> k == 0, apply initPathDeterminesIndex ==> p[0] == 0
+            initPathDeterminesIndex(r, p, k, i);
         } else {
             if p[0] == 0 {
                 //  p[0] is a witness
@@ -332,7 +336,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
                         childrenInCompTreesHaveHalfNumberOfLeaves(r , height(r));
 
                         //  k >= power2(height(r) -1 ) /2 by
-                        nodeLoc2(r, p, k, i);
+                        initPathDeterminesIndex(r, p, k, i);
 
                         var k' := k - power2(height(r) - 1) / 2;
                         //  induction on rc
@@ -341,23 +345,27 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
         }
     }
 
-  /**
+   /**
      *  A path to a leaf which is not the rightmost one must have 
      *  a zero.
+     *
+     *  @todo simplify this lemma by establishing a property on bitListToNat:
+     *  bitListtoNat(p) == power2(n) - 1 iff the first n bits are 1.
      */
-    lemma {:induction p} foo450(p: seq<bit>, r :  Tree, k : nat, i : nat) 
+    lemma {:induction p} aPathToNonLastLeafhasZero(p: seq<bit>, r :  Tree, k : nat, i : nat) 
         requires isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, i)
         requires 1 <= |p| == height(r) - 1
         requires 0 <= k < |leavesIn(r)| - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
-        ensures  exists i ::  0 <= i < |p| && p[i] == 0 
+        ensures  exists i :: 0 <= i < |p| && p[i] == 0 
         decreases p 
     {
+        
         if |p| == 1 {
             //  Thanks Dafny
             assert(k == 0);
-            nodeLoc2(r, p, k, i);
+            initPathDeterminesIndex(r, p, k, i);
             assert(p[0] == 0);
         } else {
             if p[0] == 0 {
@@ -372,11 +380,11 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
                         // assert(|leavesIn(rc)| == )
                         childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
                         assert(p[0] == 1);
-                        nodeLoc2(r, p, k, i);
+                        initPathDeterminesIndex(r, p, k, i);
                         assert( 0 <= k - power2(height(r) - 1) / 2);
                         assert( k - power2(height(r) - 1)/ 2 < |leavesIn(rc)| - 1);
                         // assert(nodeAt(p[1..],rc) == );
-                        foo450(p[1..], rc, k - power2(height(r) - 1)/2, i + power2(height(r) - 1) / 2);
+                        aPathToNonLastLeafhasZero(p[1..], rc, k - power2(height(r) - 1)/2, i + power2(height(r) - 1) / 2);
                         assert(exists i ::  0 <= i < |p[1..]| && p[1..][i] == 0); 
                         // var i :|  0 <= i < |p[1..]| && p[1..][i] == 0 ;
             }
@@ -386,7 +394,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
     /**
      *  Next path from a leaf must go to the next leaf
      */
-     lemma {:induction r} nextPathNextLeaf(p: seq<bit>, r :  Tree, k : nat) 
+    lemma {:induction r} nextPathNextLeaf(p: seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)                              // 1.
         requires hasLeavesIndexedFrom(r, 0)
         requires 1 <= |p| == height(r) - 1                      // 2.
@@ -396,19 +404,21 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
         ensures  nodeAt(nextPath(p), r) == leavesIn(r)[k + 1]   //  P2
     {
         //  proof of P1
-        foo450(p, r, k, 0);
+        aPathToNonLastLeafhasZero(p, r, k, 0);
         //   proof of P2
         nextPathIsSucc(p);
         assert(bitListToNat(nextPath(p)) == bitListToNat(p) + 1);
-        foo200(p, r, k, 0);
+        indexOfLeafisIntValueOfPath(p, r, k);
         assert(bitListToNat(p) == k);
         assert(bitListToNat(nextPath(p)) == k + 1);
-        foo200(nextPath(p), r, k + 1,0);
-
-
+        indexOfLeafisIntValueOfPath(nextPath(p), r, k + 1);
     }
 
-    lemma {:induction p} foo707(p: seq<bit>, r :  Tree, k : nat)
+    /**
+     *  Left siblings of nextPath(p) are either nodes of p or
+     *  left siblings of p.
+     */
+    lemma {:induction p, r} leftSiblingAtNextPathOnPathOrSiblingOfPath(p: seq<bit>, r :  Tree, k : nat)
         requires isCompleteTree(r)      
         requires hasLeavesIndexedFrom(r, 0)                        
         requires 1 <= |p| == height(r) - 1                      
@@ -424,19 +434,19 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
                         siblingAt(nextPath(p)[..i + 1], r) == siblingAt(p[..i + 1], r)
                     )
     {
-       foo450(p, r , k, 0) ;
-       foo707b(p, r);
+       aPathToNonLastLeafhasZero(p, r , k, 0) ;
+       leftSiblingAtNextPathOnPathOrSiblingOfPathSub(p, r);
     }
 
-lemma foo707b(p: seq<bit>, r :  Tree)
+    /**
+     *  Left siblings of nextPath are on path or are sibling of path.
+     */
+    lemma {:induction p, r} leftSiblingAtNextPathOnPathOrSiblingOfPathSub(p: seq<bit>, r :  Tree)
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1                      
-        // requires 0 <= k < |nodesIn(r)| - 1                     
-        // requires nodeAt(p, r) == nodesIn(r)[k]                 
         requires exists i ::  0 <= i < |p| && p[i] == 0
         ensures (
                 forall i :: 0 <= i < |p| 
-                    // && exists i ::  0 <= i < |p| && p[i] == 0
                     && nextPath(p)[i] == 1 ==> 
                     (
                         siblingAt(nextPath(p)[..i + 1], r) == nodeAt(p[..i + 1], r)
@@ -444,6 +454,7 @@ lemma foo707b(p: seq<bit>, r :  Tree)
                         siblingAt(nextPath(p)[..i + 1], r) == siblingAt(p[..i + 1], r)
                     )
         )
+        decreases p
     {
         if |p| == 1 {
             forall( i : int | 0 <= i < |p| && nextPath(p)[i] == 1) 
@@ -522,7 +533,7 @@ lemma foo707b(p: seq<bit>, r :  Tree)
 
                     if ( i < |p| - 1) {
                         //  induction on p[..|p| - 1]
-                        foo707b(p[.. |p| - 1], r);
+                        leftSiblingAtNextPathOnPathOrSiblingOfPathSub(p[.. |p| - 1], r);
 
                         assert(siblingAt(nextPath(p[.. |p| - 1 ])[..i + 1], r) == nodeAt(p[..|p| - 1][..i + 1], r)
                         ||
@@ -548,6 +559,15 @@ lemma foo707b(p: seq<bit>, r :  Tree)
         ensures (s[.. |s| - 1] + [a])[..|s|] ==  s[.. |s| - 1] + [a]
     {}
 
+    /**
+     *  Compute the left siblings of nextPath.
+     *
+     *  @param  p   A path.
+     *  @param  r   The root of the tree.
+     *  @param  v1  The values of the nodes on the path.
+     *  @param  v2  The values of the nodes that are left siblings of nodes on the path.
+     *  @returns    The values of the nodes that are left siblings of nextPath(p).
+     */
     function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>) : seq<T>
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1      
@@ -559,6 +579,8 @@ lemma foo707b(p: seq<bit>, r :  Tree)
             p[i] == 1 ==> v2[i] == siblingAt(p[.. i + 1],r).v 
 
         ensures |computeLeftSiblingOnNextPath(p, r, v1, v2)| == |v1|
+
+        decreases p
     {
         if |p| == 1 then
             assert(p[0] == 0);
@@ -580,7 +602,10 @@ lemma foo707b(p: seq<bit>, r :  Tree)
                 computeLeftSiblingOnNextPath(p[.. |p| - 1], r, v1[..|p| - 1], v2[..|p| - 1]) + [v1[|p| - 1 ]]
     } 
 
-    lemma foo500<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>)
+    /**
+     *  computeLeftSiblingOnNextPath returns values on left siblings of next path.
+     */
+    lemma computeOnNextPathCollectsValuesOfNextLeftSiblings<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>)
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1      
 
@@ -735,7 +760,7 @@ lemma foo707b(p: seq<bit>, r :  Tree)
                         }
                         
                         //  Induction hypothesis on p[.. |p| - 1], ... 
-                        foo500(p[.. |p| - 1], r, v1[..|p| - 1] , v2[..|p| - 1]);
+                        computeOnNextPathCollectsValuesOfNextLeftSiblings(p[.. |p| - 1], r, v1[..|p| - 1] , v2[..|p| - 1]);
 
                         calc {
                             computeLeftSiblingOnNextPath(p[..|p| - 1], r, v1[..|p| - 1], v2[..|p| - 1])[i] ;

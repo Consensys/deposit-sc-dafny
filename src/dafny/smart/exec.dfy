@@ -534,7 +534,7 @@ module Foo {
 
         assert(bitListToNat(p) == k);
         assert(1 <= |p| == height(r) - 1);
-        foo200(p, r, k, 0);
+        indexOfLeafisIntValueOfPath(p, r, k);
         assert(bitListToNat(p) == k ==> nodeAt(p, r) == leavesIn(r)[k]);
         assert(nodeAt(p, r) == leavesIn(r)[k]);
     }
