@@ -15,7 +15,7 @@
 include "Helpers.dfy"
 
 /**
- *  Provide tree decorated with value and indexed trees.
+ *  Provide tree decorated with attribute values.
  */
 module Trees {
 
@@ -51,9 +51,8 @@ module Trees {
      *
      *  @param  root    The root of the tree.
      *
-     *  @return         The sequence of nodes/leaves that corresponds to the pre-order 
-     *                  (node, left, right) traversal of a tree.
-     *  @todo           We don't really need that but only the number of nodes.
+     *  @return         The sequence of nodes (including leaves) that corresponds to 
+     *                  the pre-order (node, left, right) traversal of a tree.
      */
     function method nodesIn(root : Tree) : seq<Tree>
         decreases root
@@ -70,15 +69,13 @@ module Trees {
      *
      *  @return         The leaves as a sequence from left to right in-order 
      *                  traversal (left, node, right).
-     *
-     *  @todo           We don't really need that but only the values of the leaves.
-     *
      */
     function method leavesIn(root : Tree) : seq<Tree>
-        /** All the collected nodes are leaves. */
+        /** Sanity check: All the collected nodes are leaves. */
         ensures forall i :: 0 <= i < |leavesIn(root)| ==>  leavesIn(root)[i].Leaf?
         /** All the leaves are collected. */
         ensures forall n :: n in nodesIn(root) && n.Leaf? ==> n in leavesIn(root)
+        ensures forall n :: n in leavesIn(root) ==> n in nodesIn(root) && n.Leaf? 
         decreases root
     {
         match root 
@@ -87,31 +84,34 @@ module Trees {
                 leavesIn(lc) + leavesIn(rc) 
     }
 
-    
-    //  Predicates 
+    //  Predicates on Trees.
 
     /**
-     *  Check that a decorated tree correctly stores the f attribute. 
+     *  Check that a decorated tree correctly stores the synthesised attribute f. 
+     *
+     *  @param  t       The function to compute the attribute on a node
+     *                  given the values on the children.
+     *  @param  root    The root that defines the tree.
+     *
+     *  @note           We assume that the synthesised attribute is given
+     *                  on the leaves and is not computed on them. 
      */
     predicate isDecoratedWith<T>(f : (T, T) -> T, root: Tree<T>)
         decreases root
     {
         match root
-
-            case Leaf(v) => 
-                    //  leaves define the attributes
-                    true
+            case Leaf(v) => true
 
             case Node(v, lc, rc) => 
-                    //  Recursive definition for an internal node: children are
-                    //  well decorated and node value if the f between children.
+                    //  Recursive definition for an internal node: children 
+                    //  are well decorated and node's value is f applied to children.
                     v == f(lc.v, rc.v)
                     && isDecoratedWith(f, lc)
                     && isDecoratedWith(f, rc)
     }
 
     /**
-     *  The tree decorated with constant values.
+     *  Check that a tree is decorated with a single value.
      *  
      *  @param  r   A tree.
      *  @param  c   A value.
