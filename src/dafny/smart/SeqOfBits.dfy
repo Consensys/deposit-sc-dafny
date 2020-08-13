@@ -49,10 +49,14 @@ module SeqOfBits {
     } 
 
     /**
-     *  Encode a natural on b bits
+     *  Encode a natural on length bits.
+     *  
+     *  @param  n       A non-negative integer.
+     *  @param  length  A number of bits.
      */
     function natToBitList(n: nat, length: nat) : seq<bit> 
-        requires length >= 1
+        requires 1 <= length 
+        /** Number of bits is sufficient to encode `n`. */
         requires n < power2(length)
         ensures |natToBitList(n, length)| == length
         decreases length
@@ -62,11 +66,37 @@ module SeqOfBits {
         else 
             natToBitList(n / 2, length - 1) +  [(n % 2) as bit]
     }
-    
-    /**
-     *  bitListToNat(natToBitList(.)) is identity.
+
+    /** 
+     *  Compute a path (to next leaf) recursively from end.
+     *  Alternatively binary add one on seq<bit>.
+     *
+     *  @param  p   A sequence of bits.
+     *  @returns    The sequence encoding p + 1 (in binary).
+     *  
+     *  @note   Lemma nextPathIsSucc provides a property of nextPath.
      */
-    lemma {:induction n} foo909(n : nat, length: nat) 
+    function nextPath(p : seq<bit>) : seq<bit> 
+        /** Path has at least on element. */
+        requires |p| >= 1
+        /** Not the path 1+ that has no successors. */
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        ensures |nextPath(p)| == |p|
+
+        decreases p
+    {
+        if p[|p| - 1] == 0 then 
+            p[..|p| - 1] + [1]
+        else 
+           nextPath(p[.. |p| - 1]) + [0]
+    }
+
+    /**
+     *  Involution theorem.
+
+     *  bitListToNat(natToBitList(x)) == x.
+     */
+    lemma {:induction n} bitToNatToBitsIsIdentity(n : nat, length: nat) 
         requires length >= 1
         requires n < power2(length)
         ensures bitListToNat(natToBitList(n, length)) == n 
@@ -78,47 +108,20 @@ module SeqOfBits {
             calc == {
                 bitListToNat(natToBitList(n, length));
                 bitListToNat(natToBitList ( n / 2 , length - 1) + [(n % 2) as bit]);
-                { foo101(natToBitList ( n / 2 , length - 1), (n % 2) as bit ); }
+                { simplifyPrefixBitListToNat(natToBitList( n / 2 , length - 1), (n % 2) as bit); }
                 2 * bitListToNat(natToBitList ( n / 2, length - 1 )) + ((n % 2) as bit) as nat;
-                { foo909( n / 2, length - 1 ); }
+                { bitToNatToBitsIsIdentity( n / 2, length - 1 ); }
                 2 * ( n / 2) + ((n % 2) as bit) as nat;
             }
         }
     }
 
-    // lemma foo777(p: seq<bit>, length : nat)
-    //     ensures natToBitList( power2(k) + )
-
-    // lemma {:induction p} foo919(p: seq<bit>, k : nat)
-    //     requires 1 <= |p| 
-    //     requires 
-    //     ensures natToBitList(bitListToNat(p), |p|) == p
-    // {
-    //     if |p| == 1 {
-    //         //  Thanks Dafny
-    //     } else {
-    //         if p[0] == 1 {
-    //             calc == {
-    //                 natToBitList(bitListToNat(p), |p|);
-    //                 natToBitList(bitListToNat(p) / 2, |p| - 1) +  [(bitListToNat(p) % 2) as bit];
-                     
-    //                 // natToBitList ( (power2(|p| - 1) + bitListToNat(p[1..])) / 2 ) + 
-    //                     // [( (power2(|p| - 1) + bitListToNat(p[1..])) % 2) as bit];
-    //                 //  Induction on p[1..]
-    //                 //  natToBitList ( (power2(|p| - 1) + bitListToNat(p[1..])) / 2 ) + 
-    //                     // [( (power2(|p| - 1) + bitListToNat(p[1..])) % 2) as bit];
-    //             }
-    //         } else {
-    //             //  Direct induction
-    //         }
-            
-    //     }
-    // }
-
     /**
-     *  Relation between bitListToNat( p + x) and bitListToNat(x).
+     *  Relation between bitListToNat(p + x) and bitListToNat(x).
+     *  
+     *  @todo   A not-that-hard but very tedious proof.
      */
-    lemma {:induction p} foo101(p: seq<bit>, a : bit) 
+    lemma {:induction p} simplifyPrefixBitListToNat(p: seq<bit>, a : bit) 
         requires |p| >= 1
         ensures bitListToNat(p + [a]) == 2 * bitListToNat(p) + a as nat
         decreases p
@@ -150,7 +153,7 @@ module SeqOfBits {
                         p[1..] + [a];
                     }
                     power2((|p| + 1) - 1) + bitListToNat(p[1..] + [a]);
-                    //  induction on p[1..] available as foo101(p[1..], a);
+                    //  induction on p[1..] available as simplifyPrefixBitListToNat(p[1..], a);
                 }
             } else {
                 //  p[0] == 0
@@ -178,33 +181,13 @@ module SeqOfBits {
                         p[1..] + [a];
                     }
                     bitListToNat(p[1..] + [a]);
-                    //  Induction on p[1..] available as foo101(p[1..], a);
+                    //  Induction on p[1..] available as simplifyPrefixBitListToNat(p[1..], a);
                 }
             }
         }
     }
 
     //  Some properties of seq<bit> that encode paths in a binary tree.
-
-    /** 
-     *  Compute a path (to next leaf) recursively from end.
-     *  
-     *  @note   Lemma nextPathIsSucc provides a property of nextPath.
-     */
-    function nextPath(p : seq<bit>) : seq<bit> 
-        /** Path has at least on element. */
-        requires |p| >= 1
-        /** Not the path 1+ that has no successors. */
-        requires exists i :: 0 <= i < |p| && p[i] == 0
-        ensures |nextPath(p)| == |p|
-
-        decreases p
-    {
-        if p[|p| - 1] == 0 then 
-            p[..|p| - 1] + [1]
-        else 
-           nextPath(p[.. |p| - 1]) + [0]
-    }
 
     /**
      *  The number represented by nextPath(p) is the successor of the
@@ -222,35 +205,52 @@ module SeqOfBits {
             //  Thanks Dafny
         } else {
             if p[|p| - 1] == 0 {
-                assert(nextPath(p) == p[..|p| - 1] + [1]);
-                assert( p == p[..|p| - 1] + [0]);
-                foo101(p[..|p| - 1], 0);
-                assert(bitListToNat(p) == 2 * bitListToNat(p[..|p| - 1]));
-                foo101(p[..|p| - 1], 1);
-                assert(bitListToNat(nextPath(p)) == 2 * bitListToNat(p[..|p| - 1]) + 1);
-            } else {
-                //  last of p is 1
-                assert(p[|p| - 1] == 1);
-                assert( p == p[..|p| - 1] + [1]);
-
-                //  def of next path
-                assert(nextPath(p) == nextPath(p[..|p| - 1]) + [0]);
-
-                assert(exists i :: 0 <= i < |p| && i != |p| - 1 && p[i] == 0);
-              
-                assert(exists i :: 0 <= i < |p| - 1 && p[i] == 0);
-                // This implies the pre-condition of this lemma on |p[..|p| - 1]|
-                // Induction on p[..|p| - 1]
-                assert(bitListToNat(nextPath(p[..|p| - 1])) == bitListToNat(p[..|p| - 1]) + 1);
-                // //  binListToNat suffix
-                foo101(p[..|p| - 1], 1);
-                assert( bitListToNat(p) == 2 * bitListToNat(p[..|p| - 1]) + 1);
-
-                calc {
+                //  we want bitListToNat(nextPath(p)) ==  bitListToNat(p) + 1
+                calc == {
+                    bitListToNat(p);
+                    calc == {
+                        p;
+                        p[..|p| - 1] + [0];
+                    }
+                    bitListToNat(p[..|p| - 1] + [0]);
+                    { simplifyPrefixBitListToNat(p[..|p| - 1], 0) ;}
+                    2 * bitListToNat(p[..|p| - 1]);
+                }
+                calc == {
                     bitListToNat(nextPath(p));
-                    == 
+                    calc == {
+                        nextPath(p);
+                        p[..|p| - 1] + [1];
+                    }
+                    bitListToNat(p[..|p| - 1] + [1]);
+                    { simplifyPrefixBitListToNat(p[..|p| - 1], 1); }
+                    2 * bitListToNat(p[..|p| - 1]) + 1;
+                    bitListToNat(p) + 1;
+                } 
+            } else {
+                //  we want bitListToNat(nextPath(p)) ==  bitListToNat(p) + 1
+                //  last of p is 1
+                calc == {
+                    bitListToNat(p);
+                    calc == {
+                        p;
+                        p[..|p| - 1] + [p[|p| - 1]];
+                        { assert(p[|p| - 1] == 1); }
+                        p[..|p| - 1] + [1];
+                    }
+                    bitListToNat(p[..|p| - 1] + [1]);
+                    { simplifyPrefixBitListToNat(p[..|p| - 1], 1); }
+                    2 * bitListToNat(p[..|p| - 1]) + 1 ;
+                }
+                calc == {
+                    bitListToNat(nextPath(p));
+                    calc == {
+                        nextPath(p);
+                        nextPath(p[..|p| - 1] + [1]);
+                        nextPath(p[..|p| - 1]) + [0];
+                    }
                     bitListToNat(nextPath(p[..|p| - 1]) + [0]);
-                    == { foo101(nextPath(p[..|p| - 1]), 0);}
+                    == { simplifyPrefixBitListToNat(nextPath(p[..|p| - 1]), 0);}
                     2 * bitListToNat(nextPath(p[..|p| - 1]));
                     == { nextPathIsSucc(p[..|p| - 1]) ; } 
                     2 * (bitListToNat(p[..|p| - 1]) + 1) ;
