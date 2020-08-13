@@ -4,7 +4,7 @@
 include "MerkleTrees.dfy"
 include "SeqOfBits.dfy"
 include "CompleteTrees.dfy"
-include "PathInCompleteTrees2.dfy"
+include "PathInCompleteTrees.dfy"
 include "SeqHelpers.dfy"
 
 module Foo {
@@ -51,7 +51,7 @@ module Foo {
         requires forall k :: 0 <= k < |b| ==> b[k] == siblingAt(p[..k + 1], r).v
         /** Depending on p[0], `b` projects onto `lc or `rc`. */
         ensures match r
-            case Node(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
                 forall k :: 0 <= k < |b| - 1 ==>
                 if p[0] == 0 then
                     b[1..][k] == siblingAt(p[1..][..k + 1], lc).v
@@ -59,7 +59,7 @@ module Foo {
                     b[1..][k] == siblingAt(p[1..][..k + 1], rc).v
     {
         match r 
-            case Node(_, lc, rc, _)=> 
+            case Node(_, lc, rc) => 
                 forall (k : nat | 0 <= k < |b| - 1) 
                     ensures 
                         0 <= k < |b| - 1 ==> 
@@ -133,7 +133,7 @@ module Foo {
             
             
             match r
-                case Node(_, lc, rc, _) =>
+                case Node(_, lc, rc) =>
 
                 // cby definition r.v == f(lc.v, rc.v)
                 //  We show that whatever child is on path `p`  we have 
@@ -522,7 +522,7 @@ module Foo {
         requires height(r) >= 2
         requires k < |leavesIn(r)|
 
-        ensures k < power2(height(r) - 1) 
+        ensures k < power2(height(r) - 1)  
         ensures nodeAt(natToBitList(k, height(r) - 1), r) ==  leavesIn(r)[k]
     {
         completeTreeNumberLemmas(r);

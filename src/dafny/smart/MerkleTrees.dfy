@@ -119,7 +119,7 @@ module MerkleTrees {
         requires h == height(r) >= 2
         ensures |l| == power2(height(r) - 1)
         ensures match r 
-            case Node(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
                 |leavesIn(lc)| == power2(height(r) - 1)/2
                 && |l[.. power2(height(r) - 1)/2]| <=  |leavesIn(lc)|
                 && isMerkle2(lc, l[..  power2(height(r) - 1)/2], f)

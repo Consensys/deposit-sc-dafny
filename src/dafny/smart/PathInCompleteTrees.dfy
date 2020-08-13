@@ -45,7 +45,7 @@ module PathInCompleteTrees {
         else 
             // r must be a node as height(r) > |p| >= 1
             match r 
-                case Node(_, lc, rc, _) => 
+                case Node(_, lc, rc) => 
                     nodeAt(p[1..], if p[0] == 0 then lc else rc)
     }
 
@@ -76,12 +76,12 @@ module PathInCompleteTrees {
         requires 2 <= |p| < height(r) 
         requires isCompleteTree(r)
         ensures match r 
-            case Node(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
                 siblingAt(p, r) == 
                 siblingAt(p[1..], if p[0] == 0 then lc else rc)
     {
         match r 
-            case Node(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
             
                 var oppLastP := 1 - p[|p| - 1];
                 var p1 := p[..|p| - 1];
@@ -136,7 +136,7 @@ module PathInCompleteTrees {
             heightOfNodeAt(p, r) ;
             //  Second part 
             match r 
-                case Node(_, lc, rc, _) => 
+                case Node(_, lc, rc) => 
                     calc == {
                         nodeAt(p + [a], r);
                         ==
@@ -160,7 +160,7 @@ module PathInCompleteTrees {
         requires nodeAt(p,r) == leavesIn(r)[k]
 
         ensures match r 
-            case Node(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
                 (p[0] == 0 && k < power2(height(r) - 1)/2)
                 ||
                 (p[0] == 1 && k >= power2(height(r) - 1)/2)
@@ -192,7 +192,7 @@ module PathInCompleteTrees {
         } else {
             //  r is not a leaf
             match r 
-                case Node(_, lc, rc, _) => 
+                case Node(_, lc, rc) => 
                     if p[0] == 0 {
                         //  left lc
                         assert(nodeAt(p, r) == nodeAt(p[1..], lc));
@@ -255,7 +255,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
         } else {
             //  r is not a leaf
             match r 
-                case Node(_, lc, rc, _) => 
+                case Node(_, lc, rc) => 
                     childrenCompTreeValidIndex(r, height(r), i);
                     if p[0] == 0 {
                         //  left lc
@@ -326,7 +326,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
             } else {
                 //  r is a node (not a leaf) and path leads to a node in rc
                 match r
-                    case Node(_, lc, rc, _) =>
+                    case Node(_, lc, rc) =>
                         //  Use relation on leavesIn(rc) and leavesIn(r)
                         //  leavesIn(r)[k] == leavesIn(rc)[k - power2(height(r) - 1)/2]
                         childrenInCompTreesHaveHalfNumberOfLeaves(r , height(r));
@@ -365,7 +365,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
             } else {
                 // p[0] == 1, apply to rc
                 match r
-                    case Node(_, _, rc, _)=>
+                    case Node(_, _, rc)=>
                         assert(isCompleteTree(rc));
                         assert(1 <= |p[1..]|);
                         assert(nodeAt(p, r) == nodeAt(p[1..], rc));

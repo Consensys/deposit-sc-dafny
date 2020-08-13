@@ -41,7 +41,7 @@ module CompleteTrees {
             //  A leaf is a complete tree
             case Leaf(_, _) => true
             //  From a root node, a tree is complete if both children have same height
-            case Node(_, lc, rc, _) => 
+            case Node(_, lc, rc) => 
                 && height(lc) == height(rc) 
                 && isCompleteTree(lc) && isCompleteTree(rc)
     }
@@ -75,11 +75,11 @@ module CompleteTrees {
         requires height(r) >= 2
         requires isCompleteTree(r)
         ensures match r
-            case Node(_, lc, rc, _) => 
+            case Node(_, lc, rc) => 
                 |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r) - 1) / 2
     {
         match r 
-            case Node(_, lc, rc, _) =>
+            case Node(_, lc, rc) =>
                 completeTreesOfSameHeightHaveSameNumberOfLeaves(lc, rc);
     }
 
@@ -91,7 +91,7 @@ module CompleteTrees {
         requires isCompleteTree(r)
         ensures |leavesIn(r)| == power2(h - 1)
         ensures match r
-            case Node(_, lc, rc, _) => 
+            case Node(_, lc, rc) => 
                 leavesIn(lc) == leavesIn(r)[.. power2(h - 1) / 2]
                 && leavesIn(rc) == leavesIn(r)[power2(height(r) - 1) / 2 ..]
     {
@@ -99,7 +99,7 @@ module CompleteTrees {
             //  Thanks Dafny
         } else {
             match r
-                case Node(_, lc, rc, _) => 
+                case Node(_, lc, rc) => 
                     childrenInCompTreesHaveSameNumberOfLeaves(r);
         }
     }
@@ -109,14 +109,14 @@ module CompleteTrees {
         requires h == height(r) >= 2
         requires isCompleteTree(r)
         ensures match r
-            case Node(_, lc, rc, _) => 
+            case Node(_, lc, rc) => 
                 isValidIndex(lc, i)
                 && isValidIndex(rc, i + power2(height(r) - 1) / 2)
     {
         if h == 2 {
             //  
             match r
-            case Node(_, lc, rc, _) => 
+            case Node(_, lc, rc) => 
                 // assert(lc.Leaf?);
                 // assert(rc.Leaf?);
                 assert(leavesIn(r) == [lc, rc]);

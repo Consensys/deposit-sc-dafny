@@ -31,7 +31,7 @@ module Trees {
      */
     datatype Tree<T> = 
             Leaf(v: T, ghost index : nat)
-        |   Node(v: T, left: Tree, right: Tree, ghost id : seq<bit>)
+        |   Node(v: T, left: Tree, right: Tree)
 
     /**
      *  Height of a tree.
@@ -45,7 +45,7 @@ module Trees {
     {
         match root 
             case Leaf(_, _) => 1
-            case Node(_, lc, rc, _) => 1 + max(height(lc), height(rc))
+            case Node(_, lc, rc) => 1 + max(height(lc), height(rc))
     }
     
     /**
@@ -61,7 +61,7 @@ module Trees {
     {
         match root 
             case Leaf(_, _) => [ root ] 
-            case Node(_, lc, rc, _) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
+            case Node(_, lc, rc) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
     }
 
     /**
@@ -82,7 +82,7 @@ module Trees {
     {
         match root 
             case Leaf(_,_) => [ root ] 
-            case Node(_, lc, rc, _) =>  
+            case Node(_, lc, rc) =>  
                 leavesIn(lc) + leavesIn(rc) 
     }
 
@@ -104,7 +104,7 @@ module Trees {
         match root
             case Leaf(v, _) => true
 
-            case Node(v, lc, rc, _) => 
+            case Node(v, lc, rc) => 
                     //  Recursive definition for an internal node: children 
                     //  are well decorated and node's value is f applied to children.
                     v == f(lc.v, rc.v)
@@ -124,7 +124,7 @@ module Trees {
     {
         match r 
             case Leaf(v,_) => v == c
-            case Node(v, lc, rc,_) => v == c
+            case Node(v, lc, rc) => v == c
                             && isConstant(lc, c) 
                             && isConstant(rc, c)
     }

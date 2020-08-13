@@ -17,7 +17,7 @@ include "Trees2.dfy"
 include "MerkleTrees.dfy"
 include "SeqOfBits.dfy"
 include "CompleteTrees.dfy"
-include "PathInCompleteTrees2.dfy"
+include "PathInCompleteTrees.dfy"
 include "SeqHelpers.dfy"
 
 module DiffTree {
@@ -109,11 +109,11 @@ module DiffTree {
         requires forall i :: k <= i < |l| ==> l[i] == 0
 
         ensures match r 
-            case Node(_, lc, rc , _) =>
+            case Node(_, lc, rc) =>
                 forall i :: 0 <= i < |leavesIn(rc)| ==> leavesIn(rc)[i].v == 0
     {   
         match r 
-            case Node(_, lc, rc, _ )=>
+            case Node(_, lc, rc) =>
                 forall (i : int |  0 <= i < |leavesIn(rc)|)
                     ensures leavesIn(rc)[i].v == 0
                     {
@@ -135,10 +135,10 @@ module DiffTree {
         requires forall i :: k <= i < |l| ==> l[i] == 0
         
         ensures match r 
-            case Node(_, lc, rc, _) => rc.v == 0
+            case Node(_, lc, rc) => rc.v == 0
     {   
         match r 
-            case Node(_, lc, rc , _)=>
+            case Node(_, lc, rc)=>
                 p3(r, l, k);
                 allLeavesZeroImplyAllNodesZero(rc);
     }
@@ -179,7 +179,7 @@ module DiffTree {
                 childrenCompTreeValidIndex(r, height(r), j);
                 if (p[0] == 0) {
                     match r 
-                        case Node(_, lc, rc, _ )=> 
+                        case Node(_, lc, rc) => 
                             assert(siblingAt(p[..1], r) ==  rc);
                             assert(siblingAt(p[..1], r) ==  leavesIn(r)[1]);
                             assert(|leavesIn(r)| == 2);
@@ -192,7 +192,7 @@ module DiffTree {
             } else {
                 //  height(r) >= 3, so lc and rc have children
                 match r
-                    case Node(v, lc, rc, _ )=> 
+                    case Node(v, lc, rc) => 
                         childrenCompTreeValidIndex(r, height(r), j);
                         if (p[0] == 0) {
                             completeTreeNumberLemmas(r);
