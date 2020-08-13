@@ -105,13 +105,13 @@ module CompleteTrees {
     }
 
     lemma {:induction r} childrenCompTreeValidIndex(r : Tree, h : nat, i : nat)
-        requires isValidIndex(r, i)
+        requires hasLeavesIndexedFrom(r, i)
         requires h == height(r) >= 2
         requires isCompleteTree(r)
         ensures match r
             case Node(_, lc, rc) => 
-                isValidIndex(lc, i)
-                && isValidIndex(rc, i + power2(height(r) - 1) / 2)
+                hasLeavesIndexedFrom(lc, i)
+                && hasLeavesIndexedFrom(rc, i + power2(height(r) - 1) / 2)
     {
         if h == 2 {
             //  

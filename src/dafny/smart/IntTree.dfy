@@ -149,7 +149,7 @@ module DiffTree {
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
-        requires isValidIndex(r, j)
+        requires hasLeavesIndexedFrom(r, j)
 
         /** Proper indexing. */
 

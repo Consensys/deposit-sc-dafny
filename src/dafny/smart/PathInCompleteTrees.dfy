@@ -156,7 +156,7 @@ module PathInCompleteTrees {
         requires isCompleteTree(r)
         requires k < power2(height(r) - 1)
         requires k < |leavesIn(r)|
-        requires isValidIndex(r, i)
+        requires hasLeavesIndexedFrom(r, i)
         requires nodeAt(p,r) == leavesIn(r)[k]
 
         ensures match r 
@@ -172,7 +172,7 @@ module PathInCompleteTrees {
         requires isCompleteTree(r)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
-        requires isValidIndex(r, i)
+        requires hasLeavesIndexedFrom(r, i)
         requires nodeAt(p, r) == leavesIn(r)[k]
         ensures bitListToNat(p) == k
     {
@@ -232,7 +232,7 @@ module PathInCompleteTrees {
 
 lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat) 
         requires isCompleteTree(r)
-        requires isValidIndex(r, i)
+        requires hasLeavesIndexedFrom(r, i)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
         requires bitListToNat(p) == k
@@ -292,7 +292,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
 
     lemma {:induction r} foo200(p : seq<bit>, r :  Tree, k : nat, i : nat) 
         requires isCompleteTree(r)
-        requires isValidIndex(r, i)
+        requires hasLeavesIndexedFrom(r, i)
         requires 1 <= |p| == height(r) - 1 
         requires k < |leavesIn(r)|
         ensures bitListToNat(p) == k <==> nodeAt(p, r) == leavesIn(r)[k]
@@ -311,7 +311,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
     lemma {:induction p} pathToLeafInInitHasZero(p: seq<bit>, r :  Tree, k : nat, i : nat)
         requires |p| == height(r) - 1
         requires isCompleteTree(r)
-        requires isValidIndex(r, i)
+        requires hasLeavesIndexedFrom(r, i)
         requires k < |leavesIn(r)| - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
         ensures exists i :: 0 <= i < |p| && p[i] == 0
@@ -347,7 +347,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
      */
     lemma {:induction p} foo450(p: seq<bit>, r :  Tree, k : nat, i : nat) 
         requires isCompleteTree(r)
-        requires isValidIndex(r, i)
+        requires hasLeavesIndexedFrom(r, i)
         requires 1 <= |p| == height(r) - 1
         requires 0 <= k < |leavesIn(r)| - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
@@ -388,7 +388,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
      */
      lemma {:induction r} nextPathNextLeaf(p: seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)                              // 1.
-        requires isValidIndex(r, 0)
+        requires hasLeavesIndexedFrom(r, 0)
         requires 1 <= |p| == height(r) - 1                      // 2.
         requires 0 <= k < |leavesIn(r)| - 1                     // 3.
         requires nodeAt(p, r) == leavesIn(r)[k]                 // 4.
@@ -410,7 +410,7 @@ lemma foo203(p : seq<bit>, r :  Tree, k : nat, i : nat)
 
     lemma {:induction p} foo707(p: seq<bit>, r :  Tree, k : nat)
         requires isCompleteTree(r)      
-        requires isValidIndex(r, 0)                        
+        requires hasLeavesIndexedFrom(r, 0)                        
         requires 1 <= |p| == height(r) - 1                      
         requires 0 <= k < |leavesIn(r)| - 1                     
         requires nodeAt(p, r) == leavesIn(r)[k]                 

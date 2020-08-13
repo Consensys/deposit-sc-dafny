@@ -173,7 +173,7 @@ module Foo {
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
-        requires isValidIndex(r, 0)
+        requires hasLeavesIndexedFrom(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -439,7 +439,7 @@ module Foo {
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
-        requires isValidIndex(r, 0)
+        requires hasLeavesIndexedFrom(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -489,7 +489,7 @@ module Foo {
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
-        requires isValidIndex(r, 0)
+        requires hasLeavesIndexedFrom(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -518,7 +518,7 @@ module Foo {
     lemma {:induction r} foo111(r : Tree<int>, k : nat) 
 
         requires isCompleteTree(r)
-        requires isValidIndex(r, 0)
+        requires hasLeavesIndexedFrom(r, 0)
         requires height(r) >= 2
         requires k < |leavesIn(r)|
 
@@ -543,7 +543,7 @@ module Foo {
         //  current leaf is not the last one
         requires height(r) >= 2
         requires  isCompleteTree(r)
-        requires isValidIndex(r, 0)
+        requires hasLeavesIndexedFrom(r, 0)
         requires |l| == |leavesIn(r)|
         requires k < |leavesIn(r)| - 1
         requires forall i :: k < i < |l| ==> l[i] == 0
