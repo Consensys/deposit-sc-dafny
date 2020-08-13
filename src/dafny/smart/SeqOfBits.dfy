@@ -74,7 +74,8 @@ module SeqOfBits {
      *  @param  p   A sequence of bits.
      *  @returns    The sequence encoding p + 1 (in binary).
      *  
-     *  @note   Lemma nextPathIsSucc provides a property of nextPath.
+     *  @note       Lemma nextPathIsSucc proves that 
+     *              bitListToNat(nextPath(p)) == bitListToNat(p) + 1.
      */
     function nextPath(p : seq<bit>) : seq<bit> 
         /** Path has at least on element. */
@@ -264,5 +265,4 @@ module SeqOfBits {
             }
         }
     } 
-
 }
