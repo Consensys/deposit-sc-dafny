@@ -155,21 +155,25 @@ module DiffTree {
                 allLeavesZeroImplyAllNodesZero(rc);
     }
 
-    lemma {:induction r} t2(r: Tree<int>, l : seq<int>, k : nat, p: seq<bit>, j : nat) 
+    /**
+     *  For a Merkle tree, if all the leaves on right side of the node after the path
+     *  are zero, then all the right siblings on the path hold a zero value.
+     */
+    lemma {:induction r} leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r: Tree<int>, l : seq<int>, k : nat, p: seq<bit>, j : nat) 
 
         /** Merkle tree. */
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
-        requires hasLeavesIndexedFrom(r, j)
 
         /** Proper indexing. */
+        requires hasLeavesIndexedFrom(r, j)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
         requires forall i :: k < i < |l| ==> l[i] == 0
 
-        /** p is the path to k leaf in r. */
+        /** p is the path to k-th leaf in r. */
         requires |p| == height(r) - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
 
@@ -235,7 +239,7 @@ module DiffTree {
                                 assert(|l[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
                                 assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
                                 assert( k <= |leavesIn(lc)|); 
-                                t2(lc, l[.. power2(height(r) - 1)/2], k, p[1..], j);
+                                leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(lc, l[.. power2(height(r) - 1)/2], k, p[1..], j);
 
                                 assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
 
@@ -282,7 +286,7 @@ module DiffTree {
                                 assert( k >= power2(height(r) - 1) / 2);
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
                                 assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
-                                t2(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..],
+                                leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..],
                                  j + power2(height(r) - 1)/2);
                                 assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
                                 // prefixOfSuffix(p, i);   
