@@ -82,15 +82,6 @@ module DiffTree {
     }
 
     /**
-     *  Equivalent characterisation of zero trees.
-     */
-    // lemma {:induction r} isZeroTreeiffAllNodesZero2(r : Tree<int>) 
-    //         ensures (forall l :: l in nodesIn(r) ==> l.v == 0) <==> isZeroTree(r)
-    //         // ensures (forall l :: l in leavesIn(r) ==> l.v == 0) <==> isZeroTree(r)
-    // {   //  Thanks Dafny
-    // } 
-
-    /**
      *  If all leaves are zero and tree is decorated with diff, then
      *  all nodes are zero.
      */
