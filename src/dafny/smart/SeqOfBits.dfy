@@ -265,4 +265,12 @@ module SeqOfBits {
             }
         }
     } 
+
+    lemma {:induction p} valueOfSeqOfOnes(p : seq<bit>)
+        requires |p| >= 1
+        requires forall i :: 0 <= i < |p| ==> p[i] == 1
+        ensures bitListToNat(p) == power2(|p|) - 1
+    {   //  Thanks Dafny
+    }
+    
 }
