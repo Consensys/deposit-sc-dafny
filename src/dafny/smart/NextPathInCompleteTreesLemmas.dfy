@@ -31,7 +31,7 @@ module NextPathInCompleteTreesLemmas {
     /**
      *  Next path from a leaf must go to the next leaf
      */
-    lemma nextPathNextLeaf(p: seq<bit>, r :  Tree, k : nat) 
+    lemma {:induction p, r} nextPathNextLeaf(p: seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)                              // 1.
         requires hasLeavesIndexedFrom(r, 0)
         requires 1 <= |p| == height(r) - 1                      // 2.
@@ -41,7 +41,7 @@ module NextPathInCompleteTreesLemmas {
         ensures  nodeAt(nextPath(p), r) == leavesIn(r)[k + 1]   //  P2
     {
         //  proof of P1
-        aPathToNonLastLeafhasZero(p, r, k, 0);
+        pathToLeafInInitHasZero(p, r, k);
         //   proof of P2
         nextPathIsSucc(p);
         assert(bitListToNat(nextPath(p)) == bitListToNat(p) + 1);
@@ -55,7 +55,7 @@ module NextPathInCompleteTreesLemmas {
      *  Left siblings of nextPath(p) are either nodes of p or
      *  left siblings of p.
      */
-    lemma {:induction p, r, k} leftSiblingAtNextPathOnPathOrSiblingOfPath(p: seq<bit>, r :  Tree, k : nat)
+    lemma {:induction p, r} leftSiblingAtNextPathOnPathOrSiblingOfPath(p: seq<bit>, r :  Tree, k : nat)
         requires isCompleteTree(r)      
         requires hasLeavesIndexedFrom(r, 0)                        
         requires 1 <= |p| == height(r) - 1                      
@@ -71,14 +71,15 @@ module NextPathInCompleteTreesLemmas {
                         siblingAt(nextPath(p)[..i + 1], r) == siblingAt(p[..i + 1], r)
                     )
     {
-       aPathToNonLastLeafhasZero(p, r , k, 0) ;
+       pathToLeafInInitHasZero(p, r , k) ;
        foo32(p, r);
     }
 
     /**
      *  Left siblings of nextPath are on path or are sibling of path.
+     *  This lemma does not seem to be used anywhere.
      */
-    lemma foo32(p: seq<bit>, r :  Tree)
+    lemma {:induction p, r} foo32(p: seq<bit>, r :  Tree)
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1                      
         requires exists i ::  0 <= i < |p| && p[i] == 0
