@@ -149,6 +149,8 @@ module DiffTree {
     /**
      *  For a Merkle tree, if all the leaves on right side of the node after the path
      *  are zero, then all the right siblings on the path hold a zero value.
+     *
+     *  @note       The proof has several cases but is not hard.
      */
     lemma {:induction r} leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r: Tree<int>, l : seq<int>, k : nat, p: seq<bit>, j : nat) 
 
@@ -175,6 +177,7 @@ module DiffTree {
         decreases r
 
     {   
+        //  The tree is properly indexed and lc and rc properly indexed.
         childrenCompTreeValidIndex(r, height(r), j);
 
         forall ( i : nat | 0 <= i < |p|)
@@ -182,125 +185,116 @@ module DiffTree {
         {
             if (height(r) == 2) {
                 //  Thanks Dafny
-                assert(|p| == 1);
-                // assume(isValidIndex(r,j));
-                // assert(isCompleteTree(r));
-                childrenCompTreeValidIndex(r, height(r), j);
-                if (p[0] == 0) {
-                    match r 
-                        case Node(_, lc, rc) => 
-                            assert(siblingAt(p[..1], r) ==  rc);
-                            assert(siblingAt(p[..1], r) ==  leavesIn(r)[1]);
-                            assert(|leavesIn(r)| == 2);
-                            initPathDeterminesIndex(r, p, k, j);
-                            assert(k < 1);
-                } else {
-                    //  p[0] == 1 
-                    assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
+                if ( p[0] == 0 ) {
+                    calc == {
+                        siblingAt(p[..1], r).v ;
+                        nodeAt([1], r).v;
+                        { initPathDeterminesIndex(r, p, k, j); }
+                        //  implies k == 0 and hence nodeAt([1], r).v == 0
+                        0;
+                    }
                 }
             } else {
                 //  height(r) >= 3, so lc and rc have children
                 match r
                     case Node(v, lc, rc) => 
-                        childrenCompTreeValidIndex(r, height(r), j);
                         if (p[0] == 0) {
+                            //  number of nodes and leaves in complete trees.
                             completeTreeNumberLemmas(r);
                             assert( k < power2(height(r) - 1));
+
+                            //  First bit of a path determines range for index of target leaf.
                             initPathDeterminesIndex(r, p, k, j);
                             assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
-                            //  siblings in lc
-                            if ( i >= 1 ) {
-                            
-                                assert(height(lc) >= 2);
-                                assert(0 <= |p[..i][1..]| );
-                                assert (0 <= |p[..i][1..]| < height(lc));
-                                assert(isCompleteTree(lc));
-                                assert( p == [0] + p[1..]);
 
-                                simplifySiblingAtFirstBit(p[..i + 1], r);
-                                // assert(siblingAt(p[..i + 1], r) == nodeAt(p[..i + 1], r));
-                                // assert(nodeAt(p[..i + 1], r) == nodeAt(p[..i + 1][1..], lc));
-                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[..i + 1][1..], lc));
-
-
-                                assert(isCompleteTree(r));
-                                completeTreeNumberLemmas(r);
-                                assert(|l| == power2(height(r) - 1));
+                            //  Conclusion if i == 0 sibling is rc, and otherwise
+                            //  siblings are in lc
+                            if ( i == 0 ) {
+                                //  p[0] == 0 and i == 0
+                                calc == {
+                                    siblingAt(p[..0 + 1], r).v;
+                                    siblingAt([p[0]], r).v;
+                                    nodeAt([p[0]][..|[p[0]]| - 1] + [1] , r).v;
+                                    nodeAt([1],r).v;
+                                    rc.v ;
+                                    {  rightHalfOfListZeroImpliesRightChildValueZero(r, l, k + 1); }
+                                    0;
+                                }
+                            }
+                            else {
+                                //   i >= 1, siblings are in lc
+                                //  Check pre-condition before applying induction on lc
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
                                 assert(|l[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
-                                assert(|l[.. power2(height(r) - 1)/2]| == power2(height(r) - 1)/2);
-                                assert( k <= |leavesIn(lc)|); 
-                                leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(lc, l[.. power2(height(r) - 1)/2], k, p[1..], j);
 
+                                //  Induction on lc
+                                leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
+                                    lc, 
+                                    l[.. power2(height(r) - 1)/2],
+                                    k, 
+                                    p[1..], 
+                                    j);
+
+                                //  We conclude that:
                                 assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
 
-                                // prefixOfSuffix(p, i);   
-                                assert(p[1..][..i] == p[1.. i + 1]); 
-                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], lc));
-                                assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[1..][.. i], lc).v == 0);
-
-                                // prefixOfSuffix(p, i);    
-                                assert(p[i] == 0 ==> siblingAt(p[1..i + 1], lc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
-
-                            } else {
-                                //  p[0] == 0 and i == 0
-                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[..0 + 1], r));
+                                //  We can use the fact that siblingAt(siblingAt(p[..i + 1], r) is
+                                //  siblingAt(p[1..][.. i], lc) and p[1..][i] == p[..i + 1]
+                                simplifySiblingAtFirstBit(p[..i + 1], r);
                                 calc == {
-                                    siblingAt(p[..0 + 1], r);
-                                    siblingAt([p[0]], r);
-                                    nodeAt([p[0]][..|[p[0]]| - 1] + [1] , r);
-                                    nodeAt([1],r);
+                                    siblingAt(p[..i + 1], r);
+                                    siblingAt(p[..i + 1][1..], lc);
+                                    calc == {
+                                        p[1..][..i];
+                                        p[1.. i + 1];
+                                    }
+                                    siblingAt(p[1..][.. i], lc);
                                 }
-                                //  case of first sibling which is rc.
-                                //  All leaves in rc are zero
-                                // p1(r, k);
-                                assert(k + 1 <= power2(height(r) -1 )/ 2);
-                                // foo111(p[..i + 1], r);
-                                // p3(r, l, k + 1);
-                                rightHalfOfListZeroImpliesRightChildValueZero(r, l, k + 1);
-                                //  assume(
-                                //         forall i :: 0 <= i < |p| ==> 
-                                //         p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
-                                //     );
-                            }
-
+                            } 
                         } else {
                             //  p[0] == 1 
-                            //  nothing to prove for siblingAt(p[..1], r).v == 0
-                            if ( i == 0) {
-                                assert(p[0] == 0 ==> siblingAt(p[..1], r).v == 0);
+                            //  Split in case i == 0 and i >= 1
+                            if ( i == 0 ) {
+                                //  nothing to prove as p[0] == 1
                             } else {
+                                //  i >= 1
+                                //  siblingAt(p[..i + 1], r) are  in rc and all leaves in rc are zero
                                 completeTreeNumberLemmas(r);
                                 initPathDeterminesIndex(r, p, k, j);
                                 assert( k >= power2(height(r) - 1) / 2);
+
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
                                 assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
-                                leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(rc, l[power2(height(r) - 1)/2..], k - power2(height(r) - 1)/2, p[1..],
-                                 j + power2(height(r) - 1)/2);
-                                assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
-                                // prefixOfSuffix(p, i);   
-                                assert(p[1..][..i] == p[1.. i + 1]); 
 
+                                //  Induction on rc
+                                leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
+                                    rc, 
+                                    l[power2(height(r) - 1)/2..], 
+                                    k - power2(height(r) - 1)/2,
+                                     p[1..],
+                                    j + power2(height(r) - 1)/2);
+                                //  We conclude that 
+                                assert(forall i :: 0 <= i < |p[1..]| ==> 
+                                    p[1..][i] == 0 ==> siblingAt(p[1..][..i + 1], rc).v == 0);
+
+                                //  We now prove that siblingAt(siblingAt(p[..i + 1], r) is
+                                //  siblingAt(p[1..][.. i], rc) and p[1..][i] == p[..i + 1]
                                 simplifySiblingAtFirstBit(p[..i + 1], r);
-
-                                // assert(siblingAt(p[..i + 1], r) == nodeAt(p[..i + 1], r));
-                                // assert(nodeAt(p[..i + 1], r) == nodeAt(p[..i + 1][1..], rc));
-                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[..i + 1][1..], rc));
-
-                                assert(siblingAt(p[..i + 1], r) == siblingAt(p[1..][.. i], rc));
-                                assert(p[1..][i - 1] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[1..][.. i], rc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[1..i + 1], rc).v == 0);
-                                assert(p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
-
+                                calc == {
+                                    siblingAt(p[..i + 1], r);
+                                    siblingAt(p[..i + 1][1..], rc);
+                                    calc == {
+                                        p[1..][..i];
+                                        p[1.. i + 1];
+                                    }
+                                    siblingAt(p[1..][.. i], rc);
+                                }
+                                //  hence p[].. i + 1] == 0 ==> siblingAt(p[..i + 1], r).v == 0
                             }
                         }   
             }
         }
     }
-
 
     /**
      *  Incremental algorithm.
