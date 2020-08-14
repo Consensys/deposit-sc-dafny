@@ -266,6 +266,9 @@ module SeqOfBits {
         }
     } 
 
+    /**
+     *  if all bits are set,  bitListToNat(p) = 2^p - 1.
+     */
     lemma {:induction p} valueOfSeqOfOnes(p : seq<bit>)
         requires |p| >= 1
         requires forall i :: 0 <= i < |p| ==> p[i] == 1
