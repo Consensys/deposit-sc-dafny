@@ -20,7 +20,7 @@ include "CompleteTrees.dfy"
 include "PathInCompleteTrees.dfy"
 include "SeqHelpers.dfy"
 
-module DiffTree {
+module DiffTree { 
 
     import opened Helpers
     import opened Trees
