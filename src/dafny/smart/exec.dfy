@@ -1,6 +1,6 @@
- include "./Trees2.dfy"
- include "./Helpers.dfy"
- include "./IntTree.dfy"
+include "./Trees2.dfy"
+include "./Helpers.dfy"
+include "./IntTree.dfy"
 include "MerkleTrees.dfy"
 include "SeqOfBits.dfy"
 include "CompleteTrees.dfy"
@@ -191,7 +191,7 @@ module Foo {
 
         ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v
     {
-        t2(r, l, k, p, 0);
+        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, l, k, p, 0);
         
     }
 
@@ -464,7 +464,7 @@ module Foo {
         // var b' : seq<int> :| |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ; 
         var b' := makeB(p, b);
 
-        t2(r, l, k, p, 0);
+        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, l, k, p, 0);
         assert(forall i :: 0 <= i < |p| ==> 
             p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
