@@ -138,9 +138,37 @@ module Trees {
      */
     predicate hasLeavesIndexedFrom(r: Tree, i : nat) 
     {
-        forall k::0 <= k < |leavesIn(r)|  ==> 
+        forall k :: 0 <= k < |leavesIn(r)|  ==> 
             leavesIn(r)[k].index == k + i
     }
 
-    
+    //  Constant tree iff same values on all nodes (and leaves)
+
+     lemma {:induction r} isConstantImpliesSameValuesEveryWhere<T>(r : Tree<T>, c: T)
+        requires isConstant(r, c)
+        ensures  
+            (forall k :: 0 <= k < |nodesIn(r)|  ==> nodesIn(r)[k].v == c)
+            && (forall k :: 0 <= k < |leavesIn(r)|  ==> leavesIn(r)[k].v == c)
+    {}
+
+    lemma {:induction r} sameValuesEveryWhereImpliesIsConstant<T>(r : Tree<T>, c: T)
+        requires forall k :: 0 <= k < |nodesIn(r)|  ==> nodesIn(r)[k].v == c
+        ensures isConstant(r, c) 
+        decreases r 
+    {
+        if (height(r) == 1) {
+            assert(nodesIn(r)[0] == r);
+        } else {
+            match r 
+                case Node(v, lc, rc) =>
+                    assert(nodesIn(r) == [r] + nodesIn(lc) + nodesIn(rc));
+                    assert(nodesIn(lc)  == nodesIn(r)[1..|nodesIn(lc)| + 1]);
+                    assert(nodesIn(rc)  == nodesIn(r)[|nodesIn(lc)| + 1..|nodesIn(r)|]);
+
+                    sameValuesEveryWhereImpliesIsConstant(lc, c);
+                    sameValuesEveryWhereImpliesIsConstant(rc, c);
+                    
+                    assert(nodesIn(r)[0] == r);
+        }
+    }    
 }
