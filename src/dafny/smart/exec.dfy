@@ -42,9 +42,10 @@ module Foo {
     }
 
     /**
-     *  Relate values on siblings of child to suffix of b.
+     *  If a seq of values b corresponds to the values of siblings on a path,
+     *  then p[1..] corresponds to siblings of lc or rc depending on p[0].
      */
-    lemma {:induction r} restrictValuesOnChild<T>(p : seq<bit>, r : Tree<T>, b : seq<T>)  
+    lemma {:induction r} projectValuesOnChild<T>(p : seq<bit>, r : Tree<T>, b : seq<T>)  
         requires 1 <= |p| < height(r) 
         requires isCompleteTree(r)
         requires |b| == |p|
@@ -53,27 +54,43 @@ module Foo {
         ensures match r
             case Node(_, lc, rc) =>
                 forall k :: 0 <= k < |b| - 1 ==>
-                if p[0] == 0 then
-                    b[1..][k] == siblingAt(p[1..][..k + 1], lc).v
-                else 
-                    b[1..][k] == siblingAt(p[1..][..k + 1], rc).v
+                     b[1..][k] == siblingAt(p[1..][..k + 1], if p[0] == 0 then lc else rc).v
     {
         match r 
             case Node(_, lc, rc) => 
                 forall (k : nat | 0 <= k < |b| - 1) 
                     ensures 
                         0 <= k < |b| - 1 ==> 
-                            if p[0] == 0 then
-                                b[1..][k] == siblingAt(p[1..][..k + 1], lc).v
-                            else 
-                                b[1..][k] == siblingAt(p[1..][..k + 1], rc).v   
+                             b[1..][k] == siblingAt(p[1..][..k + 1], if p[0] == 0 then lc else rc).v 
                 {
-                    //  Select child to use in induction according to p[0]
                     if ( k == 0 ) {
-                        assume(if p[0] == 0 then
-                                b[1..][0] == siblingAt(p[1..][..0 + 1], lc).v
-                            else 
-                                b[1..][0] == siblingAt(p[1..][..0 + 1], rc).v   );
+                        //  for k == 0, we cannot use the simplification on first bit of path
+                        //  for siblings, so we do it case by case.
+                        if |p| == 1 {
+                            //  Thanks Dafny.
+                        } else {
+                            //  We need to prove b[1..][0] == siblingAt(p[1..][..0 + 1], if p[0] == 0 then lc else rc).v
+
+                            var child := if p[0] == 0 then lc else rc;
+
+                            calc == {
+                                siblingAt(p[1..][..1], child).v;
+                                siblingAt([p[1]], child).v;
+                                nodeAt([] + [1 - p[1]], child).v;
+                                calc == {
+                                    [] + [1];
+                                    [1];
+                                }
+                                nodeAt([1 - p[1]], child).v;
+                                calc == {
+                                    [] + [1];
+                                    [1];
+                                }
+                                nodeAt([p[0], 1 - p[1]], r).v;
+                                siblingAt([p[0] , p[1]], r).v;
+                                b[1];
+                            }
+                        }
                     } else {
                         assert( k >= 1 );
                         var child := if p[0] == 0 then lc else rc ;
@@ -89,15 +106,7 @@ module Foo {
                                 p[1..][..k + 1];
                             }
                             siblingAt(p[1..][..k + 1], child).v;
-                            // (if p[0] == 0 then
-                            //     b[1..][k] == siblingAt(p[1..][..k + 1], lc).v
-                            // else 
-                            //     b[1..][k] == siblingAt(p[1..][..k + 1], rc).v)  ;
                         }
-                        // assume(if p[0] == 0 then
-                        //         b[1..][0] == siblingAt(p[1..][..0 + 1], lc).v
-                        //     else 
-                        //         b[1..][0] == siblingAt(p[1..][..0 + 1], rc).v   );
                     }
                 }
     }
@@ -144,7 +153,7 @@ module Foo {
 
                 //  this ensures we can use computeOnPathYieldsRootValue inductively
                 //  it proves that b[1..][i] == siblingAt(p[1..][.. i + 1], r).v
-                restrictValuesOnChild(p, r, b);
+                projectValuesOnChild(p, r, b);
                 
                 //  Induction on lc or rc depending on p[0]
                 computeOnPathYieldsRootValue(p[1..], child, b[1..], f, seed);
