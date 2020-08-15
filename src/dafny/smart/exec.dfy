@@ -82,6 +82,27 @@ module Foo {
     }
 
     /**
+     *  Restrict computation to path of length >= 1.
+     */
+     function computeRootPathDiff2(p : seq<bit>, b : seq<int>, seed: int) : int
+        requires |p| >= 1
+        requires |p| == |b|
+        ensures computeRootPathDiff2(p, b, seed) == computeRootPathDiff(p, b, seed)
+        decreases p
+    {
+        if |p| == 1 then 
+            computeRootPathDiff(p, b, seed)
+        else 
+            var r := computeRootPathDiff(p[1..], b[1..], seed);
+            if p[0] == 0 then
+                diff(r, 0)
+            else 
+                diff(b[0], r)
+    }
+
+    // lemma foo606(p : seq<bit>, b : seq<int>, seed: int)
+
+    /**
      *  Compute computeRootPathDiff by pre-computing the last 
      *  step.
      *  This corresponds to computing the value of the penultimate node on the path
@@ -203,6 +224,50 @@ module Foo {
             computeRootPathDiffAndLeftSiblingsUp(
                     p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), [0] + b)
     }
+
+    /**
+     *  For path of size >= 2, computeRootPathDiffAndLeftSiblingsUp and computeRootPathDiffUp
+     *  yield the same result.
+     */
+    lemma {:induction p, b, seed, v1} foo888(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
+        requires |p| == |b|
+        requires |p| >= 1
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 == computeRootPathDiffUp(p, b, seed)
+        decreases p
+    {
+        if |p| == 1 {
+            //  Thanks Dafny
+            calc == {
+                computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0;
+                computeRootPathDiff(p, b, seed);
+                { computeUpEqualsComputeDown(p, b, seed); }
+                computeRootPathDiffUp(p, b, seed);
+            }
+        } else {
+            if p[|p| - 1] == 0 {
+                calc == {
+                    computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0;
+                    computeRootPathDiffAndLeftSiblingsUp(
+                        p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), [diff(seed, 0)] + b).0;
+                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),[diff(seed, 0)] + b); }
+                    computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1], diff(seed, 0));
+                    calc {
+                        p[|p| - 1] == 0;
+                    }
+                    computeRootPathDiffUp(p, b, seed);
+                }
+            } else {
+                calc == {
+                    computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 ;
+                    computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), [0] + b).0;
+                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),[diff(seed, 0)] + b); }
+                    computeRootPathDiffUp(p, b, seed);
+                }
+            }
+        }
+    }
+
 
     /**
      *  Computing up or down yield the same result!
