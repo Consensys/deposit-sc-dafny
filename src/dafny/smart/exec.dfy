@@ -25,7 +25,7 @@ module Foo {
      *  If b and b' agree on values at which p[i] == 1 and b has siblings at p[..], then 
      *  b' has siblings at same location.  
      */
-    lemma siblingsLeft(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat) 
+    lemma {:induction p, r} siblingsLeft(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat) 
         /** Merkle tree. */
         requires height(r) >= 2
         requires |l| == |leavesIn(r)|
@@ -48,14 +48,13 @@ module Foo {
 
         ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v
     {
-        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, l, k, p, 0);
-        
+        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, l, k, p, 0);   
     }
 
     /**
      *  Same as computeRootPath but uses default value 0 on 
      *  right sibling to compute value at root.
-     *  Compute the value on a path by computing on child first.
+     *  Compute the value on a path recursively by computing on children first.
      */
     function computeRootPathDiff(p : seq<bit>, b : seq<int>, seed: int) : int
         requires |p| == |b|
@@ -71,9 +70,16 @@ module Foo {
                 diff(b[0], r)
     }
 
+// lemma foo000<T>(s : seq<T>, a : T) 
+//         requires |s| >= 1
+//         ensures (s[.. |s| - 1] + [a])[..|s|] ==  s[.. |s| - 1] + [a]
+//     {}
+
     /**
      *  Compute computeRootPathDiff by pre-computing the last 
      *  step.
+     *  This corresponds to computing the value of the penultimate node on the path
+     *  and then use it to compute the value on the prefix path (without the last node).
      */
     lemma {:induction p, b} foo506(p : seq<bit>, b : seq<int>, seed: int) 
         requires 1 <= |p| == |b|
@@ -161,8 +167,10 @@ module Foo {
 
     /**
      *  Compute root value starting from end of path.
+     *  Recursive computation by simplifying the last node i.e.
+     *  computing its value and then iterate on the prefix path.
      */
-    function computeRootUp(p : seq<bit>, b : seq<int>, seed: int) : int
+    function computeRootPathDiffUp(p : seq<bit>, b : seq<int>, seed: int) : int
         requires |p| == |b|
         decreases p
     {
@@ -170,15 +178,33 @@ module Foo {
         seed 
     else 
         if p[|p| - 1] == 0 then
-            computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0))
+            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0))
         else        
-            computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed))
+            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed))
+    }
+
+    function computeRootPathDiffAndLeftSiblingsUp(p : seq<bit>, b : seq<int>, seed: int, v2: seq<int>) : (int, seq<int>)
+        requires |p| == |b|
+        decreases p
+    {
+     if |p| == 0 then
+        (seed, []) 
+    else 
+        if p[|p| - 1] == 0 then
+            computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), [diff(seed, 0)] + b)
+        else        
+            computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), [0] + b)
     }
 
     
-    lemma {:induction p, b, seed} foo510(p : seq<bit>, b : seq<int>, seed: int) 
+    /**
+     *  Computing up or down yield the same result!
+     */
+    lemma {:induction p, b, seed} computeUpEqualsComputeDown(p : seq<bit>, b : seq<int>, seed: int) 
         requires |p| == |b|
-        ensures computeRootUp(p, b, seed) == computeRootPathDiff(p, b, seed)
+        ensures computeRootPathDiffUp(p, b, seed) == computeRootPathDiff(p, b, seed)
     {
         if |p| <= 1 {
             //  Thanks Dafny
@@ -187,8 +213,8 @@ module Foo {
             //  Split on values of p[|p| - 1]
             if p[|p| - 1] == 0 {
                 calc == {
-                    computeRootUp(p, b, seed);
-                    computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
+                    computeRootPathDiffUp(p, b, seed);
+                    computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
                     //  Induction assumption
                     computeRootPathDiff(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
                     { foo506(p, b, seed); }
@@ -197,8 +223,8 @@ module Foo {
             } else  {
                 assert(p[|p| - 1] == 1 );
                 calc == {
-                    computeRootUp(p, b, seed);
-                     computeRootUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed));
+                    computeRootPathDiffUp(p, b, seed);
+                     computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed));
                     //  Induction assumption
                     computeRootPathDiff(p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed));
                     { foo506(p, b, seed); }
@@ -212,7 +238,7 @@ module Foo {
      *  Show that if right sibling values are zero,  computeRootPathDiff
      *  computes the same result as computeRootPath.
      */
-    lemma {:induction p} foo304(p : seq<bit>, b : seq<int>, seed: int) 
+    lemma {:induction p} computeRootPathDiffEqualscomputeRootPath(p : seq<bit>, b : seq<int>, seed: int) 
         requires |b| == |p| 
         requires forall i :: 0 <= i < |b| ==> p[i] == 0 ==> b[i] == 0
         ensures computeRootPathDiff(p, b, seed) == computeRootPath(p, b, diff, seed)
@@ -226,7 +252,7 @@ module Foo {
             var r' := computeRootPath(p[1..], b[1..], diff, seed);
 
             //  Use inductive assumption on p[1..], b[1..]
-            foo304(p[1..], b[1..], seed);
+            computeRootPathDiffEqualscomputeRootPath(p[1..], b[1..], seed);
             // HI implies r == r'
             
             calc == {   //  These terms are equal
@@ -332,7 +358,7 @@ module Foo {
 
         computeOnPathYieldsRootValue(p, r, b', diff, leavesIn(r)[k].v);
         assert(computeRootPath(p, b', diff, leavesIn(r)[k].v) ==  r.v);
-        foo304(p, b', leavesIn(r)[k].v);
+        computeRootPathDiffEqualscomputeRootPath(p, b', leavesIn(r)[k].v);
         assert(computeRootPathDiff(p, b',  leavesIn(r)[k].v) == computeRootPath(p, b', diff,  leavesIn(r)[k].v));
 
         sameComputeDiffPath(p, b, b', leavesIn(r)[k].v);
@@ -365,42 +391,17 @@ module Foo {
         //  Values on left sibling are enough to compuute r.v using computeRootPathDiff
         computeOnPathYieldsRootValueDiff(p, l, r, b, k);
         //  Compute computeRootUp yields same value as computeRootPathDiff
-        foo510(p, b, leavesIn(r)[k].v);
-        computeRootUp(p, b, leavesIn(r)[k].v)
+        computeUpEqualsComputeDown(p, b, leavesIn(r)[k].v);
+        computeRootPathDiffUp(p, b, leavesIn(r)[k].v)
     }
 
-    /**
-     *  The binary encoding of k of height(r) - 1 is the path leading to leaf k.
-     */
-    lemma {:induction r} foo111(r : Tree<int>, k : nat) 
-
-        requires isCompleteTree(r)
-        requires hasLeavesIndexedFrom(r, 0)
-        requires height(r) >= 2
-        requires k < |leavesIn(r)|
-
-        ensures k < power2(height(r) - 1)  
-        ensures nodeAt(natToBitList(k, height(r) - 1), r) ==  leavesIn(r)[k]
-    {
-        completeTreeNumberLemmas(r);
-        assert(k < |leavesIn(r)| == power2(height(r) - 1) );
-
-        bitToNatToBitsIsIdentity(k, height(r) - 1);
-
-        var p := natToBitList(k, height(r) - 1) ;
-
-        assert(bitListToNat(p) == k);
-        assert(1 <= |p| == height(r) - 1);
-        indexOfLeafisIntValueOfPath(p, r, k);
-        assert(bitListToNat(p) == k ==> nodeAt(p, r) == leavesIn(r)[k]);
-        assert(nodeAt(p, r) == leavesIn(r)[k]);
-    }
 
     function incMerkle(p: seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) : (int, seq<int>) 
-        //  current leaf is not the last one
+
         requires height(r) >= 2
         requires  isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, 0)
+
         requires |l| == |leavesIn(r)|
         requires k < |leavesIn(r)| - 1
         requires forall i :: k < i < |l| ==> l[i] == 0
@@ -416,10 +417,16 @@ module Foo {
     {
         // var p := natToBitList(k, height(r) - 1);
         assert(|p| == height(r) - 1);
-        foo111(r,k);
+        indexOfLeafisIntValueOfPath(p, r,k);
         // foo200(natToBitList(k, height(r) - 1), r, k);
-
+        // bitToNatToBitsIsIdentity();
+         bitToNatToBitsIsIdentity(k, height(r) - 1);
+        // assert(bitListToNat);
+        // assert(nodeAt(p, r) == leavesIn(r)[k]);
+         indexOfLeafisIntValueOfPath(p, r, k);
+        assert(bitListToNat(p) == k ==> nodeAt(p, r) == leavesIn(r)[k]);
         assert(nodeAt(p, r) == leavesIn(r)[k]);
+
         (computeRootDiffUp(p, l, r, b, k), [])
     }
 
