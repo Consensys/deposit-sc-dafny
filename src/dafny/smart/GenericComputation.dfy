@@ -36,6 +36,8 @@ module GenericComputation {
                 f(b[0], r)
     }
 
+    //  Properties of computeRootPath
+
     /**
      *  If a seq of values b corresponds to the values of siblings on a path,
      *  then p[1..] corresponds to siblings of lc or rc depending on p[0].
@@ -158,7 +160,7 @@ module GenericComputation {
                 calc == {
                     b[0] ;
                     nodeAt([] + [a], r).v;
-                    calc {  //  simplify
+                    calc == {  //  simplify
                         [] + [a];
                         [a];
                     }
