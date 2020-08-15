@@ -114,14 +114,7 @@ module Foo {
                         else diff(b[1..][|b[1..]| - 1], seed)
                         ), 0
                     );
-                    //  by eq1
-                    diff(
-                        computeRootPathDiff(p[1..|p| - 1], b[1..][..|b[1..]| - 1], 
-                        if p[|p| - 1] == 0 then diff(seed, 0)
-                        else diff(b[1..][|b[1..]| - 1], seed)
-                        ), 0
-                    );
-                    //  by eq2
+                    //  by eq1, simplify p[1..][..|p[1..]| - 1] and by eq2 b[1..][..|b[1..]| - 1]
                     diff(
                         computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
                         if p[|p| - 1] == 0 then diff(seed, 0)
@@ -130,7 +123,7 @@ module Foo {
                     );
                 }
             }
-            else {
+            else {  //  p[0] == 1
                 calc == {
                     computeRootPathDiff(p, b, seed);
                     diff(b[0], computeRootPathDiff(p[1..], b[1..], seed));
@@ -141,15 +134,7 @@ module Foo {
                         else diff(b[1..][|b[1..]| - 1], seed)
                         )
                     );
-                    // by eq1 
-                    diff(
-                        b[0],
-                        computeRootPathDiff(p[1..|p| - 1], b[1..][..|b[1..]| - 1], 
-                        if p[|p| - 1] == 0 then diff(seed, 0)
-                        else diff(b[1..][|b[1..]| - 1], seed)
-                        )
-                    );
-                    // by eq2
+                    //  by eq1, simplify p[1..][..|p[1..]| - 1] and by eq2 b[1..][..|b[1..]| - 1]
                     diff(
                         b[0],
                         computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
