@@ -95,6 +95,15 @@ module Foo {
         if |p| == 1 {
             // Thanks Dafny
         } else {
+            //  These equalities are used in the sequel
+            calc == {   // eq1
+                p[1..][..|p[1..]| - 1];
+                p[1..|p| - 1];
+            }
+            calc == {   //  eq2
+                b[1..][..|b[1..]| - 1];
+                b[1..|b| - 1];
+            }
             if p[0] == 0 {
                 calc == {
                     computeRootPathDiff(p, b, seed);
@@ -105,20 +114,14 @@ module Foo {
                         else diff(b[1..][|b[1..]| - 1], seed)
                         ), 0
                     );
-                    calc == {
-                        p[1..][..|p[1..]| - 1];
-                        p[1..|p| - 1];
-                    }
+                    //  by eq1
                     diff(
                         computeRootPathDiff(p[1..|p| - 1], b[1..][..|b[1..]| - 1], 
                         if p[|p| - 1] == 0 then diff(seed, 0)
                         else diff(b[1..][|b[1..]| - 1], seed)
                         ), 0
                     );
-                    calc == {
-                        b[1..][..|b[1..]| - 1];
-                        b[1..|b| - 1];
-                    }
+                    //  by eq2
                     diff(
                         computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
                         if p[|p| - 1] == 0 then diff(seed, 0)
@@ -138,10 +141,7 @@ module Foo {
                         else diff(b[1..][|b[1..]| - 1], seed)
                         )
                     );
-                    calc == {
-                        p[1..][..|p[1..]| - 1];
-                        p[1..|p| - 1];
-                    }
+                    // by eq1 
                     diff(
                         b[0],
                         computeRootPathDiff(p[1..|p| - 1], b[1..][..|b[1..]| - 1], 
@@ -149,10 +149,7 @@ module Foo {
                         else diff(b[1..][|b[1..]| - 1], seed)
                         )
                     );
-                    calc == {
-                        b[1..][..|b[1..]| - 1];
-                        b[1..|b| - 1];
-                    }
+                    // by eq2
                     diff(
                         b[0],
                         computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
@@ -183,6 +180,9 @@ module Foo {
             computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed))
     }
 
+    /**
+     *  Compute diff root and collect siblings of next path.
+     */
     function computeRootPathDiffAndLeftSiblingsUp(p : seq<bit>, b : seq<int>, seed: int, v2: seq<int>) : (int, seq<int>)
         requires |p| == |b|
         decreases p
