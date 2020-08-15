@@ -173,9 +173,20 @@ module Foo {
 
     /**
      *  Compute diff root and collect siblings of next path.
+     *  
+     *  @param  p       The path.
+     *  @param  b       The values of the left siblings of nodes on `p`.
+     *  @param  seed    The value at nodeAt(p).
+     *  @param  v2
+     *  @returns        The value of diff at the root and a vector of values of
+     *                  for the left siblins on nextPath(p).
      */
-    function computeRootPathDiffAndLeftSiblingsUp(p : seq<bit>, b : seq<int>, seed: int, v2: seq<int>) : (int, seq<int>)
+    function computeRootPathDiffAndLeftSiblingsUp(
+        p : seq<bit>, b : seq<int>, seed: int, v2: seq<int>) : (int, seq<int>)
         requires |p| == |b|
+        /** The int value computed  is the same as the one computed by computeRootPathDiffUp. */
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v2).0 == computeRootPathDiffUp(p, b, seed)
+        
         decreases p
     {
      if |p| == 0 then
@@ -189,7 +200,6 @@ module Foo {
                     p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), [0] + b)
     }
 
-    
     /**
      *  Computing up or down yield the same result!
      */
