@@ -70,11 +70,6 @@ module Foo {
                 diff(b[0], r)
     }
 
-// lemma foo000<T>(s : seq<T>, a : T) 
-//         requires |s| >= 1
-//         ensures (s[.. |s| - 1] + [a])[..|s|] ==  s[.. |s| - 1] + [a]
-//     {}
-
     /**
      *  Compute computeRootPathDiff by pre-computing the last 
      *  step.
