@@ -17,6 +17,7 @@ include "CompleteTrees.dfy"
 include "GenericComputation.dfy"
 include "Helpers.dfy"
 include "MerkleTrees.dfy"
+include "NextPathInCompleteTreesLemmas.dfy"
 include "PathInCompleteTrees.dfy"
 include "SeqOfBits.dfy"
 include "Trees2.dfy"
@@ -28,6 +29,7 @@ module Foo {
     import opened GenericComputation
     import opened Helpers
     import opened MerkleTrees
+    import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
     import opened Trees
@@ -206,23 +208,34 @@ module Foo {
         p : seq<bit>, b : seq<int>, seed: int, 
         v1: seq<int>) 
             : (int, seq<int>)
-        requires |p| == |b|
+        requires |p| == |b| == |v1|
         requires |p| >= 1
         /** The int value result is the same as the one computed by computeRootPathDiffUp. */
         // ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 == computeRootPathDiff(p, b, seed)
-
+        // ensures 
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 == computeLeftSiblingOnNextPath(p, v1, b)
+        
         decreases p
     {
      if |p| == 1 then
         var r := computeRootPathDiff(p, b, seed);
-        (r, [r]) 
+        (r, v1) 
     else 
         if p[|p| - 1] == 0 then
-            computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), [diff(seed, 0)] + b)
-        else        
-            computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), [0] + b)
+            var r := computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), v1[..|p| - 1]);
+                        //  could use  p[.. |p| - 1] instead of v1[..|p| - 1]
+                    // [diff(seed, 0)] + b
+                    (r.0, b[.. |b| - 1] + [v1[|p| - 1 ]])
+        else      
+            var r :=  computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]);
+                    // [0] + b
+                    // v2[..|p| - 1]) + [v1[|p| - 1]]
+                    // )
+                    (r.0, r.1 + [v1[|p| - 1]])
+                    //  could use 0 instead of v1[|p| - 1] but need to adjust 
+                    //  computeLeftSiblingOnNextPath to match that
     }
 
     /**
@@ -230,7 +243,7 @@ module Foo {
      *  yield the same result.
      */
     lemma {:induction p, b, seed, v1} foo888(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
-        requires |p| == |b|
+        requires |p| == |b| == |v1|
         requires |p| >= 1
         ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 == computeRootPathDiffUp(p, b, seed)
         decreases p
@@ -248,8 +261,8 @@ module Foo {
                 calc == {
                     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0;
                     computeRootPathDiffAndLeftSiblingsUp(
-                        p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), [diff(seed, 0)] + b).0;
-                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),[diff(seed, 0)] + b); }
+                        p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), v1[..|p| - 1]).0;
+                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
                     computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1], diff(seed, 0));
                     calc {
                         p[|p| - 1] == 0;
@@ -260,10 +273,37 @@ module Foo {
                 calc == {
                     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 ;
                     computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), [0] + b).0;
-                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),[diff(seed, 0)] + b); }
+                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]).0;
+                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
                     computeRootPathDiffUp(p, b, seed);
                 }
+            }
+        }
+    }
+
+    lemma {:induction p, b, seed, v1} foo999(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
+        requires |p| == |b| == |v1|
+        requires |p| >= 1
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 == computeLeftSiblingOnNextPath(p, v1, b)
+        decreases p
+    {
+        if |p| == 1 {
+            //  Thanks Dafny
+        } else {
+            if p[|p| - 1] == 0 {
+                // calc == {
+                //     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1;
+                //     b[.. |b| - 1] + [v1[|p| - 1]];
+                //     computeLeftSiblingOnNextPath(p, v1, b);
+                // }
+            } else {
+                // calc == {
+                //     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 ;
+                //     computeRootPathDiffAndLeftSiblingsUp(
+                //     p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]).1 + [v1[|p| - 1]];
+                //     // { foo999(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
+                //     computeLeftSiblingOnNextPath(p, v1, b);
+                // }
             }
         }
     }
