@@ -205,14 +205,13 @@ module Foo {
      *                  for the left siblins on nextPath(p).
      */
     function computeRootPathDiffAndLeftSiblingsUp(
-        p : seq<bit>, b : seq<int>, seed: int, 
-        v1: seq<int>) 
-            : (int, seq<int>)
+        p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) : (int, seq<int>)
         requires |p| == |b| == |v1|
         requires |p| >= 1
-        /** The int value result is the same as the one computed by computeRootPathDiffUp. */
-        // ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 == computeRootPathDiff(p, b, seed)
-        // ensures 
+        /** This post-condition follows easily from the defs of the functions.
+         *  The fact that computeRootPathDiffAndLeftSiblingsUp.0 is the same as
+         *  computeRootPathDiff requires some hints and is proved in computeRootAnSiblingsIsCorrect.
+         */
         ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 == computeLeftSiblingOnNextPath(p, v1, b)
         
         decreases p
@@ -242,10 +241,20 @@ module Foo {
      *  For path of size >= 2, computeRootPathDiffAndLeftSiblingsUp and computeRootPathDiffUp
      *  yield the same result.
      */
-    lemma {:induction p, b, seed, v1} foo888(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
+    lemma {:induction p, b, seed, v1} computeRootAnSiblingsIsCorrect(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
         requires |p| == |b| == |v1|
         requires |p| >= 1
-        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 == computeRootPathDiffUp(p, b, seed)
+        /** We prove the following property: */
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 == computeRootPathDiffUp(p, b, seed) 
+        /** And with the post condition of computeRootPathDiffAndLeftSiblingsUp 
+         *  it gives the following general result: if the returned value is (r, xs)
+         *  1. then r is the same as computeRootPathDiffUp
+         *  2. xs is the the same as the computeLeftSiblingOnNextPath(p)
+         */
+        ensures  computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1) == 
+            (computeRootPathDiffUp(p, b, seed),
+            computeLeftSiblingOnNextPath(p, v1, b)
+            )
         decreases p
     {
         if |p| == 1 {
@@ -262,26 +271,24 @@ module Foo {
                     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0;
                     computeRootPathDiffAndLeftSiblingsUp(
                         p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), v1[..|p| - 1]).0;
-                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
+                    { computeRootAnSiblingsIsCorrect(
+                        p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
                     computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1], diff(seed, 0));
-                    calc {
-                        p[|p| - 1] == 0;
-                    }
                     computeRootPathDiffUp(p, b, seed);
                 }
             } else {
                 calc == {
                     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 ;
                     computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]).0;
-                    { foo888(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
+                        p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]).0;
+                    { computeRootAnSiblingsIsCorrect(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
                     computeRootPathDiffUp(p, b, seed);
                 }
             }
         }
     }
 
-    lemma {:induction p, b, seed, v1} foo999(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
+    lemma {:induction p, b, seed, v1} foo9990(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
         requires |p| == |b| == |v1|
         requires |p| >= 1
         ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 == computeLeftSiblingOnNextPath(p, v1, b)
