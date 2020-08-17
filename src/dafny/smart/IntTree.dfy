@@ -83,30 +83,33 @@ module DiffTree {
 
     /**
      *  If all leaves are zero and tree is decorated with diff, then
-     *  all nodes are zero.
+     *  all nodes are zero, and tree is ZeroTree.
      */
     lemma {:induction r} allLeavesZeroImplyAllNodesZero(r: Tree<int>) 
         requires isDecoratedWithDiff(r)
         requires forall l :: l in leavesIn(r) ==> l.v == 0
         ensures forall l :: l in nodesIn(r) ==> l.v == 0 
+        ensures isZeroTree(r)
     {   //  Thanks Dafny
     }
 
     /**
-     *  For a Merkle tree of height >=2 that correspond to a list `l`, 
-     *  if more than half of the last leaves of `l` are zero, 
-     *  then the right child is a zero tree.
+     *  For a tree of height >= 2, decorated with diff,
+     *  If for some k <= power2(height(r) - 1) / 2, all leaves are zero,
+     *  then the right child is the zero tree.
      */
-    lemma {:induction r} rightHalfOfListZeroImpliesRightTreeZero(r: Tree<int>, l : seq<int>, k : nat) 
+    lemma {:induction r} rightHalfOfListZeroImpliesRightTreeZero(r: Tree<int>, k : nat) 
+        requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
         requires height(r) >= 2
-        requires |l| == |leavesIn(r)|
-        requires isMerkle2(r, l, diff)
-        /**  all leaves in rc are 0 (plus maybe some in lc). */
+
+        /**  all leaves at index >= k are zero. */
         requires k <= power2(height(r) - 1) / 2
-        requires forall i :: k <= i < |l| ==> l[i] == 0
+        requires forall i :: k <= i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
         ensures match r 
-            case Node(_, lc, rc) => isZeroTree(rc)
+            case Node(_, lc, rc) => isZeroTree(rc) && rc.v == 0
     {   
         match r 
             case Node(_, lc, rc) =>
@@ -128,44 +131,53 @@ module DiffTree {
      *  if more than half of the last leaves of `l` are zero, 
      *  then the right child value is zero.
      */
-    lemma {:induction r} rightHalfOfListZeroImpliesRightChildValueZero(r: Tree<int>, l : seq<int>, k : nat) 
-        requires height(r) >= 2
-        requires |l| == |leavesIn(r)|
-        requires isMerkle2(r, l, diff)
-        /**  all leaves in rc are 0 (plus maybe some in lc). */
-        requires k <= power2(height(r) - 1) / 2
-        requires forall i :: k <= i < |l| ==> l[i] == 0
+    // lemma {:induction r} rightHalfOfListZeroImpliesRightChildValueZero2(r: Tree<int>, l : seq<int>, k : nat) 
+    //     requires height(r) >= 2
+    //     requires |l| == |leavesIn(r)|
+
+    //     // requires isMerkle2(r, l, diff)
+
+    //      requires isCompleteTree(r)
+    //     /** `r` is decorated with attribute `f`. */
+    //     requires isDecoratedWith(diff, r)
+
+    //      /** Proper indexing. */
+    //     // requires hasLeavesIndexedFrom(r, 0)
+
+    //     /**  all leaves in rc are 0 (plus maybe some in lc). */
+    //     requires k <= power2(height(r) - 1) / 2
+    //     requires forall i :: k <= i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
         
-        ensures match r 
-            case Node(_, lc, rc) => rc.v == 0
-    {   
-        match r 
-            case Node(_, lc, rc)=>
-                rightHalfOfListZeroImpliesRightTreeZero(r, l, k);
-                isConstantImpliesSameValuesEveryWhere(rc, 0);
-                allLeavesZeroImplyAllNodesZero(rc);
-    }
+    //     ensures match r 
+    //         case Node(_, lc, rc) => rc.v == 0
+    // {   
+    //     match r 
+    //         case Node(_, lc, rc)=>
+    //             rightHalfOfListZeroImpliesRightTreeZero(r, k);
+    //             isConstantImpliesSameValuesEveryWhere(rc, 0);
+    //             allLeavesZeroImplyAllNodesZero(rc);
+    // }
 
     /**
-     *  For a Merkle tree, if all the leaves on right side of the node after the path
-     *  are zero, then all the right siblings on the path hold a zero value.
+     *  For a complete tree, decorated with diff,
+     *  If all the leaves on right side of the node after the path
+     *  are zero, then all the right siblings on the path have value 0.
      *
      *  @note       The proof has several cases but is not hard.
      */
-    lemma {:induction r} leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r: Tree<int>, l : seq<int>, k : nat, p: seq<bit>, j : nat) 
+    lemma {:induction r} leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r: Tree<int>, k : nat, p: seq<bit>, j : nat) 
 
-        /** Merkle tree. */
+        requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
         requires height(r) >= 2
-        requires |l| == |leavesIn(r)|
-        requires isMerkle2(r, l, diff)
-
-        /** Proper indexing. */
-        requires hasLeavesIndexedFrom(r, j)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
-        requires forall i :: k < i < |l| ==> l[i] == 0
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
+         /** Proper indexing. */
+        requires hasLeavesIndexedFrom(r, j)
         /** p is the path to k-th leaf in r. */
         requires |p| == height(r) - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
@@ -217,7 +229,7 @@ module DiffTree {
                                     nodeAt([p[0]][..|[p[0]]| - 1] + [1] , r).v;
                                     nodeAt([1],r).v;
                                     rc.v ;
-                                    {  rightHalfOfListZeroImpliesRightChildValueZero(r, l, k + 1); }
+                                    {  rightHalfOfListZeroImpliesRightTreeZero(r, k + 1); }
                                     0;
                                 }
                             }
@@ -225,12 +237,10 @@ module DiffTree {
                                 //   i >= 1, siblings are in lc
                                 //  Check pre-condition before applying induction on lc
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
-                                assert(|l[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
-
+                                assert(|leavesIn(r)[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
                                 //  Induction on lc
                                 leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
                                     lc, 
-                                    l[.. power2(height(r) - 1)/2],
                                     k, 
                                     p[1..], 
                                     j);
@@ -264,12 +274,11 @@ module DiffTree {
                                 assert( k >= power2(height(r) - 1) / 2);
 
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
-                                assert(|l[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
+                                assert(|leavesIn(r)[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
 
                                 //  Induction on rc
                                 leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
                                     rc, 
-                                    l[power2(height(r) - 1)/2..], 
                                     k - power2(height(r) - 1)/2,
                                      p[1..],
                                     j + power2(height(r) - 1)/2);

@@ -38,18 +38,19 @@ module Foo {
      *  If b and b' agree on values at which p[i] == 1 and b has siblings at p[..], then 
      *  b' has siblings at same location.  
      */
-    lemma {:induction p, r} siblingsLeft(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat) 
-        /** Merkle tree. */
+    lemma {:induction p, r} siblingsLeft(p : seq<bit>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat) 
+
+        requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
         requires height(r) >= 2
-        requires |l| == |leavesIn(r)|
-        requires isMerkle2(r, l, diff)
-        requires hasLeavesIndexedFrom(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
-        requires forall i :: k < i < |l| ==> l[i] == 0
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
         /** p is the path to k leaf in r. */
+        requires hasLeavesIndexedFrom(r, 0)
         requires |p| == height(r) - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
 
@@ -57,11 +58,12 @@ module Foo {
         /** `b` contains values at left siblings on path `p`. */
         requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
 
+        /** B abd b' agree on values at indices where p[i] == 1, and otherwise b'[i] == 0 */
         requires |b'| == |b| && forall i :: 0 <= i < |b'| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 
 
         ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v
     {
-        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, l, k, p, 0);   
+        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, 0);   
     }
 
     /**
@@ -197,45 +199,84 @@ module Foo {
     /**
      *  Compute diff root and collect siblings of next path.
      *  
-     *  @param  p       The path.
-     *  @param  b       The values of the left siblings of nodes on `p`.
-     *  @param  seed    The value at nodeAt(p).
-     *  @param  v1      The values of the nodes on the path p.
-     *  @returns        The value of diff at the root and a vector of values of
-     *                  for the left siblins on nextPath(p).
+     *  @param  p           The path.
+     *  @param  valOnLeftAt The values of the left siblings of nodes on `p`.
+     *  @param  seed        The value at nodeAt(p).
+     *  @param  valOnPAt    The values of the nodes on the path p.
+     *  @returns            The value of diff at the root and a vector of values of
+     *                      for the left siblings on nextPath(p).
      */
     function computeRootPathDiffAndLeftSiblingsUp(
-        p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) : (int, seq<int>)
-        requires |p| == |b| == |v1|
+        p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) : (int, seq<int>)
+        requires |p| == |valOnLeftAt| == |valOnPAt|
         requires |p| >= 1
         /** This post-condition follows easily from the defs of the functions.
          *  The fact that computeRootPathDiffAndLeftSiblingsUp.0 is the same as
          *  computeRootPathDiff requires some hints and is proved in computeRootAnSiblingsIsCorrect.
          */
-        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 == computeLeftSiblingOnNextPath(p, v1, b)
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1 == computeLeftSiblingOnNextPath(p, valOnPAt, valOnLeftAt)
         
         decreases p
     {
      if |p| == 1 then
-        var r := computeRootPathDiff(p, b, seed);
-        (r, v1) 
+        var r := computeRootPathDiff(p, valOnLeftAt, seed);
+        (r, valOnPAt) 
     else 
         if p[|p| - 1] == 0 then
             var r := computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), v1[..|p| - 1]);
-                        //  could use  p[.. |p| - 1] instead of v1[..|p| - 1]
+                    p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1],  diff(seed, 0), valOnPAt[..|p| - 1]);
+                        //  could use  p[.. |p| - 1] instead of valOnPAt[..|p| - 1]
                     // [diff(seed, 0)] + b
-                    (r.0, b[.. |b| - 1] + [v1[|p| - 1 ]])
+                    (r.0, valOnLeftAt[.. |valOnLeftAt| - 1] + [valOnPAt[|p| - 1 ]])
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]);
+                    p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
                     // [0] + b
-                    // v2[..|p| - 1]) + [v1[|p| - 1]]
+                    // v2[..|p| - 1]) + [valOnPAt[|p| - 1]]
                     // )
-                    (r.0, r.1 + [v1[|p| - 1]])
+                    (r.0, r.1 + [valOnPAt[|p| - 1]])
                     //  could use 0 instead of v1[|p| - 1] but need to adjust 
                     //  computeLeftSiblingOnNextPath to match that
     }
+
+     function computeRootPathDiffAndLeftSiblingsUpv2(
+        p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) : (int, seq<int>)
+        requires |p| == |valOnLeftAt| == |valOnPAt|
+        requires |p| >= 1
+        requires forall i :: 0 <= i < |valOnPAt| ==> valOnPAt[i] == computeRootPathDiffUp(p[i..], valOnLeftAt[i..], seed) 
+
+        /** This post-condition follows easily from the defs of the functions.
+         *  The fact that computeRootPathDiffAndLeftSiblingsUp.0 is the same as
+         *  computeRootPathDiff requires some hints and is proved in computeRootAnSiblingsIsCorrect.
+         */
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1 == computeLeftSiblingOnNextPath(p, valOnPAt, valOnLeftAt)
+        
+        decreases p
+    {
+     if |p| == 1 then
+        var r := computeRootPathDiff(p, valOnLeftAt, seed);
+        assert(r == computeRootPathDiff(p, valOnLeftAt, seed));
+
+        (r, valOnPAt) 
+    else 
+        if p[|p| - 1] == 0 then
+            var r := computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1],  diff(seed, 0), valOnPAt[..|p| - 1]);
+                        //  could use  p[.. |p| - 1] instead of valOnPAt[..|p| - 1]
+                    // [diff(seed, 0)] + b
+                    assert(r.0 == );
+                    (r.0, valOnLeftAt[.. |valOnLeftAt| - 1] + [valOnPAt[|p| - 1 ]])
+        else      
+            var r :=  computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
+                    // [0] + b
+                    // v2[..|p| - 1]) + [valOnPAt[|p| - 1]]
+                    // )
+                    (r.0, r.1 + [valOnPAt[|p| - 1]])
+                    //  could use 0 instead of v1[|p| - 1] but need to adjust 
+                    //  computeLeftSiblingOnNextPath to match that
+    }
+
 
     /**
      *  For path of size >= 2, computeRootPathDiffAndLeftSiblingsUp and computeRootPathDiffUp
@@ -288,33 +329,47 @@ module Foo {
         }
     }
 
-    lemma {:induction p, b, seed, v1} foo9990(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
-        requires |p| == |b| == |v1|
-        requires |p| >= 1
-        ensures computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 == computeLeftSiblingOnNextPath(p, v1, b)
-        decreases p
+    /** 
+     *  Add requirements on |p| and values of b and v1 in computeRootPathDiffAndLeftSiblingsUp
+     */
+    lemma computeRootPathDiffAndLeftSiblingsUpInATree(p: seq<bit>, r :  Tree<int>, v1 : seq<int>, v2 : seq<int>, seed : int, l : seq<int>, k : nat)
+
+        requires isCompleteTree(r)       
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
+
+        requires k < |leavesIn(r)|
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+
+        /** Path to k-th leaf. */
+        requires hasLeavesIndexedFrom(r, 0)
+        requires 1 <= |p| == height(r) - 1      
+        requires nodeAt(p, r) == leavesIn(r)[k]
+        requires seed == nodeAt(p,r).v 
+
+        /** Path is not to the last leaf. */
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        requires |v1| == |v2| == |p|
+        requires forall i :: 0 <= i < |p| ==>
+            v1[i] == nodeAt(p[.. i + 1],r).v 
+        requires forall i :: 0 <= i < |p| ==>
+            (p[i] == 1 && v2[i] == siblingAt(p[.. i + 1],r).v)
+            || 
+            (p[i] == 0 && v2[i] == 0)
+
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 == r.v
     {
-        if |p| == 1 {
-            //  Thanks Dafny
-        } else {
-            if p[|p| - 1] == 0 {
-                // calc == {
-                //     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1;
-                //     b[.. |b| - 1] + [v1[|p| - 1]];
-                //     computeLeftSiblingOnNextPath(p, v1, b);
-                // }
-            } else {
-                // calc == {
-                //     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).1 ;
-                //     computeRootPathDiffAndLeftSiblingsUp(
-                //     p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]).1 + [v1[|p| - 1]];
-                //     // { foo999(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
-                //     computeLeftSiblingOnNextPath(p, v1, b);
-                // }
-            }
+        calc == {
+            computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 ;
+            { computeRootAnSiblingsIsCorrect(p, v2, seed, v1); }
+             computeRootPathDiffUp(p, v2, seed) ;
+            { computeUpEqualsComputeDown(p, v2, seed); }
+            computeRootPathDiff(p, v2, seed) ; 
+            computeRootPathDiff(p, v2, leavesIn(r)[k].v);
+            { computeOnPathYieldsRootValueDiff(p, r, v2, k) ; }
+            r.v;  
         }
     }
-
 
     /**
      *  Computing up or down yield the same result!
@@ -351,6 +406,7 @@ module Foo {
         }
     }
 
+   
     /**
      *  Show that if right sibling values are zero,  computeRootPathDiff
      *  computes the same result as computeRootPath.
@@ -434,18 +490,19 @@ module Foo {
      *  Weakening of computeOnPathYieldsRootValue, requesting values on left siblings only, when
      *  merkle tree and path is not last non-null leaf.
      */
-     lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) 
-        /** Merkle tree. */
+     lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat) 
+
+         requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
         requires height(r) >= 2
-        requires |l| == |leavesIn(r)|
-        requires isMerkle2(r, l, diff)
-        requires hasLeavesIndexedFrom(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
-        requires forall i :: k < i < |l| ==> l[i] == 0
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
         /** p is the path to k leaf in r. */
+        requires hasLeavesIndexedFrom(r, 0)
         requires |p| == height(r) - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
 
@@ -464,11 +521,11 @@ module Foo {
         // var b' : seq<int> :| |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ; 
         var b' := makeB(p, b);
 
-        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, l, k, p, 0);
+        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, 0);
         assert(forall i :: 0 <= i < |p| ==> 
             p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
-        siblingsLeft(p, l, r, b, b', k);
+        siblingsLeft(p, r, b, b', k);
         assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
 
         assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
@@ -484,18 +541,18 @@ module Foo {
     /**
      *  Main function to compute the root value.
      */
-     function computeRootDiffUp(p : seq<bit>, l : seq<int>, r : Tree<int>, b : seq<int>, k : nat) : int
-        /** Merkle tree. */
+     function computeRootDiffUp(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat) : int
+        requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
         requires height(r) >= 2
-        requires |l| == |leavesIn(r)|
-        requires isMerkle2(r, l, diff)
-        requires hasLeavesIndexedFrom(r, 0)
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
-        requires forall i :: k < i < |l| ==> l[i] == 0
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
         /** p is the path to k leaf in r. */
+        requires hasLeavesIndexedFrom(r, 0)
         requires |p| == height(r) - 1
         requires nodeAt(p, r) == leavesIn(r)[k]
 
@@ -503,10 +560,10 @@ module Foo {
         /** `b` contains values at left siblings on path `p`. */
         requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
 
-        ensures r.v == computeRootDiffUp(p, l, r, b, k)
+        ensures r.v == computeRootDiffUp(p, r, b, k)
     {
         //  Values on left sibling are enough to compuute r.v using computeRootPathDiff
-        computeOnPathYieldsRootValueDiff(p, l, r, b, k);
+        computeOnPathYieldsRootValueDiff(p, r, b, k);
         //  Compute computeRootUp yields same value as computeRootPathDiff
         computeUpEqualsComputeDown(p, b, leavesIn(r)[k].v);
         computeRootPathDiffUp(p, b, leavesIn(r)[k].v)
@@ -544,7 +601,7 @@ module Foo {
         assert(bitListToNat(p) == k ==> nodeAt(p, r) == leavesIn(r)[k]);
         assert(nodeAt(p, r) == leavesIn(r)[k]);
 
-        (computeRootDiffUp(p, l, r, b, k), [])
+        (computeRootDiffUp(p, r, b, k), [])
     }
 
 
