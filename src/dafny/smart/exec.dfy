@@ -238,20 +238,17 @@ module Foo {
                     //  computeLeftSiblingOnNextPath to match that
     }
 
+    /**
+     *  Compute the root value and the left siblings concurrently.
+     *  The fact that this version and the non-optimised
+     *  computeRootPathDiffAndLeftSiblingsUp computes the same result os
+     *  provided by lemma v1Equalsv2.
+     */
      function computeRootPathDiffAndLeftSiblingsUpv2(
         p : seq<bit>, valOnLeftAt : seq<int>, seed: int) : (int, seq<int>)
         requires |p| == |valOnLeftAt| 
         requires |p| >= 1
-        // requires forall i :: 0 <= i < |valOnPAt| ==> valOnPAt[i] == computeRootPathDiffUp(p[i..], valOnLeftAt[i..], seed) 
-
-        /** This post-condition follows easily from the defs of the functions.
-         *  The fact that computeRootPathDiffAndLeftSiblingsUp.0 is the same as
-         *  computeRootPathDiff requires some hints and is proved in computeRootAnSiblingsIsCorrect.
-         */
-        // ensures computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).0 == 
-            // computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).0
-            // computeLeftSiblingOnNextPath(p, valOnPAt, valOnLeftAt).0
-        
+       
         decreases p
     {
      if |p| == 1 then
@@ -274,7 +271,6 @@ module Foo {
                     //  could use 0 instead of v1[|p| - 1] but need to adjust 
                     //  computeLeftSiblingOnNextPath to match that
     }
-
 
     /**
      *  For path of size >= 2, computeRootPathDiffAndLeftSiblingsUp and computeRootPathDiffUp
@@ -602,7 +598,6 @@ module Foo {
         (computeRootDiffUp(p, r, b, k), [])
     }
 
-
     /** 
      *  The values on P can be computed on-the-fly.
      */
@@ -634,39 +629,102 @@ module Foo {
                 }
             } else {
                 //  
-                assume(computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1 ==
-            computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1);
+                var a := computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed);
+                var b := computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt);
+
+                //  Def of computeRootPathDiffAndLeftSiblingsUpv2 for p[|p| - 1] == 1
+                var a1 := computeRootPathDiffAndLeftSiblingsUpv2(
+                    p[.. |p| - 1], 
+                    valOnLeftAt[..|valOnLeftAt| - 1],  
+                    diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
+                //  def of computeRootPathDiffAndLeftSiblingsUp for p[|p| - 1] == 1
+                var b1 := computeRootPathDiffAndLeftSiblingsUp(
+                    p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
+                calc == {
+                    computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1;
+                    a1.1 + [seed];
+                }
+                calc == {
+                    computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1;
+                    b1.1 + [valOnPAt[|p| - 1]];
+                }
+                calc == {
+                    valOnPAt[|p| - 1];
+                    computeRootPathDiffUp(p[|p| + 1 - 1..], valOnLeftAt[|p| + 1 - 1..], seed);
+                    computeRootPathDiffUp([], [], seed);
+                    seed;
+                }
+                //  Establish pre-condition for use of inductive hypothesis on p[.. |p| - 1]
+                prefixOfComputation(p, valOnLeftAt, seed, valOnPAt);
+                calc == {
+                    a1.1;
+                    { v1Equalsv2(p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]); } 
+                    b1.1;
+                }
             }
         }
-
     }
 
      lemma v1Equalsv2subLemma(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
         requires |p| == |valOnLeftAt| ==  |valOnPAt|
         requires |p| >= 1
-        // ensures forall i :: 0 <= i < |valOnPAt| ==> valOnPAt[i] == computeRootPathDiffUp(p[i..], valOnLeftAt[i..], seed) 
-
         ensures computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).0 ==
             computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).0
-    {
-        // if |p| == 1 {
-        //     //  Easy. Thanks Dafny.
-        // } else {
-        //     if p[|p| - 1] == 0 {
-        //         // calc {
-        //         //     computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).0;
-        //         //     computeRootPathDiffAndLeftSiblingsUp(
-        //         //     p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1],  diff(seed, 0), valOnPAt[..|p| - 1]).0;
-        //         //     //  induction
-        //         //     { v1Equalsv2subLemma(p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(seed, 0), valOnPAt[..|p| - 1]); }
-        //         //     computeRootPathDiffAndLeftSiblingsUpv2(p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1],  valOnPAt[..|p| - 1], diff(seed, 0)).0;
-        //         // }
-        //     } else {
-        //         //  
-        //     }
-        // }
-
+    {   //  Thanks Dafny.
     }
 
-
+    /**
+     *  A useful lemma need in the proof of v1Equalsv2 when |p| > 1 and p[|p| - 1] == 1.
+     *  
+     *  It states that the values on  valOnPAt[..|p| - 1] (valOnPAt minus last element) must
+     *  coincide with computations of prefixes of p[.. |p| - 1] starting from a seed that 
+     *  is the result of the computation of diff using the last values (node and it sibling).
+     *
+     *  @note   A tedious proof with lots of indices but not hard.
+     */
+    lemma prefixOfComputation(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) 
+        requires |p| == |valOnLeftAt| ==  |valOnPAt|
+        requires |p| >= 2
+        requires forall i :: 0 <= i < |valOnPAt| ==> valOnPAt[i] == computeRootPathDiffUp(p[i + 1..], valOnLeftAt[i + 1..], seed) 
+        ensures p[|p| - 1] == 1 ==> forall i :: 0 <= i < |valOnLeftAt[..|valOnLeftAt| - 1]| ==> 
+                    valOnPAt[..|p| - 1][i] == computeRootPathDiffUp(p[.. |p| - 1][i + 1..], valOnLeftAt[..|valOnLeftAt| - 1][i + 1..], diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) 
+    {
+        if p[|p| - 1] == 1 {
+            forall (i : nat  | 0 <= i < |valOnPAt[.. |valOnPAt| - 1]|)
+                    ensures valOnPAt[.. |valOnPAt| - 1][i] == computeRootPathDiffUp( p[.. |p| - 1][i + 1..], valOnLeftAt[.. |valOnLeftAt| - 1][i + 1..], diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) 
+            {
+                calc == {
+                    computeRootPathDiffUp(
+                                p[..|p| - 1][i + 1..], 
+                                valOnLeftAt[..|valOnLeftAt| - 1][i + 1 ..],
+                                diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) ;
+                    calc == {
+                            valOnLeftAt[i + 1..][..|valOnLeftAt[i + 1..]| - 1];
+                            valOnLeftAt[..|valOnLeftAt| - 1][i + 1 ..];
+                    }
+                    computeRootPathDiffUp(
+                                p[..|p| - 1][i + 1..], 
+                                valOnLeftAt[i + 1..][..| valOnLeftAt[i + 1..]| - 1],
+                                diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) ;
+                    calc == {
+                            p[i + 1..][.. |p[i + 1..]| - 1];
+                            p[..|p| - 1][i + 1..];
+                    }
+                    computeRootPathDiffUp(
+                                p[i + 1..][.. |p[i + 1..]| - 1], 
+                                valOnLeftAt[i + 1..][..| valOnLeftAt[i + 1..]| - 1],
+                                diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) ;
+                    calc == {
+                            p[i + 1..][|p[i + 1..]| - 1];
+                            1;
+                    }
+                    computeRootPathDiffUp(p[i + 1..], valOnLeftAt[i + 1..],  diff(valOnLeftAt[|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed))); 
+                    //  use requires
+                    valOnPAt[i];
+                    //  as i < |p| - 2, valOnPAt[i] is same as valOnPAt[..|p| - 1][i]
+                    valOnPAt[..|p| - 1][i];
+                }
+            }
+        }
+    }
  }
