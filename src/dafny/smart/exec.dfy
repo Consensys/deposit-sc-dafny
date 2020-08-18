@@ -371,7 +371,7 @@ module Foo {
      *  For path of size >= 2, computeRootPathDiffAndLeftSiblingsUp and computeRootPathDiffUp
      *  yield the same result.
      */
-    lemma {:induction p, b, seed, v1} computeRootAnSiblingsIsCorrect(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
+    lemma {:induction p, b, seed, v1} computeRootAndSiblingsIsCorrect(p : seq<bit>, b : seq<int>, seed: int, v1: seq<int>) 
         requires |p| == |b| == |v1|
         requires |p| >= 1
         /** We prove the following property: */
@@ -401,7 +401,7 @@ module Foo {
                     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0;
                     computeRootPathDiffAndLeftSiblingsUp(
                         p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0), v1[..|p| - 1]).0;
-                    { computeRootAnSiblingsIsCorrect(
+                    { computeRootAndSiblingsIsCorrect(
                         p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
                     computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1], diff(seed, 0));
                     computeRootPathDiffUp(p, b, seed);
@@ -411,7 +411,7 @@ module Foo {
                     computeRootPathDiffAndLeftSiblingsUp(p, b, seed, v1).0 ;
                     computeRootPathDiffAndLeftSiblingsUp(
                         p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed), v1[..|p| - 1]).0;
-                    { computeRootAnSiblingsIsCorrect(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
+                    { computeRootAndSiblingsIsCorrect(p[.. |p| - 1], b[..|b| - 1],  diff(seed, 0),v1[..|p| - 1]); }
                     computeRootPathDiffUp(p, b, seed);
                 }
             }
@@ -450,7 +450,7 @@ module Foo {
     {
         calc == {
             computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 ;
-            { computeRootAnSiblingsIsCorrect(p, v2, seed, v1); }
+            { computeRootAndSiblingsIsCorrect(p, v2, seed, v1); }
              computeRootPathDiffUp(p, v2, seed) ;
             { computeUpEqualsComputeDown(p, v2, seed); }
             computeRootPathDiff(p, v2, seed) ; 
