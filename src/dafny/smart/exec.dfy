@@ -418,6 +418,37 @@ module Foo {
         }
     }
 
+    /**
+     *  Proof that version 2 is correct.
+     */
+    lemma {:induction p, b, seed} computeRootAndSiblingsv2IsCorrect(p : seq<bit>, b : seq<int>, seed: int) 
+        requires |p| == |b| 
+        requires |p| >= 1
+        /** We prove the following property: */
+        ensures computeRootPathDiffAndLeftSiblingsUpv2(p, b, seed).0 == computeRootPathDiffUp(p, b, seed) 
+        /** And with the post condition of computeRootPathDiffAndLeftSiblingsUpv2
+         *  it gives the following general result: if the returned value is (r, xs)
+         *  1. then r is the same as computeRootPathDiffUp
+         *  2. xs is the the same as the computeLeftSiblingOnNextPath(p)
+         */
+        ensures  computeRootPathDiffAndLeftSiblingsUpv2(p, b, seed) == 
+            (computeRootPathDiffUp(p, b, seed),
+            computeLeftSiblingOnNextPath(p, computeAllPathDiffUp(p, b, seed), b)
+            )
+        decreases p
+    {
+        //  pre-compute the values on each node of the path.
+        var nodeAt := computeAllPathDiffUp(p, b, seed);
+
+        //  use computeRootPathDiffAndLeftSiblingsUp is correct 
+        computeRootAndSiblingsIsCorrect(p, b, seed, nodeAt);
+
+        //  Use v1equalsv2
+        //  possible because nodeAt satisfies pre-condition
+        computeAllDiffUpPrefixes(p, b, seed);
+        v1Equalsv2(p, b, seed, nodeAt);
+    }
+
     /** 
      *  Add requirements on |p| and values of b and v1 in computeRootPathDiffAndLeftSiblingsUp
      */
