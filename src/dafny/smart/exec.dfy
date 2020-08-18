@@ -197,6 +197,101 @@ module Foo {
     }
 
     /**
+     *  Collect all the diff values computed on the path p.
+     */
+    function computeAllPathDiffUp(p : seq<bit>, b : seq<int>, seed: int) : seq<int>
+        requires |p| == |b|
+        ensures |computeAllPathDiffUp(p, b, seed)| == |p| 
+        decreases p
+    {
+     if |p| == 0 then
+        [] 
+    else 
+        if p[|p| - 1] == 0 then
+            computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0)) + [seed]
+        else        
+            computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed)) + [seed]
+    }
+
+    /**
+     *  The sequence collected by computeAllPathDiffUp corresponds to the sequence
+     *  of values computed by computeRootPathDiffUp on suffixes.
+     */
+    lemma computeAllDiffUpPrefixes(p : seq<bit>, b : seq<int>, seed: int)
+        requires |p| == |b|
+        ensures forall i :: 0 <= i < |computeAllPathDiffUp(p, b, seed)| ==>
+            computeAllPathDiffUp(p, b, seed)[i] == computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) 
+    {
+        if |p| == 0 {
+            //  Thanks Dafny.
+        } else {
+            forall ( i : nat | 0 <= i < |p|)
+                ensures computeAllPathDiffUp(p, b, seed)[i] == computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) 
+            {
+                if p[|p| - 1] == 0 {
+                    if i < |p| - 1 {
+                        calc == {
+                            computeRootPathDiffUp(p, b, seed);
+                            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
+                        }
+                        var a := computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0)) + [diff(seed, 0)];
+                        // var b := 
+                        calc == {
+                            computeAllPathDiffUp(p, b, seed)[i];
+                            a[i];
+                            { computeAllDiffUpPrefixes(p[.. |p| - 1], b[.. |p| - 1],diff(seed, 0)); }
+                            computeRootPathDiffUp(p[.. |p| - 1][i + 1..], b[.. |p| - 1][i + 1..], diff(seed, 0)); 
+                            calc == {
+                                p[i + 1..][.. |p[i + 1..]| - 1];
+                                p[..|p| - 1][i + 1..];
+                            }   
+                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[.. |p| - 1][i + 1..], diff(seed, 0));
+                            calc == {
+                                b[i + 1..][.. |p[i + 1..]| - 1];
+                                b[..|p| - 1][i + 1..];
+                            }  
+                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[i + 1..][.. |p[i + 1..]| - 1], diff(seed, 0));
+                            computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) ;
+                        }
+                    } else {
+                        //   i == |p| - 1
+                    }
+                } else {
+                    //  p{|p| - 1} == 1, same as p{|p| - 1} == 1 except that diff(seed, 0) is
+                    //  replaced by diff(b[|b| - 1], seed)
+                    if i < |p| - 1 {
+                        calc == {
+                            computeRootPathDiffUp(p, b, seed);
+                            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed));
+                        }
+                        var a := computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed)) + [diff(b[|b| - 1], seed)];
+                        // var b := 
+                        calc == {
+                            computeAllPathDiffUp(p, b, seed)[i];
+                            a[i];
+                            { computeAllDiffUpPrefixes(p[.. |p| - 1], b[.. |p| - 1],diff(b[|b| - 1], seed)); }
+                            computeRootPathDiffUp(p[.. |p| - 1][i + 1..], b[.. |p| - 1][i + 1..], diff(b[|b| - 1], seed)); 
+                            calc == {
+                                p[i + 1..][.. |p[i + 1..]| - 1];
+                                p[..|p| - 1][i + 1..];
+                            }   
+                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[.. |p| - 1][i + 1..], diff(b[|b| - 1], seed));
+                            calc == {
+                                b[i + 1..][.. |p[i + 1..]| - 1];
+                                b[..|p| - 1][i + 1..];
+                            }  
+                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[i + 1..][.. |p[i + 1..]| - 1],diff(b[|b| - 1], seed));
+                            computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) ;
+                        }
+                    } else {
+                        //   i == |p| - 1
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      *  Compute diff root and collect siblings of next path.
      *  
      *  @param  p           The path.
