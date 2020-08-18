@@ -140,13 +140,10 @@ module IncAlgoV2 {
         var v1 := computeAllPathDiffUp(p, v2, seed);
         //  Fisrt, establish pre-condition that computeAllPathDiffUp(p, v2, seed) == v1
         //  is the same as the values of the nodes in the tree.
-        assume(
-           forall i :: 0 <= i < |p| ==>
-            v1[i] == nodeAt(p[.. i + 1],r).v 
-        );
-       
+        computeAllPathDiffUpInATree(p, r, v2, k, seed, 0);
+
         //  Proof that .0 is r.v
-        calc {
+        calc == {
             computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).0;
             { v1Equalsv2subLemma(p, v2, seed, v1); }
             computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0;
@@ -156,7 +153,7 @@ module IncAlgoV2 {
     
         //  Proof of .1 is computeLeftSiblingOnNextPath(p, v1, v2)
         computeAllDiffUpPrefixes(p, v2, seed);
-        calc {
+        calc == {
             computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1;
             { v1Equalsv2(p, v2, seed, v1); }
             computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).1;
