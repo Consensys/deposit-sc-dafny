@@ -136,6 +136,9 @@ module IncAlgoV2 {
         ensures computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).0 == r.v
         ensures computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1 == 
                                              computeLeftSiblingOnNextPath(p, computeAllPathDiffUp(p, v2, seed), v2)
+
+        ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
+                computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1[i] == siblingAt(nextPath(p)[..i + 1],r).v
     {
         var v1 := computeAllPathDiffUp(p, v2, seed);
         //  Fisrt, establish pre-condition that computeAllPathDiffUp(p, v2, seed) == v1
@@ -160,6 +163,8 @@ module IncAlgoV2 {
             { computeRootPathDiffAndLeftSiblingsUpInATree(p, r, v1, v2, seed, k); }
             computeLeftSiblingOnNextPath(p, v1, v2);
         }
+
+        computeOnNextPathCollectsValuesOfNextLeftSiblings(p, r, v1, v2);
     }
 
     /** 
