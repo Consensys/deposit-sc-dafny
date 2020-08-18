@@ -452,7 +452,7 @@ module Foo {
     /** 
      *  Add requirements on |p| and values of b and v1 in computeRootPathDiffAndLeftSiblingsUp
      */
-    lemma computeRootPathDiffAndLeftSiblingsUpInATree(p: seq<bit>, r :  Tree<int>, v1 : seq<int>, v2 : seq<int>, seed : int, l : seq<int>, k : nat)
+    lemma computeRootPathDiffAndLeftSiblingsUpInATree(p: seq<bit>, r :  Tree<int>, v1 : seq<int>, v2 : seq<int>, seed : int, k : nat)
 
         requires isCompleteTree(r)       
         /** `r` is decorated with attribute `f`. */
@@ -478,6 +478,8 @@ module Foo {
             (p[i] == 0 && v2[i] == 0)
 
         ensures computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 == r.v
+        ensures computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).1 == 
+                                             computeLeftSiblingOnNextPath(p, v1, v2)
     {
         calc == {
             computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 ;
@@ -490,6 +492,69 @@ module Foo {
             r.v;  
         }
     }
+
+
+    lemma computeRootPathDiffAndLeftSiblingsUpv2InATree(p: seq<bit>, r :  Tree<int>, v2 : seq<int>, seed : int, k : nat)
+
+        requires isCompleteTree(r)       
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
+
+        requires k < |leavesIn(r)|
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+
+        /** Path to k-th leaf. */
+        requires hasLeavesIndexedFrom(r, 0)
+        requires 1 <= |p| == height(r) - 1      
+        requires nodeAt(p, r) == leavesIn(r)[k]
+        requires seed == nodeAt(p,r).v 
+
+        /** Path is not to the last leaf. */
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        // requires |v1| == |v2| == |p|
+        requires |v2| == |p|
+        // requires forall i :: 0 <= i < |p| ==>
+        //     v1[i] == nodeAt(p[.. i + 1],r).v 
+        requires forall i :: 0 <= i < |p| ==>
+            (p[i] == 1 && v2[i] == siblingAt(p[.. i + 1],r).v)
+            || 
+            (p[i] == 0 && v2[i] == 0)
+
+        ensures computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).0 == r.v
+        ensures computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1 == 
+                                             computeLeftSiblingOnNextPath(p, computeAllPathDiffUp(p, v2, seed), v2)
+    {
+        var v1 := computeAllPathDiffUp(p, v2, seed);
+        //  establish pre-condition that computeAllPathDiffUp(p, v2, seed)
+        //  is the same as the values of the nodes in the tree.
+        assume(
+           forall i :: 0 <= i < |p| ==>
+            v1[i] == nodeAt(p[.. i + 1],r).v 
+        );
+       
+        //  Proof that .0 is r.v
+        calc {
+            computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).0;
+            { v1Equalsv2subLemma(p, v2, seed, v1); }
+            computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0;
+            { computeRootPathDiffAndLeftSiblingsUpInATree(p, r, v1, v2, seed, k); }
+            r.v;
+        }
+    
+        //  Proof of .1 is computeLeftSiblingOnNextPath(p, v1, v2)
+        computeAllDiffUpPrefixes(p, v2, seed);
+        calc {
+            computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1;
+            { v1Equalsv2(p, v2, seed, v1); }
+            computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).1;
+            { computeRootPathDiffAndLeftSiblingsUpInATree(p, r, v1, v2, seed, k); }
+            computeLeftSiblingOnNextPath(p, v1, v2);
+        }
+        
+        
+    }
+
+// computeRootPathDiffAndLeftSiblingsUpInATree(p: seq<bit>, r :  Tree<int>, v1 : seq<int>, v2 : seq<int>, seed : int, k : nat)
 
     /**
      *  Computing up or down yield the same result!
