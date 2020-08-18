@@ -179,50 +179,50 @@ module IncAlgoV1 {
      *  Weakening of computeOnPathYieldsRootValue, requesting values on left siblings only, when
      *  merkle tree and path is not last non-null leaf.
      */
-     lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat) 
+    //  lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat) 
 
-         requires isCompleteTree(r)
-        /** `r` is decorated with attribute `f`. */
-        requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+    //      requires isCompleteTree(r)
+    //     /** `r` is decorated with attribute `f`. */
+    //     requires isDecoratedWith(diff, r)
+    //     requires height(r) >= 2
 
-        /**  all leaves after the k leaf are zero. */
-        requires k < |leavesIn(r)|
-        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+    //     /**  all leaves after the k leaf are zero. */
+    //     requires k < |leavesIn(r)|
+    //     requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
-        /** p is the path to k leaf in r. */
-        requires hasLeavesIndexedFrom(r, 0)
-        requires |p| == height(r) - 1
-        requires nodeAt(p, r) == leavesIn(r)[k]
+    //     /** p is the path to k leaf in r. */
+    //     requires hasLeavesIndexedFrom(r, 0)
+    //     requires |p| == height(r) - 1
+    //     requires nodeAt(p, r) == leavesIn(r)[k]
 
-        requires |b| == |p|
-        /** `b` contains values at left siblings on path `p`. */
-        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+    //     requires |b| == |p|
+    //     /** `b` contains values at left siblings on path `p`. */
+    //     requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
 
-        ensures r.v == computeRootPathDiff(p, b, leavesIn(r)[k].v)
+    //     ensures r.v == computeRootPathDiff(p, b, leavesIn(r)[k].v)
 
-        decreases r
-    {
-        //  define a new seq b' that holds default values for right siblings
-        //  and prove that pre-conditions of computeOnPathYieldsRootValue hold.
+    //     decreases r
+    // {
+    //     //  define a new seq b' that holds default values for right siblings
+    //     //  and prove that pre-conditions of computeOnPathYieldsRootValue hold.
 
-        // var b' : seq<int> :| |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ; 
-        var b' := makeB(p, b);
+    //     // var b' : seq<int> :| |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ; 
+    //     var b' := makeB(p, b);
 
-        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, 0);
-        assert(forall i :: 0 <= i < |p| ==> 
-            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+    //     leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, 0);
+    //     assert(forall i :: 0 <= i < |p| ==> 
+    //         p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
-        siblingsLeft(p, r, b, b', k);
-        assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
+    //     siblingsLeft(p, r, b, b', k);
+    //     assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
 
-        assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
+    //     assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
 
-        computeOnPathYieldsRootValue(p, r, b', diff, leavesIn(r)[k].v);
-        assert(computeRootPath(p, b', diff, leavesIn(r)[k].v) ==  r.v);
-        computeRootPathDiffEqualscomputeRootPath(p, b', leavesIn(r)[k].v);
-        assert(computeRootPathDiff(p, b',  leavesIn(r)[k].v) == computeRootPath(p, b', diff,  leavesIn(r)[k].v));
+    //     computeOnPathYieldsRootValue(p, r, b', diff, leavesIn(r)[k].v);
+    //     assert(computeRootPath(p, b', diff, leavesIn(r)[k].v) ==  r.v);
+    //     computeRootPathDiffEqualscomputeRootPath(p, b', leavesIn(r)[k].v);
+    //     assert(computeRootPathDiff(p, b',  leavesIn(r)[k].v) == computeRootPath(p, b', diff,  leavesIn(r)[k].v));
 
-        sameComputeDiffPath(p, b, b', leavesIn(r)[k].v);
-    }
+    //     sameComputeDiffPath(p, b, b', leavesIn(r)[k].v);
+    // }
  }
