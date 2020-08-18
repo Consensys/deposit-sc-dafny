@@ -66,4 +66,32 @@ module LeftSiblings {
         leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, 0);   
     }
 
+    lemma {:induction p, r} siblingsLeft2(p : seq<bit>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat, i : nat) 
+
+        requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
+        requires height(r) >= 2
+
+        /**  all leaves after the k leaf are zero. */
+        requires k < |leavesIn(r)|
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+
+        /** p is the path to k leaf in r. */
+        requires hasLeavesIndexedFrom(r, i)
+        requires |p| == height(r) - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+
+        requires |b| == |p|
+        /** `b` contains values at left siblings on path `p`. */
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+
+        /** B abd b' agree on values at indices where p[i] == 1, and otherwise b'[i] == 0 */
+        requires |b'| == |b| && forall i :: 0 <= i < |b'| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 
+
+        ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v
+    {
+        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, i);   
+    }
+
  }

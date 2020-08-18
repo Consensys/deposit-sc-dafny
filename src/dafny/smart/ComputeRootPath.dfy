@@ -406,8 +406,6 @@ module ComputeRootPath {
 
         //  define a new seq b' that holds default values for right siblings
         //  and prove that pre-conditions of computeOnPathYieldsRootValue hold.
-
-        // var b' : seq<int> :| |b'| == |b| && forall i :: 0 <= i < |b| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 ; 
         var b' := makeB(p, b);
 
         leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, 0);
@@ -415,6 +413,52 @@ module ComputeRootPath {
             p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
         siblingsLeft(p, r, b, b', k);
+        assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
+
+        assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
+
+        computeOnPathYieldsRootValue(p, r, b', diff, leavesIn(r)[k].v);
+        assert(computeRootPath(p, b', diff, leavesIn(r)[k].v) ==  r.v);
+        computeRootPathDiffEqualscomputeRootPath(p, b', leavesIn(r)[k].v);
+        assert(computeRootPathDiff(p, b',  leavesIn(r)[k].v) == computeRootPath(p, b', diff,  leavesIn(r)[k].v));
+
+        sameComputeDiffPath(p, b, b', leavesIn(r)[k].v);
+    }
+
+    lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff2(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat, index : nat) 
+
+         requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
+        requires height(r) >= 2
+
+        /**  all leaves after the k leaf are zero. */
+        requires k < |leavesIn(r)|
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+
+        /** p is the path to k leaf in r. */
+        requires hasLeavesIndexedFrom(r, index)
+        requires |p| == height(r) - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+
+        requires |b| == |p|
+        /** `b` contains values at left siblings on path `p`. */
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+
+        ensures r.v == computeRootPathDiff(p, b, leavesIn(r)[k].v)
+
+        decreases r
+    {
+
+        //  define a new seq b' that holds default values for right siblings
+        //  and prove that pre-conditions of computeOnPathYieldsRootValue hold.
+        var b' := makeB(p, b);
+
+        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, index);
+        assert(forall i :: 0 <= i < |p| ==> 
+            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+
+        siblingsLeft2(p, r, b, b', k, index);
         assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
 
         assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
@@ -458,8 +502,6 @@ module ComputeRootPath {
         computeRootPathDiffUp(p, b, leavesIn(r)[k].v)
     }
 
-
- 
     /**
      *  A useful lemma need in the proof of v1Equalsv2 when |p| > 1 and p[|p| - 1] == 1.
      *  
@@ -511,6 +553,146 @@ module ComputeRootPath {
                     //  as i < |p| - 2, valOnPAt[i] is same as valOnPAt[..|p| - 1][i]
                     valOnPAt[..|p| - 1][i];
                 }
+            }
+        }
+    }
+
+    /**
+     *  This is the most tedious lemma to prove.
+     *  Some simplifications may be welcome at some point.
+     *  The verification time is also large and a timeout may occur (see it to a valeu >= 60sec).
+     */
+    lemma computeAllPathDiffUpInATree(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat, seed: int, index : nat) 
+        requires isCompleteTree(r)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
+        requires height(r) >= 2
+
+        /**  all leaves after the k leaf are zero. */
+        requires k < |leavesIn(r)|
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+
+        /** p is the path to k leaf in r. */
+        requires hasLeavesIndexedFrom(r, index)
+        requires |p| == height(r) - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+        requires seed == nodeAt(p,r).v 
+
+        requires |b| == |p|
+        /** `b` contains values at left siblings on path `p`. */
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+
+        ensures forall i :: 0 <= i < |p| ==> 
+            nodeAt(p[.. i + 1], r).v == computeAllPathDiffUp(p, b, seed)[i]
+    {
+        if |p| == 1 {
+            //  Thanks Dafny.
+        } else {
+            //  |p| >= 2
+            //  use induction to get i >=1 and computation on p[0] to get i == 0
+            forall ( i : nat |  0 <= i < |p| )
+                ensures nodeAt(p[.. i + 1], r).v == computeAllPathDiffUp(p, b, seed)[i]
+            {
+            var b':= makeB(p, b);
+            //  by siblingLeft lemma
+            childrenCompTreeValidIndex(r, height(r), index);
+            childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
+            siblingsLeft2(p, r, b, b', k, index);
+            assert(forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v);
+
+            match r 
+                case Node(_, lc, rc) => 
+                    projectValuesOnChild(p, r, b');
+                    assert(
+                        forall k :: 0 <= k < |b'| - 1 ==>
+                        b'[1..][k] == siblingAt(p[1..][..k + 1], if p[0] == 0 then lc else rc).v
+                    );
+                    if ( i >= 1 ) {
+                        if p[0] == 0 {
+                            initPathDeterminesIndex(r, p, k, index);
+                            assert( k < power2(height(r) - 1)/ 2);
+                            calc == {
+                                nodeAt(p[.. i + 1], r).v;
+                                nodeAt(p[1..i + 1], lc).v;
+                                calc == {
+                                    p[1..i + 1];
+                                    p[1..][..i];
+                                }
+                                nodeAt(p[1..][..i], lc).v;
+                                { computeAllPathDiffUpInATree(p[1..], lc, b'[1..], k, seed, index);}
+                                computeAllPathDiffUp(p[1..], b'[1..], seed)[i - 1];
+                                { computeAllDiffUpPrefixes(p[1..], b'[1..], seed); }
+                                computeRootPathDiffUp(p[i + 1..], b'[i + 1..], seed);
+                                { computeUpEqualsComputeDown(p[i + 1..], b'[i + 1..], seed); }
+                                computeRootPathDiff(p[i + 1..], b'[i + 1..], seed);
+                                { sameComputeDiffPath(p[i + 1..], b'[i + 1..], b[i + 1..], seed); }
+                                computeRootPathDiff(p[i + 1..], b[i + 1..], seed);
+                                { computeUpEqualsComputeDown(p[i + 1..], b[i + 1..], seed); }
+                                computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed);
+                                { computeAllDiffUpPrefixes(p, b, seed); }
+                                computeAllPathDiffUp(p, b, seed)[i];
+                            }
+                        } else {
+                            initPathDeterminesIndex(r, p, k, index);
+                            assert( k  >= power2(height(r) - 1)/ 2);
+                            calc == {
+                                nodeAt(p[.. i + 1], r).v;
+                                nodeAt(p[1..i + 1], rc).v;
+                                calc == {
+                                    p[1..i + 1];
+                                    p[1..][..i];
+                                }
+                                nodeAt(p[1..][..i], rc).v;
+                                { computeAllPathDiffUpInATree(p[1..], rc, b'[1..], k - power2(height(r) - 1)/ 2, seed, index +  power2(height(r) - 1) / 2);}
+                                computeAllPathDiffUp(p[1..], b'[1..], seed)[i - 1];
+                                { computeAllDiffUpPrefixes(p[1..], b'[1..], seed); }
+                                computeRootPathDiffUp(p[i + 1..], b'[i + 1..], seed);
+                                { computeUpEqualsComputeDown(p[i + 1..], b'[i + 1..], seed); }
+                                computeRootPathDiff(p[i + 1..], b'[i + 1..], seed);
+                                { sameComputeDiffPath(p[i + 1..], b'[i + 1..], b[i + 1..], seed); }
+                                computeRootPathDiff(p[i + 1..], b[i + 1..], seed);
+                                { computeUpEqualsComputeDown(p[i + 1..], b[i + 1..], seed); }
+                                computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed);
+                                { computeAllDiffUpPrefixes(p, b, seed); }
+                                computeAllPathDiffUp(p, b, seed)[i];
+                                }
+                            }
+                        } else {
+                            //  i == 0
+                            if p[0] == 0 {
+                                initPathDeterminesIndex(r, p, k, index);
+                                assert( k < power2(height(r) - 1)/ 2);
+                                calc == {
+                                    computeAllPathDiffUp(p, b, seed)[0];
+                                    { computeAllDiffUpPrefixes(p, b, seed); }
+                                    computeRootPathDiffUp(p[1..], b[1..],seed) ;
+                                    { computeUpEqualsComputeDown(p[1..], b[1..], seed); }
+                                    computeRootPathDiff(p[1..], b[1..],seed) ;
+                                    { sameComputeDiffPath(p[1..], b'[1..], b[1..], seed); }
+                                    computeRootPathDiff(p[1..], b'[1..], seed);
+                                    { computeOnPathYieldsRootValueDiff2(p[1..], lc, b'[1..], k, index); }
+                                    lc.v;
+                                    nodeAt([p[0]], r).v;
+                                    nodeAt(p[..1], r).v;
+                                }
+                            } else {
+                                initPathDeterminesIndex(r, p, k, index);
+                                assert( k >= power2(height(r) - 1)/ 2);
+                                calc == {
+                                    computeAllPathDiffUp(p, b, seed)[0];
+                                    { computeAllDiffUpPrefixes(p, b, seed); }
+                                    computeRootPathDiffUp(p[1..], b[1..],seed) ;
+                                    { computeUpEqualsComputeDown(p[1..], b[1..], seed); }
+                                    computeRootPathDiff(p[1..], b[1..],seed) ;
+                                    { sameComputeDiffPath(p[1..], b'[1..], b[1..], seed); }
+                                    computeRootPathDiff(p[0 + 1..], b'[0 + 1..], seed);
+                                    { computeOnPathYieldsRootValueDiff2(p[1..], rc, b'[1..], k - power2(height(r) - 1)/ 2, index + power2(height(r) - 1)/ 2); }
+                                    rc.v;
+                                    nodeAt([p[0]], r).v;
+                                    nodeAt(p[..1], r).v;
+                                }
+                            }
+                        }
             }
         }
     }
