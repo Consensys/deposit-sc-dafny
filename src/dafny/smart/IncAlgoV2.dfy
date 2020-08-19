@@ -55,23 +55,26 @@ module IncAlgoV2 {
     {
      if |p| == 1 then
         var r := computeRootPathDiff(p, valOnLeftAt, seed);
-        (r, [seed]) 
+        (r, if p[0] == 0 then [seed] else valOnLeftAt) 
     else 
         if p[|p| - 1] == 0 then
             var r := computeRootPathDiffAndLeftSiblingsUpv2(
                         p[.. |p| - 1], 
                         valOnLeftAt[..|valOnLeftAt| - 1],   
                         diff(seed, 0) );
-                        //  could use  p[.. |p| - 1] instead of valOnPAt[..|p| - 1]
                     (r.0, valOnLeftAt[.. |valOnLeftAt| - 1] + [seed])
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUpv2(
                     p[.. |p| - 1], 
                     valOnLeftAt[..|valOnLeftAt| - 1],  
                     diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
+                     /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
+                        the next path as it is not a leftSibling of a node of next path.
+                        at this level. As a consequence we can use any value to append to
+                        the second component of the result .1. We just use the old value 
+                        [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
+                        in-place a unique array in the imperative version. */
                     (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
-                    //  could use 0 instead of v1[|p| - 1] but need to adjust 
-                    //  computeLeftSiblingOnNextPath to match that
     }
 
     /**

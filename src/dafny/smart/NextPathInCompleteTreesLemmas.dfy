@@ -224,7 +224,7 @@ module NextPathInCompleteTreesLemmas {
             //  does not really matter as we'll use it only with p[0] == 0 and
             //  in that case we want v1
             // assert(p[0] == 0);
-                v1
+            if p[0] == 0 then v1 else v2 
         else 
             // assert(|p| >= 2);
             if p[|p| - 1] == 0 then 

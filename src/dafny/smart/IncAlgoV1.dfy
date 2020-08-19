@@ -63,25 +63,24 @@ module IncAlgoV1 {
      if |p| == 1 then
         var r := computeRootPathDiff(p, valOnLeftAt, seed);
         //  if p[0] == 0, the left sibling of nextpath is at p[0] and the value is valOnP
-        //  Otherise, if p[0] == 1, the sibling for nextPath at this level is a right sibling and
+        //  Otherwise, if p[0] == 1, the sibling for nextPath at this level is a right sibling and
         //  we do not care about the value of the second component.
-        (r, valOnPAt) 
+        (r, if p[0] == 0 then valOnPAt else valOnLeftAt) 
     else 
         if p[|p| - 1] == 0 then
             var r := computeRootPathDiffAndLeftSiblingsUp(
                     p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1],  diff(seed, 0), valOnPAt[..|p| - 1]);
-                        //  could use  p[.. |p| - 1] instead of valOnPAt[..|p| - 1]
                     (r.0, valOnLeftAt[.. |valOnLeftAt| - 1] + [valOnPAt[|p| - 1]])
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUp(
                     p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
-                    // (r.0, r.1 + [valOnPAt[|p| - 1]])
-                    //  use the same value valOnLeftAt[|valOnLeftAt| - 1] for next left sibling
-                    //  as it is not used
+                     /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
+                        the next path as it is not a leftSibling of a node of next path.
+                        at this level. As a consequence we can use any value to append to
+                        the second component of the result .1. We just use the old value 
+                        [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
+                        in-place a unique array in the imperative version. */
                     (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
-                    
-                    //  could use 0 instead of v1[|p| - 1] but need to adjust 
-                    //  computeLeftSiblingOnNextPath to match that
     }
 
     /**
