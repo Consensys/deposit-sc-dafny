@@ -91,7 +91,7 @@ module IncAlgoV3 {
                     k / 2,
                     valOnLeftAt[..|valOnLeftAt| - 1],  
                     diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
-                    (r.0, r.1 + [seed])
+                    (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
                     //  could use 0 instead of v1[|p| - 1] but need to adjust 
                     //  computeLeftSiblingOnNextPath to match that
     }
@@ -131,7 +131,7 @@ module IncAlgoV3 {
                     k / 2,
                     valOnLeftAt[..|valOnLeftAt| - 1],  
                     diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
-                    (r.0, r.1 + [seed])
+                    (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
                     //  could use 0 instead of v1[|p| - 1] but need to adjust 
                     //  computeLeftSiblingOnNextPath to match that
     }

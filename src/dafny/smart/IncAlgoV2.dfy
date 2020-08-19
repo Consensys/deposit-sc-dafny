@@ -69,7 +69,7 @@ module IncAlgoV2 {
                     p[.. |p| - 1], 
                     valOnLeftAt[..|valOnLeftAt| - 1],  
                     diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
-                    (r.0, r.1 + [seed])
+                    (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
                     //  could use 0 instead of v1[|p| - 1] but need to adjust 
                     //  computeLeftSiblingOnNextPath to match that
     }
@@ -213,11 +213,11 @@ module IncAlgoV2 {
                     p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
                 calc == {
                     computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1;
-                    a1.1 + [seed];
+                    a1.1 + [valOnLeftAt[|valOnLeftAt| - 1]];
                 }
                 calc == {
                     computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1;
-                    b1.1 + [valOnPAt[|p| - 1]];
+                    b1.1 + [valOnLeftAt[|valOnLeftAt| - 1]];
                 }
                 calc == {
                     valOnPAt[|p| - 1];

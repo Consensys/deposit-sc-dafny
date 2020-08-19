@@ -75,7 +75,11 @@ module IncAlgoV1 {
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUp(
                     p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
-                    (r.0, r.1 + [valOnPAt[|p| - 1]])
+                    // (r.0, r.1 + [valOnPAt[|p| - 1]])
+                    //  use the same value valOnLeftAt[|valOnLeftAt| - 1] for next left sibling
+                    //  as it is not used
+                    (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
+                    
                     //  could use 0 instead of v1[|p| - 1] but need to adjust 
                     //  computeLeftSiblingOnNextPath to match that
     }

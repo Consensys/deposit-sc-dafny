@@ -239,7 +239,7 @@ module NextPathInCompleteTreesLemmas {
                 // assert(forall i {:trigger p[.. i + 1]} :: 0 <= i < |p| - 1 ==>
                         // p[.. i + 1] == p[..|p| - 1][.. i + 1]);
 
-                computeLeftSiblingOnNextPath(p[.. |p| - 1], v1[..|p| - 1], v2[..|p| - 1]) + [v1[|p| - 1 ]]
+                computeLeftSiblingOnNextPath(p[.. |p| - 1], v1[..|p| - 1], v2[..|p| - 1]) + [v2[|p| - 1 ]]
     } 
 
     /**
