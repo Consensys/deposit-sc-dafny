@@ -40,10 +40,7 @@ module IncAlgoV3 {
     import opened Trees
 
     /**
-     *  Compute the root value and the left siblings concurrently.
-     *  The fact that this version and the non-optimised (V1)
-     *  computeRootPathDiffAndLeftSiblingsUp computes the same result is
-     *  provided by lemma v1Equalsv2.
+     *  Compute the root value and the left siblings of next path concurrently.
      */
     function computeRootPathDiffAndLeftSiblingsUpv3(
         p : seq<bit>, 
@@ -57,7 +54,7 @@ module IncAlgoV3 {
         requires natToBitList(k, |p|) == p
         
         /**
-         *  V3 and V2 computes same result.
+         *  V3 and V2 compute same result.
          */
         ensures computeRootPathDiffAndLeftSiblingsUpv3(p, h, k, valOnLeftAt, seed) ==
             computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed)
@@ -99,7 +96,8 @@ module IncAlgoV3 {
     }
 
     /**
-     *  Use the natural value of a path to compute the results.
+     *  Use the natural value of a path and height (supposedly of the tree) 
+     *  to compute the results.
      */
     function computeRootPathDiffAndLeftSiblingsUpv4(
         h : nat,
@@ -109,7 +107,7 @@ module IncAlgoV3 {
         requires k < power2(h)
 
         /**
-         *  V4 and V3 computes same result.
+         *  V4 and V3 compute same result.
          */
         ensures 
             computeRootPathDiffAndLeftSiblingsUpv4(h, k, valOnLeftAt, seed) ==
