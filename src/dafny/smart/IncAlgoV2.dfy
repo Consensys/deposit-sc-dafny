@@ -46,7 +46,7 @@ module IncAlgoV2 {
      *  computeRootPathDiffAndLeftSiblingsUp computes the same result is
      *  provided by lemma v1Equalsv2.
      */
-     function computeRootPathDiffAndLeftSiblingsUpv2(
+    function computeRootPathDiffAndLeftSiblingsUpv2(
         p : seq<bit>, valOnLeftAt : seq<int>, seed: int) : (int, seq<int>)
         requires |p| == |valOnLeftAt| 
         requires |p| >= 1

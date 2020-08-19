@@ -39,14 +39,13 @@ module IncAlgoV3 {
     import opened SeqOfBits
     import opened Trees
 
-
     /**
      *  Compute the root value and the left siblings concurrently.
      *  The fact that this version and the non-optimised (V1)
      *  computeRootPathDiffAndLeftSiblingsUp computes the same result is
      *  provided by lemma v1Equalsv2.
      */
-   function computeRootPathDiffAndLeftSiblingsUpv3(
+    function computeRootPathDiffAndLeftSiblingsUpv3(
         p : seq<bit>, 
         h : nat,
         k : nat,
@@ -99,7 +98,10 @@ module IncAlgoV3 {
                     (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
     }
 
-     function computeRootPathDiffAndLeftSiblingsUpv4(
+    /**
+     *  Use the natural value of a path to compute the results.
+     */
+    function computeRootPathDiffAndLeftSiblingsUpv4(
         h : nat,
         k : nat,
         valOnLeftAt : seq<int>, seed: int) : (int, seq<int>)
@@ -109,35 +111,38 @@ module IncAlgoV3 {
         /**
          *  V4 and V3 computes same result.
          */
-        ensures computeRootPathDiffAndLeftSiblingsUpv4(h, k, valOnLeftAt, seed) ==
-            computeRootPathDiffAndLeftSiblingsUpv3(natToBitList(k, h), h, k, valOnLeftAt, seed) 
+        ensures 
+            computeRootPathDiffAndLeftSiblingsUpv4(h, k, valOnLeftAt, seed) ==
+            var p := natToBitList(k, h);
+            computeRootPathDiffAndLeftSiblingsUpv3(p, h, k, valOnLeftAt, seed) 
 
         decreases h
     {
     if h == 1 then
         var r := computeRootPathDiff([k as bit], valOnLeftAt, seed);
-        (r, if k == 0 then [seed] else valOnLeftAt) 
+        assert(valOnLeftAt ==  [valOnLeftAt[0]]);
+        (r, if k == 0 then [seed] else [valOnLeftAt[h - 1]]) 
     else 
         if k % 2 == 0 then
             var r := computeRootPathDiffAndLeftSiblingsUpv4(
                         h - 1,
                         k / 2,
-                        valOnLeftAt[..|valOnLeftAt| - 1],   
+                        valOnLeftAt[..h - 1],   
                         diff(seed, 0) );
-                    (r.0, valOnLeftAt[.. |valOnLeftAt| - 1] + [seed])
+                    (r.0, valOnLeftAt[.. h - 1] + [seed])
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUpv4(
                     h - 1,
                     k / 2,
-                    valOnLeftAt[..|valOnLeftAt| - 1],  
-                    diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
+                    valOnLeftAt[..h - 1],  
+                    diff(valOnLeftAt[h - 1], seed));
                     /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
                         the next path as it is not a leftSibling of a node of next path.
                         at this level. As a consequence we can use any value to append to
                         the second component of the result .1. We just use the old value 
                         [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
                         in-place a unique array in the imperative version. */
-                    (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
+                    (r.0, r.1 + [valOnLeftAt[h - 1]])
     }
 
  }
