@@ -12,7 +12,7 @@
  * under the License.
  */
  
-include "IntTree.dfy"
+include "DiffTree.dfy"
 
 include "IncAlgoV1.dfy"
 include "CompleteTrees.dfy"

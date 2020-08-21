@@ -12,7 +12,7 @@
  * under the License.
  */
  
-include "IntTree.dfy"
+include "DiffTree.dfy"
 include "CompleteTrees.dfy"
 include "GenericComputation.dfy"
 include "Helpers.dfy"
@@ -41,7 +41,7 @@ module ComputeRootPath {
      *  right sibling to compute value at root.
      *  Compute the value on a path recursively by computing on children first.
      */
-    function computeRootPathDiff(p : seq<bit>, b : seq<int>, seed: int) : int
+    function method computeRootPathDiff(p : seq<bit>, b : seq<int>, seed: int) : int
         requires |p| == |b|
         decreases p
     {

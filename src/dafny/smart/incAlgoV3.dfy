@@ -12,7 +12,7 @@
  * under the License.
  */
  
-include "IntTree.dfy"
+include "DiffTree.dfy"
 
 include "IncAlgoV2.dfy"
 include "CompleteTrees.dfy"
@@ -42,7 +42,7 @@ module IncAlgoV3 {
     /**
      *  Compute the root value and the left siblings of next path concurrently.
      */
-    function computeRootPathDiffAndLeftSiblingsUpv3(
+    function  computeRootPathDiffAndLeftSiblingsUpv3(
         p : seq<bit>, 
         h : nat,
         k : nat,
@@ -99,7 +99,7 @@ module IncAlgoV3 {
      *  Use the natural value of a path and height (supposedly of the tree) 
      *  to compute the results.
      */
-    function computeRootPathDiffAndLeftSiblingsUpv4(
+    function method computeRootPathDiffAndLeftSiblingsUpv4(
         h : nat,
         k : nat,
         valOnLeftAt : seq<int>, seed: int) : (int, seq<int>)

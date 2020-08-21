@@ -15,6 +15,7 @@
 include "DiffTree.dfy"
 include "Helpers.dfy"
 include "Trees2.dfy"
+include "IncAlgoV3.dfy"
 include "MerkleTrees.dfy"
 include "SeqOfBits.dfy"
 include "CompleteTrees.dfy"
@@ -25,6 +26,7 @@ module IntTreeIncAlgo {
 
     import opened Helpers
     import opened DiffTree
+    import opened IncAlgoV3
     import opened Trees
     import opened MerkleTrees
     import opened SeqOfBits
@@ -50,10 +52,12 @@ module IntTreeIncAlgo {
         var diffRoot : int
 
         /** Number of elements in the tree. */
-        // var counter : nat
+        var counter : nat
 
         /** The list of ints stored in the tree.  */
         ghost var store : seq<int>
+
+        var valLeft : seq<int>
 
         /** A valid tree. */
         predicate isValid() 
@@ -68,8 +72,8 @@ module IntTreeIncAlgo {
             //  diffRoot is the value of diff on root.
             && diffRoot == root.v
             //  height preserved.
-            && h == height(root) 
-            && 0 <= |store| <= power2(h - 1)
+            && h == height(root) == |valLeft|
+            && 0 <= |store| == counter <= power2(h - 1)
             && |leavesIn(root)| == power2(h - 1)
 
             //  tree leftmost leaves are in store.
@@ -87,8 +91,6 @@ module IntTreeIncAlgo {
             ensures isCompleteTree(root)
             ensures isValid()
 
-        
-        
         /**
          *  The Merkle tree of height `h` for the empty list is the 
          *  zero (complete) tree of height `h`.
@@ -128,10 +130,6 @@ module IntTreeIncAlgo {
         //     completeTreesLeftRightChildrenLeaves(r, height(r)) ;
         // }
 
-
-        
-       
-
         /**
          *  Values of the nodes on the right of a path to e in Merkle(l :+ e,h)
          *  are all zeroes.
@@ -162,12 +160,12 @@ module IntTreeIncAlgo {
          *  The value of diff at the root of a well decorated tree is the value of
          *  the tree.
          */
-        function hash_tree_root(r: Tree<int>) : int 
-            requires isCompleteTree(r)
-            requires isDecoratedWithDiff(r) 
-        {
-            r.v
-        }
+        // function hash_tree_root(r: Tree<int>) : int 
+        //     requires isCompleteTree(r)
+        //     requires isDecoratedWithDiff(r) 
+        // {
+        //     r.v
+        // }
 
         /** 
          *  Add element e to the tree.
@@ -205,7 +203,7 @@ module IntTreeIncAlgo {
             ensures treeLeftmostLeavesMatchList(store, root, 0)
 
             //  The next one is not verified in the current version of this algo.
-            // ensures diffRoot == root.v
+            ensures diffRoot == root.v
 
             // ensures isValid()
 
@@ -218,6 +216,7 @@ module IntTreeIncAlgo {
             root := buildMerkleDiff(store, h);
 
             //  Compute the new diffRoot
+            diffRoot := computeRootPathDiffAndLeftSiblingsUpv4(h, counter, valLeft, e).0 ;
             diffRoot := 0 ;
         }
 

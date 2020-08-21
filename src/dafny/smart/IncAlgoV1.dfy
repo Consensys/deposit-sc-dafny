@@ -12,7 +12,7 @@
  * under the License.
  */
  
-include "IntTree.dfy"
+include "DiffTree.dfy"
 include "CompleteTrees.dfy"
 include "ComputeRootPath.dfy"
 include "GenericComputation.dfy"
