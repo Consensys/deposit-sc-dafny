@@ -142,5 +142,4 @@ module IncAlgoV3 {
                         in-place a unique array in the imperative version. */
                     (r.0, r.1 + [valOnLeftAt[h - 1]])
     }
-
  }
