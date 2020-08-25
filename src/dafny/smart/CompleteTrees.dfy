@@ -84,7 +84,8 @@ module CompleteTrees {
     }
 
     /**
-     *  Children of a node r in a complete tree evenly partition leavesIn(r).
+     *  Children of a node r in a complete tree of height >-= 2
+     *  evenly partition leavesIn(r).
      */
     lemma {:induction r} childrenInCompTreesHaveHalfNumberOfLeaves(r : Tree, h : nat) 
         requires h == height(r) >= 2
@@ -105,7 +106,7 @@ module CompleteTrees {
     }
 
     /**
-     *  Children of indexed node are indexed.
+     *  Children of indexed node are indexed by the corresponding sub-ranges.
      */
     lemma {:induction r} childrenCompTreeValidIndex(r : Tree, h : nat, i : nat)
         requires hasLeavesIndexedFrom(r, i)
