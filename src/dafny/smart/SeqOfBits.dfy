@@ -16,7 +16,7 @@ include "Helpers.dfy"
 include "SeqHelpers.dfy"
 
 /** 
- *  Provide seq<bit>, functions and lemmas for it.
+ *  Provide seq<bit>.
  */
 module SeqOfBits {
 
