@@ -84,7 +84,7 @@ module IncAlgoV2 {
     lemma {:induction p, b, seed} computeRootAndSiblingsv2IsCorrect(p : seq<bit>, b : seq<int>, seed: int) 
         requires |p| == |b| 
         requires |p| >= 1
-        /** We prove the following property: */
+        /** We prove the following property first: */
         ensures computeRootPathDiffAndLeftSiblingsUpv2(p, b, seed).0 == computeRootPathDiffUp(p, b, seed) 
         /** And with the post condition of computeRootPathDiffAndLeftSiblingsUpv2
          *  it gives the following general result: if the returned value is (r, xs)

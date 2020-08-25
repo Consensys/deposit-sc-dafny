@@ -74,7 +74,7 @@ module IncAlgoV1 {
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUp(
                     p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
-                     /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
+                     /* The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
                         the next path as it is not a leftSibling of a node of next path.
                         at this level. As a consequence we can use any value to append to
                         the second component of the result .1. We just use the old value 

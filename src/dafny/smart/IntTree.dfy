@@ -20,6 +20,7 @@ include "MerkleTrees.dfy"
 include "SeqOfBits.dfy"
 include "CompleteTrees.dfy"
 include "PathInCompleteTrees.dfy"
+include "computeRootPath.dfy"
 include "SeqHelpers.dfy"
 
 module IntTreeIncAlgo { 
@@ -32,6 +33,7 @@ module IntTreeIncAlgo {
     import opened SeqOfBits
     import opened CompleteTrees
     import opened PathInCompleteTrees
+    import opened ComputeRootPath
     import opened SeqHelpers
 
     /**
@@ -178,11 +180,13 @@ module IntTreeIncAlgo {
         method add(e: int)
 
             requires isCompleteTree(root)
-            requires h == height(root) 
+            requires h == height(root) >= 2
             requires |store| < power2(h - 1)
 
             requires |leavesIn(root)| == power2(h - 1)
             requires isDecoratedWith(diff, root)
+            requires hasLeavesIndexedFrom(root, 0)
+
             requires treeLeftmostLeavesMatchList(store, root, 0)
             requires isMerkle(root, store, diff, 0)
             requires isValid()
@@ -203,7 +207,7 @@ module IntTreeIncAlgo {
             ensures treeLeftmostLeavesMatchList(store, root, 0)
 
             //  The next one is not verified in the current version of this algo.
-            ensures diffRoot == root.v
+            // ensures diffRoot == root.v
 
             // ensures isValid()
 
@@ -217,7 +221,15 @@ module IntTreeIncAlgo {
 
             //  Compute the new diffRoot
             diffRoot := computeRootPathDiffAndLeftSiblingsUpv4(h, counter, valLeft, e).0 ;
-            diffRoot := 0 ;
+            computeRootAndSiblingsV4IsCorrect(h, counter, valLeft, e);
+            // assert(|natToBitList(counter, h - 1)| == height(root) - 1);
+            // computeOnPathYieldsRootValueDiff(natToBitList(counter, h - 1), root, valLeft, counter);
+            // assert(
+            //     computeRootPathDiffAndLeftSiblingsUpv4(h, counter, valLeft, e).0
+            //     ==
+            //     computeRootPathDiffUp(natToBitList(counter, h), valLeft, e)
+            // );
+            // diffRoot := 0 ;
         }
 
     } 
