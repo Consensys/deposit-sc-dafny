@@ -12,9 +12,9 @@
  * under the License.
  */
 
-include "Trees2.dfy"
-include "Helpers.dfy"
-include "SeqOfBits.dfy"
+include "Trees.dfy"
+include "../helpers/Helpers.dfy"
+include "../seqofbits/SeqOfBits.dfy"
 
 /**
  *  Provide complete trees.

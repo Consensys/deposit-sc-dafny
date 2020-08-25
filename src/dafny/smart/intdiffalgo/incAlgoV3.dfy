@@ -273,14 +273,17 @@ module IncAlgoV3 {
     function method computeRootPathDiffAndLeftSiblingsUpv4c(
         h : nat,
         k : nat,
+        //  ghost z : nat,  //  make sure we propagate the initial value of height 
+                        //  to prove that Inv0 holds
         valOnLeftAt : seq<int>, 
         seed: int,
         newLeft : seq<int>) : (int, seq<int>)
         requires 0 <= h == |valOnLeftAt|
         // requires h > 0 ==> k < power2(h)
-        // requires |valOnLeftAt| + |newLeft| == h 
+        // requires |valOnLeftAt| + |newLeft| == z //  Inv0
         requires k < power2(h)
 
+        // requires z == h
 
         decreases h
     {
@@ -288,9 +291,11 @@ module IncAlgoV3 {
             (seed, newLeft)
         else 
             if k % 2 == 0 then
+                // assert(|valOnLeftAt[..h - 1]| + |[seed]| + |newLeft| == h);
                 computeRootPathDiffAndLeftSiblingsUpv4c(
                             h - 1,
                             k / 2,
+                            // z,
                             valOnLeftAt[..h - 1],   
                             diff(seed, 0),
                             [seed] + newLeft)
@@ -298,6 +303,7 @@ module IncAlgoV3 {
                 computeRootPathDiffAndLeftSiblingsUpv4c(
                         h - 1,
                         k / 2,
+                        // z,
                         valOnLeftAt[..h - 1],  
                         diff(valOnLeftAt[h - 1], seed),
                         [valOnLeftAt[h - 1]] + newLeft)
@@ -311,15 +317,22 @@ module IncAlgoV3 {
 
      lemma  {:induction h} computeRootAndSiblingsV4cIsCorrect(h : nat,
         k : nat,
+        // z : nat,
         valOnLeftAt : seq<int>, seed: int,  newLeft : seq<int>)
         requires 1 <= h == |valOnLeftAt|
         requires k < power2(h)
         requires |valOnLeftAt| + |newLeft| == h - 1
 
-        ensures |computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, []).1| == h
+        // ensures |computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, []).1| == h
 
         ensures  computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed) == 
            computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, [])
+
+        ensures computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed) ==
+            (computeRootPathDiffUp(natToBitList(k, h), valOnLeftAt, seed),
+            computeLeftSiblingOnNextPath(natToBitList(k, h), computeAllPathDiffUp(natToBitList(k, h), valOnLeftAt, seed), valOnLeftAt)
+            )
+
     {   
         //  Thanks Dafny
     }

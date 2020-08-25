@@ -12,8 +12,8 @@
  * under the License.
  */
 
-include "Helpers.dfy"
-include "SeqOfBits.dfy"
+include "../helpers/Helpers.dfy"
+include "../seqofbits/SeqOfBits.dfy"
 
 /**
  *  Provide tree decorated with attribute values.
