@@ -12,9 +12,9 @@
  * under the License.
  */
 
-include "Helpers.dfy"
-include "Trees2.dfy"
-include "CompleteTrees.dfy"
+include "helpers/Helpers.dfy"
+include "trees/Trees.dfy"
+include "trees/CompleteTrees.dfy"
 
 module MerkleTrees {
 

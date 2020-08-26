@@ -12,15 +12,15 @@
  * under the License.
  */
  
-include "DiffTree.dfy"
-include "CompleteTrees.dfy"
-include "GenericComputation.dfy"
-include "Helpers.dfy"
-include "MerkleTrees.dfy"
-include "NextPathInCompleteTreesLemmas.dfy"
-include "PathInCompleteTrees.dfy"
-include "SeqOfBits.dfy"
-include "Trees2.dfy"
+include "../intdiffalgo/DiffTree.dfy"
+include "../trees/CompleteTrees.dfy"
+include "../synthattribute/GenericComputation.dfy"
+include "../helpers/Helpers.dfy"
+include "../MerkleTrees.dfy"
+include "../paths/NextPathInCompleteTreesLemmas.dfy"
+include "../paths/PathInCompleteTrees.dfy"
+include "../seqofbits/SeqOfBits.dfy"
+include "../trees/Trees.dfy"
 
 module LeftSiblings {
  

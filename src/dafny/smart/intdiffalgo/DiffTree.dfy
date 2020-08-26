@@ -12,13 +12,13 @@
  * under the License.
  */
 
-include "Helpers.dfy"
-include "Trees2.dfy"
-include "MerkleTrees.dfy"
-include "SeqOfBits.dfy"
-include "CompleteTrees.dfy"
-include "PathInCompleteTrees.dfy"
-include "SeqHelpers.dfy"
+include "../helpers/Helpers.dfy"
+include "../trees/Trees.dfy"
+include "../MerkleTrees.dfy"
+include "../seqofbits/SeqOfBits.dfy"
+include "../trees/CompleteTrees.dfy"
+include "../paths/PathInCompleteTrees.dfy"
+include "../helpers/SeqHelpers.dfy"
 
 module DiffTree { 
 

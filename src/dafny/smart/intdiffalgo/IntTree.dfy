@@ -13,15 +13,17 @@
  */
 
 include "DiffTree.dfy"
-include "Helpers.dfy"
-include "Trees2.dfy"
 include "IncAlgoV3.dfy"
-include "MerkleTrees.dfy"
-include "SeqOfBits.dfy"
-include "CompleteTrees.dfy"
-include "PathInCompleteTrees.dfy"
-include "computeRootPath.dfy"
-include "SeqHelpers.dfy"
+include "../trees/CompleteTrees.dfy"
+include "../synthattribute/ComputeRootPath.dfy"
+include "../synthattribute/GenericComputation.dfy"
+include "../helpers/Helpers.dfy"
+include "../synthattribute/LeftSiblings.dfy"
+include "../MerkleTrees.dfy"
+include "../paths/NextPathInCompleteTreesLemmas.dfy"
+include "../paths/PathInCompleteTrees.dfy"
+include "../seqofbits/SeqOfBits.dfy"
+include "../trees/Trees.dfy"
 
 module IntTreeIncAlgo { 
 

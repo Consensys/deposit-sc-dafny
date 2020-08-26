@@ -12,12 +12,12 @@
  * under the License.
  */
 
-include "CompleteTrees.dfy"
-include "Helpers.dfy"
+include "../trees/CompleteTrees.dfy"
+include "../helpers/Helpers.dfy"
 include "PathInCompleteTrees.dfy"
-include "SeqOfBits.dfy"
-include "SeqHelpers.dfy"
-include "Trees2.dfy"
+include "../seqofbits/SeqOfBits.dfy"
+include "../helpers/SeqHelpers.dfy"
+include "../trees/Trees.dfy"
 
 module NextPathInCompleteTreesLemmas {
 

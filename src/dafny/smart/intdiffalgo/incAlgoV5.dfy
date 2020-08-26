@@ -15,15 +15,16 @@
 include "DiffTree.dfy"
 
 include "IncAlgoV3.dfy"
-include "CompleteTrees.dfy"
-include "ComputeRootPath.dfy"
-include "GenericComputation.dfy"
-include "Helpers.dfy"
-include "MerkleTrees.dfy"
-include "NextPathInCompleteTreesLemmas.dfy"
-include "PathInCompleteTrees.dfy"
-include "SeqOfBits.dfy"
-include "Trees2.dfy"
+include "../trees/CompleteTrees.dfy"
+include "../synthattribute/ComputeRootPath.dfy"
+include "../synthattribute/GenericComputation.dfy"
+include "../helpers/Helpers.dfy"
+include "../synthattribute/LeftSiblings.dfy"
+include "../MerkleTrees.dfy"
+include "../paths/NextPathInCompleteTreesLemmas.dfy"
+include "../paths/PathInCompleteTrees.dfy"
+include "../seqofbits/SeqOfBits.dfy"
+include "../trees/Trees.dfy"
 
 /**
  *  Imperative version of algorithm.

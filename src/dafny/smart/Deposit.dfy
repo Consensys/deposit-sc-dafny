@@ -12,7 +12,7 @@
  * under the License.
  */
 
-include "Trees2.dfy"
+include "trees/Trees.dfy"
 include "MerkleTrees.dfy"
 
 module DepositTree {

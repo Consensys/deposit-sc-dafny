@@ -12,8 +12,8 @@
  * under the License.
  */
 
-include "Helpers.dfy"
-include "SeqHelpers.dfy"
+include "../helpers/Helpers.dfy"
+include "../helpers/SeqHelpers.dfy"
 
 /** 
  *  Provide seq<bit>.
