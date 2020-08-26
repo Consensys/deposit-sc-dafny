@@ -26,6 +26,8 @@ done
 if [ $error -ne 0 ]
 then
   echo -e "${RED}Some files [$error/$processedfiles] has(ve) errors :-("
+  exit 1
 else 
   echo -e "${GREEN}No errors occured! Great job.${NC}"
+  exit 0
 fi
