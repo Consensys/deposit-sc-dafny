@@ -45,6 +45,7 @@ module Trees {
     {
         match root 
             case Leaf(_, _) => 1
+
             case Node(_, lc, rc) => 1 + max(height(lc), height(rc))
     }
     
@@ -57,10 +58,13 @@ module Trees {
      *                  the pre-order (node, left, right) traversal of a tree.
      */
     function method nodesIn(root : Tree) : seq<Tree>
+        ensures |nodesIn(root)| >= 1
+        ensures nodesIn(root)[0] == root
         decreases root
     {
         match root 
             case Leaf(_, _) => [ root ] 
+
             case Node(_, lc, rc) =>  [ root ] + nodesIn(lc) + nodesIn(rc) 
     }
 
@@ -82,8 +86,8 @@ module Trees {
     {
         match root 
             case Leaf(_,_) => [ root ] 
-            case Node(_, lc, rc) =>  
-                leavesIn(lc) + leavesIn(rc) 
+
+            case Node(_, lc, rc) =>  leavesIn(lc) + leavesIn(rc) 
     }
 
     //  Predicates on Trees.
@@ -91,25 +95,24 @@ module Trees {
     /**
      *  Check that a decorated tree correctly stores the synthesised attribute f. 
      *
-     *  @param  t       The function to compute the attribute on a node
+     *  @param  f       The function to compute the attribute on a node
      *                  given the values on the children.
      *  @param  root    The root that defines the tree.
      *
      *  @note           We assume that the synthesised attribute is given
-     *                  on the leaves and is not computed on them. 
+     *                  on the leaves and is not computed on them, so
+     *                  a leaf is by definition well-decorated.
      */
     predicate isDecoratedWith<T>(f : (T, T) -> T, root: Tree<T>)
         decreases root
     {
         match root
-            case Leaf(v, _) => true
+            case Leaf(_, _) => true
 
             case Node(v, lc, rc) => 
-                    //  Recursive definition for an internal node: children 
-                    //  are well decorated and node's value is f applied to children.
-                    v == f(lc.v, rc.v)
-                    && isDecoratedWith(f, lc)
-                    && isDecoratedWith(f, rc)
+                //  Recursive definition for an internal node: children 
+                //  are well decorated and node's value is f applied to children.
+                v == f(lc.v, rc.v) && isDecoratedWith(f, lc) && isDecoratedWith(f, rc)
     }
 
     /**
@@ -124,9 +127,8 @@ module Trees {
     {
         match r 
             case Leaf(v,_) => v == c
-            case Node(v, lc, rc) => v == c
-                            && isConstant(lc, c) 
-                            && isConstant(rc, c)
+
+            case Node(v, lc, rc) => v == c && isConstant(lc, c) && isConstant(rc, c)
     }
 
      /**
@@ -138,8 +140,7 @@ module Trees {
      */
     predicate hasLeavesIndexedFrom(r: Tree, i : nat) 
     {
-        forall k :: 0 <= k < |leavesIn(r)|  ==> 
-            leavesIn(r)[k].index == k + i
+        forall k :: 0 <= k < |leavesIn(r)|  ==> leavesIn(r)[k].index == k + i
     }
 
     //  Constant tree iff same values on all nodes (and leaves)
@@ -149,7 +150,11 @@ module Trees {
         ensures  
             (forall k :: 0 <= k < |nodesIn(r)|  ==> nodesIn(r)[k].v == c)
             && (forall k :: 0 <= k < |leavesIn(r)|  ==> leavesIn(r)[k].v == c)
-    {}
+    {
+        //  Thanks Dafny
+    }
+
+    //  Lemmas on trees.
 
     lemma {:induction r} sameValuesEveryWhereImpliesIsConstant<T>(r : Tree<T>, c: T)
         requires forall k :: 0 <= k < |nodesIn(r)|  ==> nodesIn(r)[k].v == c
@@ -157,6 +162,7 @@ module Trees {
         decreases r 
     {
         if (height(r) == 1) {
+            //  In this case, there is only one node.
             assert(nodesIn(r)[0] == r);
         } else {
             match r 
@@ -165,9 +171,11 @@ module Trees {
                     assert(nodesIn(lc)  == nodesIn(r)[1..|nodesIn(lc)| + 1]);
                     assert(nodesIn(rc)  == nodesIn(r)[|nodesIn(lc)| + 1..|nodesIn(r)|]);
 
+                    //  Induction on lc and rc
                     sameValuesEveryWhereImpliesIsConstant(lc, c);
                     sameValuesEveryWhereImpliesIsConstant(rc, c);
                     
+                    //  True for root.
                     assert(nodesIn(r)[0] == r);
         }
     }    
