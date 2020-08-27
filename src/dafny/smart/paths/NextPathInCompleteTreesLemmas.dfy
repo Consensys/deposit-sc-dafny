@@ -109,12 +109,12 @@ module NextPathInCompleteTreesLemmas {
         requires exists i :: 0 <= i < |p| && p[i] == 0  //  Req1
         requires |v1| == |v2| == |p|
         requires forall i :: 0 <= i < |p| ==>           //  Req2
-            v1[i] == nodeAt(p[.. i + 1],r).v 
+            v1[i] == nodeAt(take(p, i + 1),r).v 
         requires forall i :: 0 <= i < |p| ==>           //  Req3 
-            p[i] == 1 ==> v2[i] == siblingAt(p[.. i + 1],r).v 
+            p[i] == 1 ==> v2[i] == siblingAt(take(p, i + 1),r).v 
 
         ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
-                computeLeftSiblingOnNextPath(p, v1, v2)[i] == siblingAt(nextPath(p)[..i + 1],r).v
+                computeLeftSiblingOnNextPath(p, v1, v2)[i] == siblingAt(take(nextPath(p), i + 1),r).v
 
         decreases p 
     {    
@@ -132,11 +132,11 @@ module NextPathInCompleteTreesLemmas {
                     computeLeftSiblingOnNextPath(p, v1, v2)[i];
                     //  Definition of computeLeftSiblingOnNextPath
                     v1[0];
-                    nodeAt(p[..1],r).v;
+                    nodeAt(take(p, 1),r).v;
                     nodeAt([0],r).v;
-                    nodeAt([1][..0] + [0],r).v;
+                    nodeAt(take([1],0) + [0],r).v;
                     siblingAt([1],r).v;
-                    siblingAt(nextPath(p)[..i + 1],r).v;
+                    siblingAt(take(nextPath(p), 1),r).v;
                 }
             } else {
                 //  |p| >= 2
