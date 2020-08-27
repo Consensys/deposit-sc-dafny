@@ -115,4 +115,11 @@ module SeqHelpers {
         //  Thanks Dafny
     }
 
+    lemma seqAppendLemmas<T>(p : seq<T>, a : T)
+        requires |p| >= 1
+        ensures init(p + [a]) == p 
+        ensures tail(p + [a]) == tail(p) + [a]
+    {
+
+    }
 }
