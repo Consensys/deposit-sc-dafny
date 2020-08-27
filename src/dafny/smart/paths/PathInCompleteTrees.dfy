@@ -46,7 +46,7 @@ module PathInCompleteTrees {
             // r must be a node as height(r) > |p| >= 1
             match r 
                 case Node(_, lc, rc) => 
-                    nodeAt(p[1..], if p[0] == 0 then lc else rc)
+                    nodeAt(tail(p), if first(p) == 0 then lc else rc)
     }
 
     /**
@@ -61,10 +61,10 @@ module PathInCompleteTrees {
         requires 1 <= |p| < height(r) 
         requires isCompleteTree(r)
     {
-        if p[|p| - 1] == 0 then
-            nodeAt(p[..|p| - 1] + [1], r)
+        if last(p) == 0 then
+            nodeAt(init(p) + [1], r)
         else
-            nodeAt(p[..|p| - 1] + [0], r)
+            nodeAt(init(p) + [0], r)
     }      
 
     /**
@@ -78,30 +78,30 @@ module PathInCompleteTrees {
         ensures match r 
             case Node(_, lc, rc) =>
                 siblingAt(p, r) == 
-                siblingAt(p[1..], if p[0] == 0 then lc else rc)
+                siblingAt(tail(p), if first(p) == 0 then lc else rc)
     {
         match r 
             case Node(_, lc, rc) =>
             
-                var oppLastP := 1 - p[|p| - 1];
-                var p1 := p[..|p| - 1];
+                var oppLastP := 1 - last(p);
                 //  build path to sibling by flipping last value of p
-                var b := p[..|p| - 1] + [oppLastP];                
+                var b := init(p) + [oppLastP];   
+                calc == {
+                    first(b);
+                    first(p);
+                }           
+                calc == {
+                    tail(b);
+                    take(tail(p), |tail(p)| - 1) + [oppLastP];
+                }  
                 calc == {
                     siblingAt(p, r);
                     nodeAt(b, r);
-                    nodeAt(b[1..], if b[0] == 0 then lc else rc);
-                    calc == {  //  b[0] is same as p[0]
-                        b[0];
-                        p[0];
-                    }
-                    nodeAt(b[1..], if p[0] == 0 then lc else rc);
-                    calc == {  //  b[1..] can be rewritten using p
-                        b[1..];
-                        p[1..][..|p[1..]| - 1] + [oppLastP];
-                    }
-                    nodeAt(p[1..][..|p[1..]| - 1] + [oppLastP], if p[0] == 0 then lc else rc);
-            }
+                    nodeAt(tail(b), if first(b) == 0 then lc else rc);
+                    nodeAt(tail(b), if first(p) == 0 then lc else rc);
+                    nodeAt(take(tail(p), |tail(p)| - 1) + [oppLastP], if first(p) == 0 then lc else rc);
+                    siblingAt(tail(p), if first(p) == 0 then lc else rc);
+                }
     }
     
     /**
@@ -139,12 +139,9 @@ module PathInCompleteTrees {
                 case Node(_, lc, rc) => 
                     calc == {
                         nodeAt(p + [a], r);
-                        nodeAt((p + [a])[1..], if p[0] == 0 then lc else rc);
-                        calc == {
-                            (p + [a])[1..] ;
-                            p[1..] + [a];
-                        }
-                        nodeAt(p[1..] + [a], if p[0] == 0 then lc else rc);
+                        nodeAt(tail(p + [a]), if first(p) == 0 then lc else rc);
+                        { seqAppendLemmas(p , a); }
+                        nodeAt(tail(p) + [a], if first(p) == 0 then lc else rc);
                     }
         }
     }
@@ -164,9 +161,9 @@ module PathInCompleteTrees {
 
         ensures match r 
             case Node(_, lc, rc) =>
-                (p[0] == 0 && k < power2(height(r) - 1)/2)
+                (first(p) == 0 && k < power2(height(r) - 1)/2)
                 ||
-                (p[0] == 1 && k >= power2(height(r) - 1)/2)
+                (first(p) == 1 && k >= power2(height(r) - 1)/2)
     {
         childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
     }
@@ -184,45 +181,79 @@ module PathInCompleteTrees {
         decreases p 
     {
         if |p| == 1 {
-            initPathDeterminesIndex(r, p, k, i);
-            if p[0] == 0 {
-                assert(bitListToNat(p) == 0 == k);
-            } else {
-                assert(bitListToNat(p) == 1 == k);
+            calc == {
+                bitListToNat(p);
+                bitListToNat([first(p)]);
+                { initPathDeterminesIndex(r, p, k, i); }
+                k;
             }
         } else {
             //  r is not a leaf
             match r 
                 case Node(_, lc, rc) => 
-                    if p[0] == 0 {
+                    if first(p) == 0 {
                         //  left lc
-                        assert(nodeAt(p, r) == nodeAt(p[1..], lc));
-                        //  HI on rc
+                        calc == {
+                            nodeAt(p, r);
+                            //  by definition as first(p) == 0
+                            nodeAt(tail(p), lc);
+                        }
+                        //  Check pre-conditions on lc before applying HI on lc
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
-                        initPathDeterminesIndex(r, p, k, i);
-                        assert( k < power2(height(r) - 1)/ 2);
                         assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
 
-                        childrenCompTreeValidIndex(r, height(r), i);
+                        initPathDeterminesIndex(r, p, k, i);
+                        assert( k < power2(height(r) - 1)/ 2);
 
-                        pathToIndexIsBinaryOfIndex(p[1..], lc, k, i);
+                        childrenCompTreeValidIndex(r, height(r), i);
+                        assert(hasLeavesIndexedFrom(lc, i));
+
+                        
+                        //  Now use result on tail(p) 
+                        calc == {
+                            bitListToNat(p);
+                            bitListToNat(tail(p));
+                            { pathToIndexIsBinaryOfIndex(tail(p), lc, k, i); }
+                            k;
+                        }
                     } else {
                         //  p[0] == 1
-                        assert(nodeAt(p, r) == nodeAt(p[1..], rc));
-                        childrenInCompTreesHaveSameNumberOfLeaves(r);
-                        assert(nodeAt(p, r) == nodeAt(p, r));
+                        assert(first(p) == 1);
+                        //  left rc
+                        calc == {
+                            nodeAt(p, r);
+                            //  by definition as first(p) == 1
+                            nodeAt(tail(p), rc);
+                        }
 
-                        initPathDeterminesIndex(r, p, k, i);
-                        assert( k >= power2(height(r) - 1)/ 2);
+                        //  Check pre-conditions on rc before applying HI on rc
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
-                        // assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
+
+                        calc >= {
+                            k;
+                            { initPathDeterminesIndex(r, p, k, i); }
+                            power2(height(r) - 1)/ 2;
+                        }
 
                         childrenCompTreeValidIndex(r, height(r), i);
-                        //  induction on 
-                        var k' := k - power2(height(r) - 1)/ 2 ;
-                        assert(leavesIn(r)[k] == leavesIn(rc)[k']);
-                        pathToIndexIsBinaryOfIndex(p[1..], rc, k',  i + power2(height(r) - 1) / 2);
+                        assert(hasLeavesIndexedFrom(rc, i + power2(height(r) - 1)/ 2));
 
+                        //  induction on rc
+                        var k' := k - power2(height(r) - 1)/ 2 ;
+                        
+                        childrenInCompTreesHaveHalfNumberOfLeaves(r , height(r));
+                        assert(leavesIn(r)[k] == leavesIn(rc)[k']);
+
+                        pathToIndexIsBinaryOfIndex(tail(p), rc, k',  i + power2(height(r) - 1) / 2);
+                        //  Now use result on tail(p) 
+                        calc == {
+                            bitListToNat(p);
+                            power2(height(r) - 1) / 2 + bitListToNat(tail(p));
+                            { pathToIndexIsBinaryOfIndex(tail(p), rc, k',  i + power2(height(r) - 1) / 2); }
+                            power2(height(r) - 1) / 2 + k';
+                            k;
+                        }
                     }
         }
     }
@@ -240,52 +271,88 @@ module PathInCompleteTrees {
         decreases p 
     {
         if |p| == 1 {
-            if p[0] == 0 {
-                initPathDeterminesIndex(r, p, k, i);
-                assert(k == 0);
-                assert(bitListToNat(p) == 0);
-                assert(nodeAt(p, r) == leavesIn(r)[0]);
+            if first(p) == 0 {
+                calc == {
+                    nodeAt(p, r);
+                    leavesIn(r)[0];
+                }
+                calc == {
+                    bitListToNat(p);
+                    k;
+                    { initPathDeterminesIndex(r, p, k, i); }
+                    0;
+                }
             } else {
-                assert(p[0] == 1);
-                initPathDeterminesIndex(r, p, k, i);
-                assert(k == 1);
-                assert(bitListToNat(p) == 1);
-                assert(nodeAt(p, r) == leavesIn(r)[k]);
+                calc == {
+                    nodeAt(p, r);
+                    leavesIn(r)[1];
+                }
+                calc == {
+                    bitListToNat(p);
+                    k;
+                    { initPathDeterminesIndex(r, p, k, i); }
+                    1;
+                }
             }
         } else {
             //  r is not a leaf
             match r 
                 case Node(_, lc, rc) => 
                     childrenCompTreeValidIndex(r, height(r), i);
-                    if p[0] == 0 {
+                    if first(p) == 0 {
                         //  left lc
-                        assert(nodeAt(p, r) == nodeAt(p[1..], lc));
+                        calc == {
+                            nodeAt(p, r);
+                            //  by definition as first(p) == 0
+                            nodeAt(tail(p), lc);
+                        }                        
                         //  HI on rc
+                        //  Check pre-conditions on lc before applying HI on lc
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
+                        assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
+
                         initPathDeterminesIndex(r, p, k, i);
                         assert( k < power2(height(r) - 1)/ 2);
-                        assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
-                        // foo302(p[1..], lc, k);
+
+                        childrenCompTreeValidIndex(r, height(r), i);
+                        assert(hasLeavesIndexedFrom(lc, i));
+
+                        calc == {
+                            nodeAt(p, r);
+                            //  by definition as first(p) == 0
+                            nodeAt(tail(p), lc);
+                            { leafAtPathIsIntValueOfPath(tail(p), lc, k, i) ; }
+                            leavesIn(lc)[k];
+                            leavesIn(r)[k];
+                        }
                     } else {
                         //  p[0] == 1
-                        assert(nodeAt(p, r) == nodeAt(p[1..], rc));
-                        childrenInCompTreesHaveSameNumberOfLeaves(r);
+                        //  right rc
+                        calc == {
+                            nodeAt(p, r);
+                            //  by definition as first(p) == 1
+                            nodeAt(tail(p), rc);
+                        }
 
-                        assert( k >= power2(height(r) - 1)/ 2);
+                        childrenInCompTreesHaveSameNumberOfLeaves(r);
                         assert(|leavesIn(rc)| == power2(height(r) - 1)/ 2);
+
+                        childrenCompTreeValidIndex(r, height(r), i);
+                        assert(hasLeavesIndexedFrom(rc, i + power2(height(r) - 1)/ 2));
+                        
                         var k' := k - power2(height(r) - 1)/ 2 ;
 
-                        childrenInCompTreesHaveHalfNumberOfLeaves(r , height(r));
-                        assert(leavesIn(rc) == leavesIn(r)[power2(height(r) - 1) / 2 ..]);
-                        assert(leavesIn(rc)[k'] == leavesIn(r)[power2(height(r) - 1) / 2 ..][k']);
-                        assert(nodeAt(p[1..], rc) == nodeAt(p, r));
-                        // assert(nodeAt(p, r) == leavesIn(r)[k]);
+                        calc == {
+                            nodeAt(p, r);
+                            nodeAt(tail(p), rc);
+                            { leafAtPathIsIntValueOfPath(tail(p), rc, k', i + power2(height(r) - 1) / 2); }
+                            leavesIn(rc)[k'];
+                            { childrenInCompTreesHaveHalfNumberOfLeaves(r , height(r));}
+                            leavesIn(r)[k];
+                        }
 
-                        leafAtPathIsIntValueOfPath(p[1..], rc, k', i + power2(height(r) - 1) / 2);
-                        assert(nodeAt(p[1..], rc) == leavesIn(rc)[k']);
-                        assert( leavesIn(rc)[k'] == leavesIn(r)[k]);
-                        initPathDeterminesIndex(rc, p[1..], k', i + power2(height(r) - 1) / 2);
-                        // assume( nodeAt(p, r) == leavesIn(r)[k]);
+                        initPathDeterminesIndex(r, p, k, i);
+                        assert( k >= power2(height(r) - 1)/ 2);
                     }
         }
     }
