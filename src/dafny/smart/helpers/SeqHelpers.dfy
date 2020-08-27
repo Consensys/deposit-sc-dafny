@@ -17,14 +17,102 @@
  */
 module SeqHelpers {
 
-    /** 
-     *  Concatenation is associative and lengths sum up.
+    /**
+     * First element of a sequence.
+     *  
+     *  @param  p   A sequence of length >= 1.
+     *  @returns    The first element.
      */
-    lemma seqAssoc<T>(a: seq<T>, b : seq<T>, c: seq<T>) 
-        ensures a + b + c == (a + b) + c == a + (b + c) == (a + b + c)
-        ensures |a + b + c| == |a| + |b| + |c|
+    function method first<T>(p : seq<T>) : T
+        requires 1 <= |p|
     {
-        //  Thanks Dafny.
+        p[0]
+    }
+
+    /**
+     * Tail  of a sequence.
+     *  
+     *  @param  p   A sequence of length >= 1.
+     *  @returns    The tail (all but first element).
+     */
+    function method tail<T>(p : seq<T>) : seq<T>
+        requires 1 <= |p|
+    {
+        p[1..]
+    }
+
+    /**
+     *  Initial prefix of a sequence.
+     *  
+     *  @param  p   A sequence of length >= 1.
+     *  @returns    The sequence p minus the last element.
+     */
+    function method init<T>(p : seq<T>) : seq<T>
+        requires 1 <= |p|
+        ensures |init(p)| == |p| - 1
+    {
+        p[..|p| - 1]
+    }
+
+   /**
+     *  Last element of a sequence.
+     *  
+     *  @param  p   A sequence of length >= 1.
+     *  @returns    The last element of p.
+     */
+    function method last<T>(p : seq<T>) : T
+        requires 1 <= |p|
+    {
+        p[|p| - 1]
+    }
+
+    /**
+     *  k-Prefix of a sequence.
+     *  
+     *  @param  p   A sequence.
+     *  @param  k   A integer between 0 and |p|.
+     *  @returns    The sequence made of the first k elements of p.
+     */
+    function method  take<T>(p : seq<T>, k : nat) : seq<T>
+        requires |p| >= k 
+        ensures |take(p, k)| == k
+    {
+        p[..k]
+    }
+
+   /**
+     *  Suffix of a sequence.
+     *  
+     *  @param  p   A sequence.
+     *  @param  k   A integer between 0 and |p|.
+     *  @returns    The sequence made of the last k - |p| elements of p.
+     */
+    function method  drop<T>(p : seq<T>, k : nat) : seq<T>
+        requires |p| >= k 
+        ensures |drop(p, k)| == |p| - k
+    {
+        p[k..]
+    }
+
+    //  Useful lemmas on init, last, take and drop.
+    lemma seqLemmas<T>(p : seq<T>) 
+        requires 1 <= |p|
+        ensures p == init(p) + [last(p)]
+        ensures init(p) == take(p, |p| - 1)
+        ensures [last(p)] == drop(p, |p| - 1) 
+        ensures [first(p)] == take(p, 1)
+        ensures tail(p) == drop(p, 1)
+    {   
+        //  Thanks Dafny
+    }
+
+    lemma seqIndexLemmas<T>(p : seq<T>, k : nat) 
+        requires 1 <= |p|
+        requires 0 <= k < |p| 
+        ensures take(p, k) == take(init(p), k)
+        ensures 0 <= k < |init(p)| ==> p[k] == init(p)[k]
+    {   
+        //  Thanks Dafny
     }
 
 }
