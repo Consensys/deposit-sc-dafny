@@ -168,7 +168,7 @@ module IncAlgoV2 {
             computeLeftSiblingOnNextPath(p, v1, v2);
         }
 
-        computeOnNextPathCollectsValuesOfNextLeftSiblings(p, r, v1, v2);
+        computeLeftSiblingOnNextPathIsCorrect(p, r, v1, v2);
     }
 
     /** 
