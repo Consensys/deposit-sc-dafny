@@ -109,9 +109,10 @@ module SeqHelpers {
 
     lemma seqIndexLemmas<T>(p : seq<T>, k : nat) 
         requires 1 <= |p|
-        requires 0 <= k < |p| 
-        ensures take(p, k) == take(init(p), k)
+        requires 0 <= k <= |p| 
+        ensures k < |p| ==> take(p, k) == take(init(p), k)
         ensures 0 <= k < |init(p)| ==> p[k] == init(p)[k]
+        ensures k >= 1 ==> tail(take(p, k)) == take(tail(p), k - 1)
     {   
         //  Thanks Dafny
     }
