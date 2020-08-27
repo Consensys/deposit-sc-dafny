@@ -147,7 +147,7 @@ module PathInCompleteTrees {
     }
 
     /**
-     *  Initial path determines index range.
+     *  Initial value of path determines index range.
      */
     lemma {:induction r, p} initPathDeterminesIndex(r : Tree, p : seq<bit>, k : nat, i : nat) 
         requires isCompleteTree(r)
@@ -306,7 +306,7 @@ module PathInCompleteTrees {
                             //  by definition as first(p) == 0
                             nodeAt(tail(p), lc);
                         }                        
-                        //  HI on rc
+                        //  Induction on lc
                         //  Check pre-conditions on lc before applying HI on lc
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
                         assert(|leavesIn(lc)| == power2(height(r) - 1)/ 2);
@@ -321,6 +321,7 @@ module PathInCompleteTrees {
                             nodeAt(p, r);
                             //  by definition as first(p) == 0
                             nodeAt(tail(p), lc);
+                            //  Induction on lc
                             { leafAtPathIsIntValueOfPath(tail(p), lc, k, i) ; }
                             leavesIn(lc)[k];
                             leavesIn(r)[k];
@@ -345,12 +346,12 @@ module PathInCompleteTrees {
                         calc == {
                             nodeAt(p, r);
                             nodeAt(tail(p), rc);
+                            //  Induction on rc
                             { leafAtPathIsIntValueOfPath(tail(p), rc, k', i + power2(height(r) - 1) / 2); }
                             leavesIn(rc)[k'];
                             { childrenInCompTreesHaveHalfNumberOfLeaves(r , height(r));}
                             leavesIn(r)[k];
                         }
-
                         initPathDeterminesIndex(r, p, k, i);
                         assert( k >= power2(height(r) - 1)/ 2);
                     }
