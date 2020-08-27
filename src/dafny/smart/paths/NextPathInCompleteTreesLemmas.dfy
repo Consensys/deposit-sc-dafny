@@ -55,31 +55,31 @@ module NextPathInCompleteTreesLemmas {
      *  Left siblings of nextPath(p) are either nodes of p or
      *  left siblings of p.
      */
-    lemma {:induction p, r} leftSiblingAtNextPathOnPathOrSiblingOfPath(p: seq<bit>, r :  Tree, k : nat)
-        requires isCompleteTree(r)      
-        requires hasLeavesIndexedFrom(r, 0)                        
-        requires 1 <= |p| == height(r) - 1                      
-        requires 0 <= k < |leavesIn(r)| - 1                     
-        requires nodeAt(p, r) == leavesIn(r)[k]                 
+    // lemma {:induction p, r} leftSiblingAtNextPathOnPathOrSiblingOfPath(p: seq<bit>, r :  Tree, k : nat)
+    //     requires isCompleteTree(r)      
+    //     requires hasLeavesIndexedFrom(r, 0)                        
+    //     requires 1 <= |p| == height(r) - 1                      
+    //     requires 0 <= k < |leavesIn(r)| - 1                     
+    //     requires nodeAt(p, r) == leavesIn(r)[k]                 
 
-        ensures (exists i ::  0 <= i < |p| && p[i] == 0)
-                &&
-                forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
-                    (
-                        siblingAt(nextPath(p)[..i + 1], r) == nodeAt(p[..i + 1], r)
-                        ||
-                        siblingAt(nextPath(p)[..i + 1], r) == siblingAt(p[..i + 1], r)
-                    )
-    {
-       pathToLeafInInitHasZero(p, r , k) ;
-       foo32(p, r);
-    }
+    //     ensures (exists i ::  0 <= i < |p| && p[i] == 0)
+    //             &&
+    //             forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
+    //                 (
+    //                     siblingAt(nextPath(p)[..i + 1], r) == nodeAt(p[..i + 1], r)
+    //                     ||
+    //                     siblingAt(nextPath(p)[..i + 1], r) == siblingAt(p[..i + 1], r)
+    //                 )
+    // {
+    //    pathToLeafInInitHasZero(p, r , k) ;
+    //    foo32(p, r);
+    // }
 
     /**
      *  Left siblings of nextPath are on path or are sibling of path.
      *  This lemma does not seem to be used anywhere.
      */
-    lemma {:induction p, r} foo32(p: seq<bit>, r :  Tree)
+    lemma {:induction p, r} foo32a(p: seq<bit>, r :  Tree)
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1                      
         requires exists i ::  0 <= i < |p| && p[i] == 0
@@ -164,14 +164,11 @@ module NextPathInCompleteTreesLemmas {
                     //  Split into induction on p[..|p| - 1] and last node
                      //  ensure nextPath pre-conds are satisfied
                     // foo450(p, r, k);
-                    assert(p[|p| - 1] == 1);
-                    assert(exists i ::  0 <= i < |p| - 1  && p[i] == 0 );
-                    // assert(p[.. |p| - 1] == )
-                    assert(exists i  ::  0 <= i < |p[.. |p| - 1]|   && p[.. |p| - 1][i] == 0 );
+                   
 
                     if ( i < |p| - 1) {
                         //  induction on p[..|p| - 1]
-                        foo32(p[.. |p| - 1], r);
+                        foo32a(p[.. |p| - 1], r);
 
                         assert(siblingAt(nextPath(p[.. |p| - 1 ])[..i + 1], r) == nodeAt(p[..|p| - 1][..i + 1], r)
                         ||
@@ -245,15 +242,15 @@ module NextPathInCompleteTreesLemmas {
     /**
      *  computeLeftSiblingOnNextPath returns values on left siblings of next path.
      */
-    lemma {:induction p, r} computeOnNextPathCollectsValuesOfNextLeftSiblings<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>)
+    lemma {:induction p, v1, v2} computeOnNextPathCollectsValuesOfNextLeftSiblings<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>)
         requires isCompleteTree(r)                              
         requires 1 <= |p| <= height(r) - 1      
 
-        requires exists i :: 0 <= i < |p| && p[i] == 0
+        requires exists i :: 0 <= i < |p| && p[i] == 0  //  Req1
         requires |v1| == |v2| == |p|
-        requires forall i :: 0 <= i < |p| ==>
+        requires forall i :: 0 <= i < |p| ==>           //  Req2
             v1[i] == nodeAt(p[.. i + 1],r).v 
-        requires forall i :: 0 <= i < |p| ==>
+        requires forall i :: 0 <= i < |p| ==>           //  Req3 
             p[i] == 1 ==> v2[i] == siblingAt(p[.. i + 1],r).v 
 
         ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
@@ -261,37 +258,29 @@ module NextPathInCompleteTreesLemmas {
 
         decreases p 
     {    
-        if |p| == 1 {
-            forall (i : int |  0 <= i < |p| && nextPath(p)[i] == 1)
-                ensures computeLeftSiblingOnNextPath(p, v1, v2)[i] == siblingAt(nextPath(p)[..i + 1],r).v
-            {
-                //  i must be zero
-                assert(i == 0);
-                assert(p[0] == 0);
-                assert(nextPath(p)[i] == 1);
+        forall (i : int |  0 <= i < |p| && nextPath(p)[i] == 1)
+            ensures computeLeftSiblingOnNextPath(p, v1, v2)[i] == 
+                                    siblingAt(take(nextPath(p), i + 1),r).v
+        {
+            if |p| == 1 {
+                //  i must be zero and because of Req1, p[0] == 0
+                assert(i == 0 && p[0] == 0);
+                assert(p == [0]);
+                //  Next path is [1]
+                assert(nextPath(p) == [1]);
                 calc == {
                     computeLeftSiblingOnNextPath(p, v1, v2)[i];
-                    computeLeftSiblingOnNextPath(p, v1, v2)[0];
+                    //  Definition of computeLeftSiblingOnNextPath
                     v1[0];
-                }
-                calc == {
-                    siblingAt(nextPath(p)[..i + 1],r).v ;
-                    siblingAt(nextPath(p)[..1],r).v;
-                    siblingAt(nextPath(p),r).v;
-                    siblingAt([1],r).v;
-                    nodeAt([1][..0] + [0],r).v;
                     nodeAt(p[..1],r).v;
-                    v1[0];
+                    nodeAt([0],r).v;
+                    nodeAt([1][..0] + [0],r).v;
+                    siblingAt([1],r).v;
+                    siblingAt(nextPath(p)[..i + 1],r).v;
                 }
-                // assert(siblingAt(nextPath(p)[..i + 1],r).v == nodeAt(p[.. i + 1],r).v) ;
-            }
-            // assert()
-        } else {
-            //  |p| >= 2
-            forall (i : int |  0 <= i < |p| && nextPath(p)[i] == 1)
-                ensures computeLeftSiblingOnNextPath(p, v1, v2)[i] == siblingAt(nextPath(p)[..i + 1],r).v
-            {
-                if (p[|p| - 1] == 0) {
+            } else {
+                //  |p| >= 2
+                if (last(p) == 0) {
                     //  next path must end with 1 and hence p[|p| - 1] == 0
                     assert(nextPath(p) == p[..|p| - 1] + [1]);
                     assert(p[|p| - 1] == 0);
@@ -309,17 +298,15 @@ module NextPathInCompleteTreesLemmas {
                             (v2[..|p| - 1] + [v1[|p| - 1 ]])[i];
                             computeLeftSiblingOnNextPath(p, v1, v2)[i];
                         }
-                    
                     } else {
                         // i == |p| - 1
                         calc == {
                             siblingAt(nextPath(p)[..i + 1],r).v ;
                             == calc == {
-                                i ;
-                                |p| - 1;
+                                i + 1;
+                                |p|;
                             }
                             siblingAt(nextPath(p)[..|p|],r).v ;
-                            // { fullSliceIsSeq(nextPath(p)) ;}
                             calc == {
                                 nextPath(p)[..|p|];
                                 nextPath(p);
@@ -328,6 +315,7 @@ module NextPathInCompleteTreesLemmas {
                             nodeAt(p[..|p| - 1] + [0], r).v;
                             == calc == {
                                 p ;
+                                {seqLemmas(p);}
                                 p[..|p| - 1] + [0];
                             }
                             nodeAt(p, r).v;
@@ -346,66 +334,72 @@ module NextPathInCompleteTreesLemmas {
                         }
                     }
                 } else {
-                    // p[|p| - 1] == 1
-                    assert(nextPath(p) == nextPath(p[.. |p| - 1]) + [0]);
+                    // last(p) == 1
+                    assert(last(p) == 1);
                     if ( i < |p| - 1 ) {
-                        assert(p[|p| - 1] == 1);
-                        //  Induction on p[.. |p| - 1]
+                        //  Induction on init(p), init(v1), init(v2)
                         //  Check pre conditions to apply lemma inductively
                        
-                        //  Requirement on v1
-                        forall (k : int | 0 <= k < |p[.. |p| - 1]| ) 
-                            ensures v1[k] == // nodeAt(p[.. k + 1],r).v == 
-                                          nodeAt(p[.. |p| - 1][.. k + 1],r).v
+                        //  Req2 on init(p) and init(v1)
+                        forall (k : int | 0 <= k < |init(p)| ) 
+                            ensures v1[k] ==  nodeAt(take(init(p), k + 1),r).v
                         {
                             calc == {
                                 v1[k];
-                                nodeAt(p[.. k + 1],r).v ;
-                                == calc == {
-                                    p[.. |p| - 1][..k + 1] ;
-                                    ==
-                                    p[..k + 1];
-                                }
-                                nodeAt(p[.. |p| - 1][.. k + 1],r).v ;
+                                //  Req2
+                                nodeAt(take(p, k + 1),r).v ;
+                                { seqIndexLemmas(p, k + 1); }
+                                nodeAt(take(init(p), k + 1), r).v ;
                             }
                         }
 
-                        //  Requirement on v2
-                        forall (k : int | 0 <= k < |p[.. |p| - 1]| && p[.. |p| - 1][k] == 1 ) 
-                            ensures v2[k] == // nodeAt(p[.. k + 1],r).v == 
-                                          siblingAt(p[.. |p| - 1][.. k + 1],r).v
+                        //  Req3 on init(p) and init(v2)
+                        forall (k : int | 0 <= k < |init(p)| && init(p)[k] == 1 ) 
+                            ensures v2[k] == siblingAt(init(p)[.. k + 1],r).v
                         {
                             calc == {
-                                v2[k];
-                                siblingAt(p[.. k + 1],r).v ;
-                                == calc == {
-                                    p[.. |p| - 1][..k + 1] ;
-                                    ==
-                                    p[..k + 1];
+                                v2[k];  // show that p[k] == 1 and by Req3 on p, same as sibling.
+                                calc ==> {
+                                   init(p)[k] == 1;
+                                    {   assert( k < |init(p)|); // pre-condition for seqLemmas(p,k)
+                                        seqLemmas(p); }
+                                    p[k] == 1;  
                                 }
-                                siblingAt(p[.. |p| - 1][.. k + 1],r).v ;
+                                //  Req3 applies
+                                siblingAt(take(p, k + 1),r).v ;
+                                { seqIndexLemmas(p, k + 1); }
+                                siblingAt(take(init(p),k + 1),r).v ;
                             }
                         }
-                        
-                        //  Induction hypothesis on p[.. |p| - 1], ... 
-                        computeOnNextPathCollectsValuesOfNextLeftSiblings(p[.. |p| - 1], r, v1[..|p| - 1] , v2[..|p| - 1]);
 
+                        //  Req1: existence of zero in init(p)
+                        calc ==> {
+                            exists j:: 0 <= j < |p|  && p[j] == 0;
+                            last(p) != 0;
+                            { pushExistsToInitPrefixIfNotLast(p); }
+                            exists j:: 0 <= j < |init(p)|  && init(p)[j] == 0;
+                        }
+
+                        //  Induction hypothesis on init(p), init(v1), init(v2) 
                         calc == {
-                            computeLeftSiblingOnNextPath(p[..|p| - 1], v1[..|p| - 1], v2[..|p| - 1])[i] ;
-                            siblingAt(nextPath(p[..|p| - 1])[..i + 1],r).v;
-                            calc == {
-                                nextPath(p[..|p| - 1])[..i + 1];
-                                == 
-                                nextPath(p)[.. i + 1];
-                            }
+                            computeLeftSiblingOnNextPath(init(p), init(v1), init(v2))[i] ;
+                            { computeOnNextPathCollectsValuesOfNextLeftSiblings(init(p), r, init(v1), init(v2)); }
+                            siblingAt(nextPath(init(p))[..i + 1],r).v;
+                            {   //  pre-conditions for foo222(p, i + 1)
+                                assert(0 <= i + 1 < |p|);
+                                assert(|p| >= 2);
+                                //  init(p) and p are the same upto |init(p)| and thus to i + 1
+                                prefixOfNextPathOfInitIsSameIfLastisOne(p, i + 1); }
                             siblingAt(nextPath(p)[..i + 1],r).v;
                         }
                     } else {
                         //  i == |p| - 1 and nextpath(p)[|p| - 1] == 0 so trivially true
+                        //  as nextpath(p)[|p| - 1] != 1
                         //  Thanks Dafny 
                     }
                 }
             }
         }
     }
+
 }
