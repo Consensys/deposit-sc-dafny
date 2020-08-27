@@ -121,11 +121,30 @@ module DiffTree {
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
                         assert(leavesIn(r)[i + power2(height(r) - 1)/2] == leavesIn(rc)[i ]);
                         assert(i + power2(height(r) - 1)/2 < |leavesIn(r)|);
+                        calc >= {
+                            i + power2(height(r) - 1)/2;
+                            k;
+                        }
+                        calc == {
+                            leavesIn(rc)[i].v;
+                            { childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));}
+                            leavesIn(r)[i + power2(height(r) - 1)/2].v;
+                            0;
+                        }
                     }
-                allLeavesZeroImplyAllNodesZero(rc);
-                sameValuesEveryWhereImpliesIsConstant(rc, 0);
+                //  Assert ore-condition of allLeavesZeroImplyAllNodesZero
+                calc ==> {
+                    forall i ::  0 <= i < |leavesIn(rc)| ==> leavesIn(rc)[i].v  == 0;
+                    forall l :: l in leavesIn(rc) ==> l.v == 0;
+                    { allLeavesZeroImplyAllNodesZero(rc); }
+                    forall n :: n in nodesIn(rc) ==> n.v == 0 && isZeroTree(rc);
+                    calc == {
+                        rc;
+                        nodesIn(rc)[0];
+                    }
+                    rc.v == 0 && isZeroTree(rc);
+                }
     }
-
 
     /**
      *  For a complete tree, decorated with diff,
