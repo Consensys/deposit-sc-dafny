@@ -132,7 +132,7 @@ module DiffTree {
                             0;
                         }
                     }
-                //  Assert ore-condition of allLeavesZeroImplyAllNodesZero
+                //  Assert pre-condition of allLeavesZeroImplyAllNodesZero
                 calc ==> {
                     forall i ::  0 <= i < |leavesIn(rc)| ==> leavesIn(rc)[i].v  == 0;
                     forall l :: l in leavesIn(rc) ==> l.v == 0;
@@ -172,7 +172,7 @@ module DiffTree {
 
         /** For all right siblings on p, value of diff is zero. */
         ensures forall i :: 0 <= i < |p| ==> 
-            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+            p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == 0
 
         decreases r
 
@@ -181,13 +181,12 @@ module DiffTree {
         childrenCompTreeValidIndex(r, height(r), j);
 
         forall ( i : nat | 0 <= i < |p|)
-            ensures p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0
+            ensures p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == 0
         {
             if (height(r) == 2) {
-                //  Thanks Dafny
-                if ( p[0] == 0 ) {
+                if ( first(p) == 0 ) {
                     calc == {
-                        siblingAt(p[..1], r).v ;
+                        siblingAt(take(p, 1), r).v ;
                         nodeAt([1], r).v;
                         { initPathDeterminesIndex(r, p, k, j); }
                         //  implies k == 0 and hence nodeAt([1], r).v == 0
@@ -198,7 +197,7 @@ module DiffTree {
                 //  height(r) >= 3, so lc and rc have children
                 match r
                     case Node(v, lc, rc) => 
-                        if (p[0] == 0) {
+                        if (first(p) == 0) {
                             //  number of nodes and leaves in complete trees.
                             completeTreeNumberLemmas(r);
                             assert( k < power2(height(r) - 1));
@@ -222,6 +221,7 @@ module DiffTree {
                                 }
                             }
                             else {
+                                assert(i >= 1); 
                                 //   i >= 1, siblings are in lc
                                 //  Check pre-condition before applying induction on lc
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
@@ -234,19 +234,17 @@ module DiffTree {
                                     j);
 
                                 //  We conclude that:
-                                assert(forall j :: 0 <= j < |p[1..]| ==> p[1..][j] == 0 ==> siblingAt(p[1..][..j + 1], lc).v == 0);
+                                assert(forall j :: 0 <= j < |tail(p)| ==> tail(p)[j] == 0 ==> siblingAt(take(tail(p), j + 1), lc).v == 0);
 
                                 //  We can use the fact that siblingAt(siblingAt(p[..i + 1], r) is
                                 //  siblingAt(p[1..][.. i], lc) and p[1..][i] == p[..i + 1]
-                                simplifySiblingAtFirstBit(p[..i + 1], r);
+                                simplifySiblingAtFirstBit(take(p, i + 1), r);
                                 calc == {
-                                    siblingAt(p[..i + 1], r);
-                                    siblingAt(p[..i + 1][1..], lc);
-                                    calc == {
-                                        p[1..][..i];
-                                        p[1.. i + 1];
-                                    }
-                                    siblingAt(p[1..][.. i], lc);
+                                    siblingAt(take(p, i + 1), r);
+                                    //  i >= 1
+                                    siblingAt(tail(take(p, i + 1)), lc);
+                                    { seqIndexLemmas(p, i + 1); }
+                                    siblingAt(take(tail(p), i), lc);
                                 }
                             } 
                         } else {
@@ -271,20 +269,17 @@ module DiffTree {
                                      p[1..],
                                     j + power2(height(r) - 1)/2);
                                 //  We conclude that 
-                                assert(forall i :: 0 <= i < |p[1..]| ==> 
-                                    p[1..][i] == 0 ==> siblingAt(p[1..][..i + 1], rc).v == 0);
+                                assert(forall i :: 0 <= i < |tail(p)| ==> 
+                                    tail(p)[i] == 0 ==> siblingAt(take(tail(p), i + 1), rc).v == 0);
 
                                 //  We now prove that siblingAt(siblingAt(p[..i + 1], r) is
                                 //  siblingAt(p[1..][.. i], rc) and p[1..][i] == p[..i + 1]
-                                simplifySiblingAtFirstBit(p[..i + 1], r);
+                                simplifySiblingAtFirstBit(take(p, i + 1), r);
                                 calc == {
-                                    siblingAt(p[..i + 1], r);
-                                    siblingAt(p[..i + 1][1..], rc);
-                                    calc == {
-                                        p[1..][..i];
-                                        p[1.. i + 1];
-                                    }
-                                    siblingAt(p[1..][.. i], rc);
+                                    siblingAt(take(p, i + 1), r);
+                                    siblingAt(tail(take(p, i + 1)), rc);
+                                    { seqIndexLemmas(p, i + 1); }
+                                    siblingAt(take(tail(p), i), rc);
                                 }
                                 //  hence p[].. i + 1] == 0 ==> siblingAt(p[..i + 1], r).v == 0
                             }
@@ -292,6 +287,4 @@ module DiffTree {
             }
         }
     }
-
-   
 }
