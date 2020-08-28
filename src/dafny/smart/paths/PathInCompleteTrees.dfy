@@ -146,6 +146,42 @@ module PathInCompleteTrees {
         }
     }
 
+    lemma {:induction p, r} foo777(p : seq<bit>, r : Tree, i : nat) 
+        requires 1 <= |p| <= height(r) - 1
+        requires isCompleteTree(r)
+        requires 0 <= i < |p|
+        ensures match r 
+            case Node(_, lc, rc) =>  
+                    nodeAt(take(p, i + 1), r) == nodeAt(take(tail(p), i), if first(p) == 0 then lc else rc)
+                
+
+    { 
+       assume(
+            match r 
+            case Node(_, lc, rc) =>  
+                 nodeAt(take(p, i + 1), r) == nodeAt(take(tail(p), i), if first(p) == 0 then lc else rc)
+       );
+
+    }
+
+    lemma {:induction p, r} foo333<T>(p : seq<bit>, r : Tree<T>, b : seq<T>) 
+        requires 1 <= |p| <= height(r) - 1
+        requires isCompleteTree(r)
+        // requires 0 <= i < |p|
+        requires |b| == |p|
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
+        ensures match r 
+            case Node(_, lc, rc) =>  
+                    forall i :: 0 <= i < |tail(b)| ==> tail(p)[i] == 1 ==> tail(b)[i] == siblingAt(take(tail(p), i + 1), if first(p) == 0 then lc else rc).v
+                
+    { 
+       assume(
+            match r 
+            case Node(_, lc, rc) =>  
+                    forall i :: 0 <= i < |tail(b)| ==> tail(p)[i] == 1 ==> tail(b)[i] == siblingAt(take(tail(p), i + 1), if first(p) == 0 then lc else rc).v
+       );
+    }
+
     /**
      *  Initial value of path determines index range.
      */
