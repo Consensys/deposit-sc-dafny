@@ -412,7 +412,7 @@ module ComputeRootPath {
         assert(forall i :: 0 <= i < |p| ==> 
             p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
-        siblingsLeft(p, r, b, b', k);
+        siblingsLeft(p, r, b, b', k, 0);
         assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
 
         assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
@@ -458,7 +458,7 @@ module ComputeRootPath {
         assert(forall i :: 0 <= i < |p| ==> 
             p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
 
-        siblingsLeft2(p, r, b, b', k, index);
+        siblingsLeft(p, r, b, b', k, index);
         assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
 
         assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
@@ -597,7 +597,7 @@ module ComputeRootPath {
             //  by siblingLeft lemma
             childrenCompTreeValidIndex(r, height(r), index);
             childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
-            siblingsLeft2(p, r, b, b', k, index);
+            siblingsLeft(p, r, b, b', k, index);
             assert(forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v);
 
             match r 
