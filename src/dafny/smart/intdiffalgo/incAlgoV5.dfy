@@ -123,7 +123,7 @@ module IncAlgoV5 {
                 // );
             }
             //  the following is used to prove Inv4
-            assume(k / power2(h - i)) / 2 == k / (power2(h - i) / 2);
+            // assume(k / power2(h - i)) / 2 == k / (power2(h - i) / 2);
             assert(valOnLeftAt[..h1 - 1] == valOnLeftAt[..h1][..h1 - 1]);
             i := i + 1;
             k' := k' / 2;
