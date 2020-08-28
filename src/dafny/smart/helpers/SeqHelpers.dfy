@@ -113,6 +113,7 @@ module SeqHelpers {
         ensures k < |p| ==> take(p, k) == take(init(p), k)
         ensures 0 <= k < |init(p)| ==> p[k] == init(p)[k]
         ensures k >= 1 ==> tail(take(p, k)) == take(tail(p), k - 1)
+        ensures k < |p| ==> init(drop(p, k)) == drop(init(p), k)
     {   
         //  Thanks Dafny
     }
@@ -126,7 +127,6 @@ module SeqHelpers {
     }
 
      lemma seqAppendIndexLemmas<T>(p : seq<T>, s : seq<T>, k : nat)
-        requires |p| >= 1
         requires k <= |p|
         ensures take(p + s, k) == take(p, k)  
         ensures k < |p| ==> (p + s)[k] == p[k]
