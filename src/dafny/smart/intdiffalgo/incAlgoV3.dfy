@@ -24,6 +24,7 @@ include "../MerkleTrees.dfy"
 include "../paths/NextPathInCompleteTreesLemmas.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
+include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
 module IncAlgoV3 {
@@ -38,10 +39,17 @@ module IncAlgoV3 {
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
+    import opened SeqHelpers
     import opened Trees
 
     /**
      *  Compute the root value and the left siblings of next path concurrently.
+     *  This version has two additional variables:
+     *  1. k constrained to be the integer that corresponds to path `p`.
+     *  2. h which is the size of the path.
+     *
+     *  This version is decorated with assertions relating `p` and k and h,
+     *  in order to replace p by k in V4.
      */
     function  computeRootPathDiffAndLeftSiblingsUpv3(
         p : seq<bit>, 
@@ -63,37 +71,37 @@ module IncAlgoV3 {
         decreases p
     {
      if |p| == 1 then
-        assert( k == p[0] as nat);
+        assert( k == first(p) as nat);
         assert( h == |p|);
         var r := computeRootPathDiff(p, valOnLeftAt, seed);
-        (r, if p[0] == 0 then [seed] else valOnLeftAt) 
+        (r, if first(p) == 0 then [seed] else valOnLeftAt) 
     else 
-        if p[|p| - 1] == 0 then
+        if last(p) == 0 then
             assert( k % 2 == 0);
             assert( h == |p|);
             var r := computeRootPathDiffAndLeftSiblingsUpv3(
-                        p[.. |p| - 1], 
+                        init(p), 
                         h - 1,
                         k / 2,
-                        valOnLeftAt[..|valOnLeftAt| - 1],   
+                        init(valOnLeftAt),   
                         diff(seed, 0) );
-                    (r.0, valOnLeftAt[.. |valOnLeftAt| - 1] + [seed])
+                    (r.0, init(valOnLeftAt) + [seed])
         else      
             assert( k % 2 == 1);
             assert( h == |p|);
             var r :=  computeRootPathDiffAndLeftSiblingsUpv3(
-                    p[.. |p| - 1], 
+                    init(p), 
                     h - 1,
                     k / 2,
-                    valOnLeftAt[..|valOnLeftAt| - 1],  
-                    diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
-                    /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
+                    init(valOnLeftAt),  
+                    diff(last(valOnLeftAt), seed));
+                    /*  The last value [last(valOnLeftAt)] is not used on 
                         the next path as it is not a leftSibling of a node of next path.
                         at this level. As a consequence we can use any value to append to
                         the second component of the result .1. We just use the old value 
-                        [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
+                        [last(valOnLeftAt) as it will enable us to "modify" 
                         in-place a unique array in the imperative version. */
-                    (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
+                    (r.0, r.1 + [last(valOnLeftAt)])
     }
 
     /**
@@ -120,28 +128,22 @@ module IncAlgoV3 {
         if h == 1 then
             var r := computeRootPathDiff([k as bit], valOnLeftAt, seed);
             assert(valOnLeftAt ==  [valOnLeftAt[0]]);
-            (r, if k == 0 then [seed] else [valOnLeftAt[h - 1]]) 
+            (r, if k == 0 then [seed] else [last(valOnLeftAt)]) 
         else 
             if k % 2 == 0 then
                 var r := computeRootPathDiffAndLeftSiblingsUpv4(
                             h - 1,
                             k / 2,
-                            valOnLeftAt[..h - 1],   
+                            init(valOnLeftAt),   
                             diff(seed, 0) );
-                (r.0, valOnLeftAt[.. h - 1] + [seed])
+                (r.0, init(valOnLeftAt) + [seed])
             else      
                 var r :=  computeRootPathDiffAndLeftSiblingsUpv4(
                         h - 1,
                         k / 2,
-                        valOnLeftAt[..h - 1],  
-                        diff(valOnLeftAt[h - 1], seed));
-                        /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
-                            the next path as it is not a leftSibling of a node of next path.
-                            at this level. As a consequence we can use any value to append to
-                            the second component of the result .1. We just use the old value 
-                            [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
-                            in-place a unique array in the imperative version. */
-                (r.0, r.1 + [valOnLeftAt[h - 1]])
+                        init(valOnLeftAt),  
+                        diff(last(valOnLeftAt), seed));
+                (r.0, r.1 + [last(valOnLeftAt)])
     }
 
     /**
@@ -158,7 +160,6 @@ module IncAlgoV3 {
             (computeRootPathDiffUp(natToBitList(k, h), valOnLeftAt, seed),
             computeLeftSiblingOnNextPath(natToBitList(k, h), computeAllPathDiffUp(natToBitList(k, h), valOnLeftAt, seed), valOnLeftAt)
             )
-
     {   
         /*
          *  V4 computes same as V3, same as V2 and V2 is correct.
@@ -185,7 +186,6 @@ module IncAlgoV3 {
         k : nat,
         valOnLeftAt : seq<int>, seed: int) : (int, seq<int>)
         requires 0 <= h == |valOnLeftAt|
-        // requires h > 0 ==> k < power2(h)
         requires k < power2(h)
 
         decreases h
@@ -197,22 +197,16 @@ module IncAlgoV3 {
                 var r := computeRootPathDiffAndLeftSiblingsUpv4b(
                             h - 1,
                             k / 2,
-                            valOnLeftAt[..h - 1],   
+                            init(valOnLeftAt),   
                             diff(seed, 0) );
-                (r.0, valOnLeftAt[..h - 1] + [seed])
+                (r.0, init(valOnLeftAt) + [seed])
             else      
                 var r :=  computeRootPathDiffAndLeftSiblingsUpv4b(
                         h - 1,
                         k / 2,
-                        valOnLeftAt[..h - 1],  
-                        diff(valOnLeftAt[h - 1], seed));
-                        /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
-                            the next path as it is not a leftSibling of a node of next path.
-                            at this level. As a consequence we can use any value to append to
-                            the second component of the result .1. We just use the old value 
-                            [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
-                            in-place a unique array in the imperative version. */
-                (r.0, r.1 + [valOnLeftAt[h - 1]])
+                        init(valOnLeftAt),  
+                        diff(last(valOnLeftAt), seed));
+                (r.0, r.1 + [last(valOnLeftAt)])
     }
 
     lemma  computeRootAndSiblingsV4bIsCorrect(h : nat,
@@ -233,15 +227,15 @@ module IncAlgoV3 {
             if (k % 2 == 0) {
                 var r := computeRootPathDiffAndLeftSiblingsUpv4b(0, 0, [], diff(seed, 0));
 
-                calc {
+                calc == {
                     computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed);
-                    (r.0, valOnLeftAt[..h - 1] + [seed]);    
-                    calc {
+                    (r.0, init(valOnLeftAt) + [seed]);    
+                    calc == {
                         [] + [seed];
                         [seed];
                     }
                     (r.0, [seed]);
-                    calc {
+                    calc == {
                         r.0;
                         diff(seed, 0);
                     }
@@ -254,37 +248,31 @@ module IncAlgoV3 {
                 var r := computeRootPathDiffAndLeftSiblingsUpv4b(0, 0, [], diff(valOnLeftAt[0], seed));
                 calc {
                     computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed);
-                    (r.0, r.1 + [valOnLeftAt[h - 1]]);
-                    calc {
-                        r.1 + [valOnLeftAt[h - 1]];
-                        [] + [valOnLeftAt[h - 1]];
-                        [valOnLeftAt[h - 1]];
+                    (r.0, r.1 + [last(valOnLeftAt)]);
+                    calc == {
+                        r.1 + [last(valOnLeftAt)];
+                        [] + [last(valOnLeftAt)];
+                        [last(valOnLeftAt)];
                     }
-                    (r.0, [valOnLeftAt[h - 1]]);
-                    (diff(valOnLeftAt[h - 1], seed), [valOnLeftAt[h - 1]]);
-                    (computeRootPathDiff([1], valOnLeftAt, seed),  [valOnLeftAt[h - 1]]);
+                    (r.0, [last(valOnLeftAt)]);
+                    (diff(last(valOnLeftAt), seed), [last(valOnLeftAt)]);
+                    (computeRootPathDiff([1], valOnLeftAt, seed),  [last(valOnLeftAt)]);
                 }
             }
         }
     }
 
     /**
-     *  Tail recursive version of algorithm.
+     *  Tail recursive version of algorithm with accumulator newLeft.
      */
     function method computeRootPathDiffAndLeftSiblingsUpv4c(
         h : nat,
         k : nat,
-        //  ghost z : nat,  //  make sure we propagate the initial value of height 
-                        //  to prove that Inv0 holds
         valOnLeftAt : seq<int>, 
         seed: int,
         newLeft : seq<int>) : (int, seq<int>)
         requires 0 <= h == |valOnLeftAt|
-        // requires h > 0 ==> k < power2(h)
-        // requires |valOnLeftAt| + |newLeft| == z //  Inv0
         requires k < power2(h)
-
-        // requires z == h
 
         decreases h
     {
@@ -292,39 +280,30 @@ module IncAlgoV3 {
             (seed, newLeft)
         else 
             if k % 2 == 0 then
-                // assert(|valOnLeftAt[..h - 1]| + |[seed]| + |newLeft| == h);
                 computeRootPathDiffAndLeftSiblingsUpv4c(
                             h - 1,
                             k / 2,
-                            // z,
-                            valOnLeftAt[..h - 1],   
+                            init(valOnLeftAt),   
                             diff(seed, 0),
                             [seed] + newLeft)
             else      
                 computeRootPathDiffAndLeftSiblingsUpv4c(
                         h - 1,
                         k / 2,
-                        // z,
-                        valOnLeftAt[..h - 1],  
-                        diff(valOnLeftAt[h - 1], seed),
-                        [valOnLeftAt[h - 1]] + newLeft)
-                        /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
-                            the next path as it is not a leftSibling of a node of next path.
-                            at this level. As a consequence we can use any value to append to
-                            the second component of the result .1. We just use the old value 
-                            [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
-                            in-place a unique array in the imperative version. */
+                        init(valOnLeftAt),  
+                        diff(last(valOnLeftAt), seed),
+                        [last(valOnLeftAt)] + newLeft)
     }
 
-     lemma  {:induction h} computeRootAndSiblingsV4cIsCorrect(h : nat,
+    /**
+     *  Correctness proof of tail recursive version.
+     */
+    lemma  {:induction h} computeRootAndSiblingsV4cIsCorrect(h : nat,
         k : nat,
-        // z : nat,
         valOnLeftAt : seq<int>, seed: int,  newLeft : seq<int>)
         requires 1 <= h == |valOnLeftAt|
         requires k < power2(h)
         requires |valOnLeftAt| + |newLeft| == h - 1
-
-        // ensures |computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, []).1| == h
 
         ensures  computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed) == 
            computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, [])
