@@ -20,6 +20,7 @@ include "../MerkleTrees.dfy"
 include "../paths/NextPathInCompleteTreesLemmas.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
+include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
 module LeftSiblings {
@@ -32,6 +33,7 @@ module LeftSiblings {
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
+    import opened SeqHelpers
     import opened Trees
 
     /**
@@ -56,12 +58,12 @@ module LeftSiblings {
 
         requires |b| == |p|
         /** `b` contains values at left siblings on path `p`. */
-        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
 
         /** B abd b' agree on values at indices where p[i] == 1, and otherwise b'[i] == 0 */
         requires |b'| == |b| && forall i :: 0 <= i < |b'| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 
 
-        ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(p[..i + 1], r).v
+        ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(take(p, i + 1), r).v
     {
         leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, i);   
     }
