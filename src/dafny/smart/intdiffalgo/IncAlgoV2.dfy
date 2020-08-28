@@ -24,6 +24,7 @@ include "../MerkleTrees.dfy"
 include "../paths/NextPathInCompleteTreesLemmas.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
+include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
 module IncAlgoV2 {
@@ -38,6 +39,7 @@ module IncAlgoV2 {
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
+    import opened SeqHelpers
     import opened Trees
 
 
@@ -56,26 +58,20 @@ module IncAlgoV2 {
     {
      if |p| == 1 then
         var r := computeRootPathDiff(p, valOnLeftAt, seed);
-        (r, if p[0] == 0 then [seed] else valOnLeftAt) 
+        (r, if first(p) == 0 then [seed] else valOnLeftAt) 
     else 
-        if p[|p| - 1] == 0 then
+        if last(p) == 0 then
             var r := computeRootPathDiffAndLeftSiblingsUpv2(
-                        p[.. |p| - 1], 
-                        valOnLeftAt[..|valOnLeftAt| - 1],   
+                        init(p), 
+                        init(valOnLeftAt),   
                         diff(seed, 0) );
-                    (r.0, valOnLeftAt[.. |valOnLeftAt| - 1] + [seed])
+                    (r.0, init(valOnLeftAt) + [seed])
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUpv2(
-                    p[.. |p| - 1], 
-                    valOnLeftAt[..|valOnLeftAt| - 1],  
-                    diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
-                     /*  The last value [valOnLeftAt[|valOnLeftAt| - 1]] is not used on 
-                        the next path as it is not a leftSibling of a node of next path.
-                        at this level. As a consequence we can use any value to append to
-                        the second component of the result .1. We just use the old value 
-                        [valOnLeftAt[|valOnLeftAt| - 1] as it will enable us to "modify" 
-                        in-place a unique array in the imperative version. */
-                    (r.0, r.1 + [valOnLeftAt[|valOnLeftAt| - 1]])
+                    init(p), 
+                    init(valOnLeftAt),  
+                    diff(last(valOnLeftAt), seed));
+                    (r.0, r.1 + [last(valOnLeftAt)])
     }
 
     /**
@@ -113,7 +109,7 @@ module IncAlgoV2 {
     /**
      *  Proof that computeRootPathDiffAndLeftSiblingsUpv2 is correct in a tree.
      */
-    lemma computeRootPathDiffAndLeftSiblingsUpv2InATree(p: seq<bit>, r :  Tree<int>, v2 : seq<int>, seed : int, k : nat)
+    lemma {:induction p, r, v2, seed} computeRootPathDiffAndLeftSiblingsUpv2InATree(p: seq<bit>, r :  Tree<int>, v2 : seq<int>, seed : int, k : nat)
 
         requires isCompleteTree(r)       
         /** `r` is decorated with attribute `f`. */
@@ -133,7 +129,7 @@ module IncAlgoV2 {
         requires |v2| == |p|
 
         requires forall i :: 0 <= i < |p| ==>
-            (p[i] == 1 && v2[i] == siblingAt(p[.. i + 1],r).v)
+            (p[i] == 1 && v2[i] == siblingAt(take(p, i + 1),r).v)
             || 
             (p[i] == 0 && v2[i] == 0)
 
@@ -142,7 +138,8 @@ module IncAlgoV2 {
                                              computeLeftSiblingOnNextPath(p, computeAllPathDiffUp(p, v2, seed), v2)
 
         ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
-                computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1[i] == siblingAt(nextPath(p)[..i + 1],r).v
+                computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1[i] 
+                                        == siblingAt(take(nextPath(p), i + 1),r).v
     {
         var v1 := computeAllPathDiffUp(p, v2, seed);
         //  Fisrt, establish pre-condition that computeAllPathDiffUp(p, v2, seed) == v1
@@ -176,27 +173,30 @@ module IncAlgoV2 {
      *  algorithm (that does not need a pre-computation of the values of the nodes
      *  on the path.)
      */
-    lemma v1Equalsv2(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
+    lemma {:induction p} v1Equalsv2(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
         requires |p| == |valOnLeftAt| ==  |valOnPAt|
         requires |p| >= 1
-        requires forall i :: 0 <= i < |valOnPAt| ==> valOnPAt[i] == computeRootPathDiffUp(p[i + 1..], valOnLeftAt[i + 1..], seed) 
+        requires forall i :: 0 <= i < |valOnPAt| ==> 
+            valOnPAt[i] == computeRootPathDiffUp(drop(p, i + 1), drop(valOnLeftAt, i + 1), seed) 
 
         ensures computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1 ==
             computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1
+
+        decreases p
     {
         if |p| == 1 {
             //  Thanks Dafny.
         } else {
-            if p[|p| - 1] == 0 {
+            if last(p) == 0 {
                 var a := computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed);
                 var b := computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt);
 
                 calc == {
                     a.1;
-                    valOnLeftAt[.. |valOnLeftAt| - 1] + [seed];
+                    init(valOnLeftAt) + [seed];
                     calc == {
-                        valOnPAt[|p| - 1];
-                        computeRootPathDiffUp(p[|p| + 1 - 1..], valOnLeftAt[|p| + 1 - 1..], seed);
+                        last(valOnPAt);
+                        computeRootPathDiffUp(drop(p, |p| + 1 - 1), drop(valOnLeftAt, |p| + 1 - 1), seed);
                         computeRootPathDiffUp([], [], seed);
                         seed;
                     }
@@ -209,31 +209,31 @@ module IncAlgoV2 {
 
                 //  Def of computeRootPathDiffAndLeftSiblingsUpv2 for p[|p| - 1] == 1
                 var a1 := computeRootPathDiffAndLeftSiblingsUpv2(
-                    p[.. |p| - 1], 
-                    valOnLeftAt[..|valOnLeftAt| - 1],  
-                    diff(valOnLeftAt[|valOnLeftAt| - 1], seed));
+                    init(p), 
+                    init(valOnLeftAt),  
+                    diff(last(valOnLeftAt), seed));
                 //  def of computeRootPathDiffAndLeftSiblingsUp for p[|p| - 1] == 1
                 var b1 := computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]);
+                    p[.. |p| - 1], init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt));
                 calc == {
                     computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1;
-                    a1.1 + [valOnLeftAt[|valOnLeftAt| - 1]];
+                    a1.1 + [last(valOnLeftAt)];
                 }
                 calc == {
                     computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1;
-                    b1.1 + [valOnLeftAt[|valOnLeftAt| - 1]];
+                    b1.1 + [last(valOnLeftAt)];
                 }
                 calc == {
                     valOnPAt[|p| - 1];
-                    computeRootPathDiffUp(p[|p| + 1 - 1..], valOnLeftAt[|p| + 1 - 1..], seed);
+                    computeRootPathDiffUp(drop(p, |p| + 1 - 1), drop(valOnLeftAt, |p| + 1 - 1), seed);
                     computeRootPathDiffUp([], [], seed);
                     seed;
                 }
-                //  Establish pre-condition for use of inductive hypothesis on p[.. |p| - 1]
+                //  Establish pre-condition for use of inductive hypothesis on init(p)
                 prefixOfComputation(p, valOnLeftAt, seed, valOnPAt);
                 calc == {
                     a1.1;
-                    { v1Equalsv2(p[.. |p| - 1], valOnLeftAt[..|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed), valOnPAt[..|p| - 1]); } 
+                    { v1Equalsv2(init(p), init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt)); } 
                     b1.1;
                 }
             }
@@ -241,10 +241,9 @@ module IncAlgoV2 {
     }
 
     /**
-     *  Second part.
-     *  @todo   Merge into v1Equalsv2.
+     *  Sublemma used in v1equalsv2.
      */
-     lemma v1Equalsv2subLemma(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
+    lemma v1Equalsv2subLemma(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
         requires |p| == |valOnLeftAt| ==  |valOnPAt|
         requires |p| >= 1
         ensures computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).0 ==
