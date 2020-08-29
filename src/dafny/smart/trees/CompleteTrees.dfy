@@ -93,7 +93,7 @@ module CompleteTrees {
         ensures |leavesIn(r)| == power2(h - 1)
         ensures match r
             case Node(_, lc, rc) => 
-                leavesIn(lc) == leavesIn(r)[.. power2(h - 1) / 2]
+                leavesIn(lc) == leavesIn(r)[.. power2(height(r) - 1) / 2]
                 && leavesIn(rc) == leavesIn(r)[power2(height(r) - 1) / 2 ..]
     {
         if h == 2 {
