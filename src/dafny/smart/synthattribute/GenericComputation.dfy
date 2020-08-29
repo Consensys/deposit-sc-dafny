@@ -65,14 +65,14 @@ module GenericComputation {
         /** Depending on p[0], `b` projects onto `lc or `rc`. */
         ensures match r
             case Node(_, lc, rc) =>
-                forall k :: 0 <= k < |b| - 1 ==>
+                forall k :: 0 <= k < |tail(b)| ==>
                      tail(b)[k] == siblingAt(take(tail(p), k + 1), if first(p) == 0 then lc else rc).v
     {
         match r 
             case Node(_, lc, rc) => 
-                forall (k : nat | 0 <= k < |b| - 1) 
+                forall (k : nat | 0 <= k < |tail(b)|) 
                     ensures 
-                        0 <= k < |b| - 1 ==> 
+                        0 <= k < |tail(b)|  ==> 
                              tail(b)[k] == siblingAt(take(tail(p), k + 1), if first(p) == 0 then lc else rc).v 
                 {
                     if ( k == 0 ) {
