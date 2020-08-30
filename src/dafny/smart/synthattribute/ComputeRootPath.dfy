@@ -21,6 +21,7 @@ include "../MerkleTrees.dfy"
 include "../paths/NextPathInCompleteTreesLemmas.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
+include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
 module ComputeRootPath {
@@ -34,6 +35,7 @@ module ComputeRootPath {
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
+    import opened SeqHelpers
     import opened Trees
 
     /**
@@ -48,11 +50,11 @@ module ComputeRootPath {
         if |p| == 0 then 
             seed
         else 
-            var r := computeRootPathDiff(p[1..], b[1..], seed);
-            if p[0] == 0 then
+            var r := computeRootPathDiff(tail(p), tail(b), seed);
+            if first(p) == 0 then
                 diff(r, 0)
             else 
-                diff(b[0], r)
+                diff(first(b), r)
     }
 
     /**
@@ -67,11 +69,11 @@ module ComputeRootPath {
         if |p| == 1 then 
             computeRootPathDiff(p, b, seed)
         else 
-            var r := computeRootPathDiff(p[1..], b[1..], seed);
-            if p[0] == 0 then
+            var r := computeRootPathDiff(tail(p), tail(b), seed);
+            if first(p) == 0 then
                 diff(r, 0)
             else 
-                diff(b[0], r)
+                diff(first(b), r)
     }
 
     // lemma foo606(p : seq<bit>, b : seq<int>, seed: int)
@@ -82,65 +84,54 @@ module ComputeRootPath {
      *  This corresponds to computing the value of the penultimate node on the path
      *  and then use it to compute the value on the prefix path (without the last node).
      */
-    lemma {:induction p, b} foo506(p : seq<bit>, b : seq<int>, seed: int) 
+    lemma {:induction p, b} simplifyComputeRootPathDiffOnLast(p : seq<bit>, b : seq<int>, seed: int) 
         requires 1 <= |p| == |b|
         ensures computeRootPathDiff(p, b, seed) == 
             computeRootPathDiff(
-                p[..|p| - 1], b[..|b| - 1], 
-                if p[|p| - 1] == 0 then 
+                init(p), init(b), 
+                if last(p) == 0 then 
                     diff(seed, 0)
                 else 
-                    diff(b[|b| - 1], seed)
+                    diff(last(b), seed)
                 )
     {
         if |p| == 1 {
             // Thanks Dafny
         } else {
-            //  These equalities are used in the sequel
-            calc == {   // eq1
-                p[1..][..|p[1..]| - 1];
-                p[1..|p| - 1];
+            calc == {
+                init(tail(p));
+                { seqLemmas(p) ; }
+                tail(init(p));
             }
-            calc == {   //  eq2
-                b[1..][..|b[1..]| - 1];
-                b[1..|b| - 1];
+            calc == {
+                init(tail(b));
+                { seqLemmas(b) ; }
+                tail(init(b));
             }
-            if p[0] == 0 {
+            //  Dafny can work out the proof, with hint induction on tail(p), tail(b)
+            { simplifyComputeRootPathDiffOnLast(tail(p), tail(b), seed); }
+            if first(p) == 0 {
                 calc == {
                     computeRootPathDiff(p, b, seed);
-                    diff(computeRootPathDiff(p[1..], b[1..], seed), 0);
+                    diff(computeRootPathDiff(tail(p), tail(b), seed), 0);
                     diff(
-                        computeRootPathDiff(p[1..][..|p[1..]| - 1], b[1..][..|b[1..]| - 1], 
-                        if p[1..][|p[1..]| - 1] == 0 then diff(seed, 0)
-                        else diff(b[1..][|b[1..]| - 1], seed)
-                        ), 0
-                    );
-                    //  by eq1, simplify p[1..][..|p[1..]| - 1] and by eq2 b[1..][..|b[1..]| - 1]
-                    diff(
-                        computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
-                        if p[|p| - 1] == 0 then diff(seed, 0)
-                        else diff(b[|b| - 1], seed)
-                        ), 0
+                        computeRootPathDiff(init(tail(p)),init(tail(b)), 
+                            if last(p) == 0 then diff(seed, 0)
+                            else diff(last(b), seed)
+                        )
+                        , 0
                     );
                 }
             }
-            else {  //  p[0] == 1
+            else {  // first(p) == 1
                 calc == {
                     computeRootPathDiff(p, b, seed);
-                    diff(b[0], computeRootPathDiff(p[1..], b[1..], seed));
+                    diff(first(b), computeRootPathDiff(tail(p), tail(b), seed));
                     diff(
-                        b[0],
-                        computeRootPathDiff(p[1..][..|p[1..]| - 1], b[1..][..|b[1..]| - 1], 
-                        if p[1..][|p[1..]| - 1] == 0 then diff(seed, 0)
-                        else diff(b[1..][|b[1..]| - 1], seed)
-                        )
-                    );
-                    //  by eq1, simplify p[1..][..|p[1..]| - 1] and by eq2 b[1..][..|b[1..]| - 1]
-                    diff(
-                        b[0],
-                        computeRootPathDiff(p[1..|p| - 1], b[1..|b| - 1], 
-                        if p[|p| - 1] == 0 then diff(seed, 0)
-                        else diff(b[|b| - 1], seed)
+                        first(b),
+                        computeRootPathDiff(init(tail(p)), init(tail(b)), 
+                            if last(p) == 0 then diff(seed, 0)
+                            else diff(last(b), seed)
                         )
                     );
                 }            
@@ -160,10 +151,10 @@ module ComputeRootPath {
      if |p| == 0 then
         seed 
     else 
-        if p[|p| - 1] == 0 then
-            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0))
+        if last(p) == 0 then
+            computeRootPathDiffUp(init(p), init(b),diff(seed, 0))
         else        
-            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed))
+            computeRootPathDiffUp(init(p), init(b),diff(last(b), seed))
     }
 
     /**
@@ -177,10 +168,10 @@ module ComputeRootPath {
      if |p| == 0 then
         [] 
     else 
-        if p[|p| - 1] == 0 then
-            computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0)) + [seed]
+        if last(p) == 0 then
+            computeAllPathDiffUp(init(p), init(b), diff(seed, 0)) + [seed]
         else        
-            computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed)) + [seed]
+            computeAllPathDiffUp(init(p), init(b), diff(last(b), seed)) + [seed]
     }
 
     /**
@@ -272,24 +263,24 @@ module ComputeRootPath {
             //  Thanks Dafny
         } else {    
             //  |p| >= 2
-            //  Split on values of p[|p| - 1]
-            if p[|p| - 1] == 0 {
+            //  Split on values of last(p) 
+            if last(p) == 0 {
                 calc == {
                     computeRootPathDiffUp(p, b, seed);
-                    computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
+                    computeRootPathDiffUp(init(p), init(b), diff(seed, 0));
                     //  Induction assumption
-                    computeRootPathDiff(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
-                    { foo506(p, b, seed); }
+                    computeRootPathDiff(init(p), init(b), diff(seed, 0));
+                    { simplifyComputeRootPathDiffOnLast(p, b, seed); }
                     computeRootPathDiff(p, b, seed);
                 }
             } else  {
-                assert(p[|p| - 1] == 1 );
+                assert(last(p) == 1 );
                 calc == {
                     computeRootPathDiffUp(p, b, seed);
-                     computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed));
+                     computeRootPathDiffUp(init(p), init(b), diff(last(b), seed));
                     //  Induction assumption
-                    computeRootPathDiff(p[.. |p| - 1], b[..|b| - 1], diff(b[|b| - 1], seed));
-                    { foo506(p, b, seed); }
+                    computeRootPathDiff(init(p), init(b),  diff(last(b), seed));
+                    { simplifyComputeRootPathDiffOnLast(p, b, seed); }
                     computeRootPathDiff(p, b, seed);
                 }
             }
@@ -309,18 +300,21 @@ module ComputeRootPath {
         if |p| == 0 {
             //  Thanks Dafny
         } else {
-            //  Compute result on suffixes p[1..], b[1..]
-            var r := computeRootPathDiff(p[1..], b[1..], seed);
-            var r' := computeRootPath(p[1..], b[1..], diff, seed);
+            //  Compute result on suffixes tail(p), tail(b)
+            var r := computeRootPathDiff(tail(p), tail(b), seed);
+            var r' := computeRootPath(tail(p), tail(b), diff, seed);
 
-            //  Use inductive assumption on p[1..], b[1..]
-            computeRootPathDiffEqualscomputeRootPath(p[1..], b[1..], seed);
-            // HI implies r == r'
-            
+            //  Use inductive assumption on tail(p), tail(b) which implies r == r'
+            calc == {
+                r;
+                { computeRootPathDiffEqualscomputeRootPath(tail(p), tail(b), seed); }
+                r';
+            }
+            //  Finalise proof
             calc == {   //  These terms are equal
                 computeRootPathDiff(p, b, seed) ;
-                if p[0] == 0 then diff(r, 0) else  diff(b[0], r);
-                if p[0] == 0 then diff(r', 0) else  diff(b[0], r');
+                if first(p) == 0 then diff(r, 0) else  diff(first(b), r);
+                if first(p) == 0 then diff(r', 0) else  diff(first(b), r');
                 computeRootPath(p, b, diff, seed);
             }
         }
@@ -340,26 +334,20 @@ module ComputeRootPath {
         if |p| == 0 {
             //
         } else {
-            var r := computeRootPathDiff(p[1..], b[1..], seed);
-            var r' := computeRootPathDiff(p[1..], b'[1..], seed);
-            if p[0] == 0 {
-                calc == {
-                    computeRootPathDiff(p, b, seed) ;
-                    diff(r, 0) ;
-                    // Induction on p[1..], b[1..], b'[1..], seed
-                    { sameComputeDiffPath(p[1..], b[1..], b'[1..], seed); }  
-                    diff(r', 0);
-                    computeRootPathDiff(p, b', seed);
-                }
-            } else {
-                calc == {
-                    computeRootPathDiff(p, b, seed) ;
-                    diff(b[0], r) ;
-                    // Induction on p[1..], b[1..], b'[1..], seed
-                    { sameComputeDiffPath(p[1..], b[1..], b'[1..], seed); }  
-                    diff(b'[0], r');
-                    computeRootPathDiff(p, b', seed);
-                }
+            var r := computeRootPathDiff(tail(p), tail(b), seed);
+            var r' := computeRootPathDiff(tail(p), tail(b'), seed);
+            //  Use inductive assumption on tail(p), tail(b) which implies r == r'
+            calc == {
+                r;
+                { sameComputeDiffPath(tail(p), tail(b), tail(b'), seed); }
+                r';
+            }
+            //  Finalise proof
+            calc == {   //  These terms are equal
+                computeRootPathDiff(p, b, seed) ;
+                if first(p) == 0 then diff(r, 0) else  diff(first(b), r);
+                if first(p) == 0 then diff(r', 0) else  diff(first(b), r');
+                computeRootPathDiff(p, b', seed);
             }
         }
     }
@@ -372,7 +360,7 @@ module ComputeRootPath {
         if |p| == 0 then
             []
         else    
-            [if p[0] == 0 then 0 else b[0]] + makeB(p[1..], b[1..])
+            [if first(p) == 0 then 0 else first(b)] + makeB(tail(p), tail(b))
     }
 
     /**
