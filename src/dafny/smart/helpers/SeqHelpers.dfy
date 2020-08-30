@@ -25,6 +25,7 @@ module SeqHelpers {
      */
     function method first<T>(p : seq<T>) : T
         requires 1 <= |p|
+        ensures first(p) == p[0]
     {
         p[0]
     }
@@ -37,6 +38,7 @@ module SeqHelpers {
      */
     function method tail<T>(p : seq<T>) : seq<T>
         requires 1 <= |p|
+        ensures tail(p) == p[1..]
     {
         p[1..]
     }
@@ -50,6 +52,7 @@ module SeqHelpers {
     function method init<T>(p : seq<T>) : seq<T>
         requires 1 <= |p|
         ensures |init(p)| == |p| - 1
+        ensures init(p) ==  p[..|p| - 1]
     {
         p[..|p| - 1]
     }
@@ -62,6 +65,7 @@ module SeqHelpers {
      */
     function method last<T>(p : seq<T>) : T
         requires 1 <= |p|
+        ensures last(p) ==  p[|p| - 1]
     {
         p[|p| - 1]
     }
@@ -76,6 +80,7 @@ module SeqHelpers {
     function method  take<T>(p : seq<T>, k : nat) : seq<T>
         requires |p| >= k 
         ensures |take(p, k)| == k
+        ensures take(p, k) ==  p[..k]
     {
         p[..k]
     }
@@ -90,6 +95,7 @@ module SeqHelpers {
     function method  drop<T>(p : seq<T>, k : nat) : seq<T>
         requires |p| >= k 
         ensures |drop(p, k)| == |p| - k
+        ensures drop(p, k) == p[k..]
     {
         p[k..]
     }
