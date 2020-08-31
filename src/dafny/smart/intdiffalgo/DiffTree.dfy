@@ -230,7 +230,7 @@ module DiffTree {
                                 leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
                                     lc, 
                                     k, 
-                                    p[1..], 
+                                    tail(p), 
                                     j);
 
                                 //  We conclude that:
@@ -266,7 +266,7 @@ module DiffTree {
                                 leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
                                     rc, 
                                     k - power2(height(r) - 1)/2,
-                                     p[1..],
+                                    tail(p),
                                     j + power2(height(r) - 1)/2);
                                 //  We conclude that 
                                 assert(forall i :: 0 <= i < |tail(p)| ==> 

@@ -60,40 +60,22 @@ module IncAlgoV5 {
     {
         var i := 0;
         var k' := k;
-        
-        // divIsZero(k, power2(h));
-        // assert(k / power2(h) == 0);
-        // assert(k' == k / power2(h - i));
+
         r := seed ;
         next := [] ; 
 
         ghost var h1 := h;
-
-        //  initial computation
-        // assert(h - i == |valOnLeftAt|);
-        // assert(h1 == h - i);
-        // assert(k' < power2(h - i));
-       
-        //  compute result with computeRootPathDiffAndLeftSiblingsUpv4c
         ghost var (r', next') := computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, []);
 
-        //  need this fact to probve next assert
+        //  need this fact to prove next assert
         assert(valOnLeftAt == valOnLeftAt[..h - i]);
-        // assert(k' < power2(h1));
-        // assert(h1 == h);
-        // assert(
-        //     (r', next') ==   computeRootPathDiffAndLeftSiblingsUpv4c(h1, k', valOnLeftAt[..h1], r, next)
-        // );
 
         while (i < h)
 
             invariant 0 <= i <= h
             invariant i == |valOnLeftAt[.. i]|
-            // invariant i > 0 ==> 0 <= k' < power2(h1) 
             invariant 0 <= k' < power2(h1)
             invariant h1 == h - i
-            // invariant k' == k / power2(h - i)      //  Inv4
-
             invariant (r', next') == computeRootPathDiffAndLeftSiblingsUpv4c(h1, k', valOnLeftAt[..h1], r, next);
 
 
@@ -102,57 +84,22 @@ module IncAlgoV5 {
             if k' % 2 == 0 {
                 next := [r] + next ;
                 r := diff(r, 0);
-                // assert(
-                //     (r', next')
-                //     ==
-                //     computeRootPathDiffAndLeftSiblingsUpv4c(h1 - 1, k' / 2,
-                //             valOnLeftAt[..h1][.. h1 - 1], r, next)
-                // );
             } else {
                 next := [valOnLeftAt[h - i - 1]] + next ;
                 r := diff(valOnLeftAt[h - i - 1], r);
-                // assert(
-                //     (r', next')
-                //     ==
-                //     computeRootPathDiffAndLeftSiblingsUpv4c(
-                //             h1 - 1,
-                //             k' / 2,
-                //             valOnLeftAt[..h1][.. h1 - 1],   
-                //              r,
-                //             next)
-                // );
             }
             //  the following is used to prove Inv4
-            // assume(k / power2(h - i)) / 2 == k / (power2(h - i) / 2);
             assert(valOnLeftAt[..h1 - 1] == valOnLeftAt[..h1][..h1 - 1]);
             i := i + 1;
             k' := k' / 2;
             h1 := h1 - 1;
-            // assert(
-            //     (r', next') == 
-            //     computeRootPathDiffAndLeftSiblingsUpv4c(h1, k', valOnLeftAt[..h1], r, next)
-            // );
-            
         }
         //  after the loop we get the result
-        // assert(
-        //     (r', next') == 
-        //         computeRootPathDiffAndLeftSiblingsUpv4c(h1, k', valOnLeftAt[..h1], r, next)
-        // );
-        // //  and because h1 is 0 
-        // assert(
-        //     (r', next') == 
-        //         computeRootPathDiffAndLeftSiblingsUpv4c(0, k', valOnLeftAt[..h1], r', next')
-        // );
         assert(
             (r, next) // == (r', next')
             ==
             computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, [])
         );
-        // assert(1 <= h == |valOnLeftAt|);
-        // assert(k < power2(h));
-        // assert(|valOnLeftAt| + || == h);
-        // computeRootAndSiblingsV4cIsCorrect(h, k, valOnLeftAt, seed, []);
     }
 
     lemma divIsZero(n : nat, m : nat) 

@@ -134,7 +134,7 @@ module GenericComputation {
         requires seed == nodeAt(p, r).v
         requires |b| == |p|
         /** `b` contains values at siblings on path `p`. */
-        requires forall i :: 0 <= i < |b| ==> b[i] == siblingAt(p[..i + 1], r).v
+        requires forall i :: 0 <= i < |b| ==> b[i] == siblingAt(take(p, i + 1), r).v
 
         ensures r.v == computeRootPath(p, b, f, seed)
 
