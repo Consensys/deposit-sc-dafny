@@ -181,68 +181,72 @@ module ComputeRootPath {
     lemma computeAllDiffUpPrefixes(p : seq<bit>, b : seq<int>, seed: int)
         requires |p| == |b|
         ensures forall i :: 0 <= i < |computeAllPathDiffUp(p, b, seed)| ==>
-            computeAllPathDiffUp(p, b, seed)[i] == computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) 
+            computeAllPathDiffUp(p, b, seed)[i] == computeRootPathDiffUp(drop(p, i + 1), drop(b, i + 1), seed) 
     {
         if |p| == 0 {
             //  Thanks Dafny.
         } else {
             forall ( i : nat | 0 <= i < |p|)
-                ensures computeAllPathDiffUp(p, b, seed)[i] == computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) 
+                ensures computeAllPathDiffUp(p, b, seed)[i] == computeRootPathDiffUp(drop(p, i + 1), drop(b, i + 1), seed) 
             {
-                if p[|p| - 1] == 0 {
+                if last(p) == 0 {
                     if i < |p| - 1 {
                         calc == {
                             computeRootPathDiffUp(p, b, seed);
-                            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0));
+                            computeRootPathDiffUp(init(p), init(b), diff(seed, 0));
                         }
-                        var a := computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(seed, 0)) + [diff(seed, 0)];
-                        // var b := 
+                        var a := computeAllPathDiffUp(init(p), init(b), diff(seed, 0)) + [diff(seed, 0)];
                         calc == {
                             computeAllPathDiffUp(p, b, seed)[i];
                             a[i];
-                            { computeAllDiffUpPrefixes(p[.. |p| - 1], b[.. |p| - 1],diff(seed, 0)); }
-                            computeRootPathDiffUp(p[.. |p| - 1][i + 1..], b[.. |p| - 1][i + 1..], diff(seed, 0)); 
-                            calc == {
-                                p[i + 1..][.. |p[i + 1..]| - 1];
-                                p[..|p| - 1][i + 1..];
+                            { computeAllDiffUpPrefixes(init(p), init(b), diff(seed, 0)); }
+                            computeRootPathDiffUp(drop(init(p), i + 1), drop(init(b), i + 1), diff(seed, 0)); 
+                            calc == {   //  i + 1 < |p|
+                                init(drop(p, i + 1)) ; 
+                                { seqIndexLemmas(p, i + 1) ; }
+                                drop(init(p),i + 1);
                             }   
-                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[.. |p| - 1][i + 1..], diff(seed, 0));
-                            calc == {
-                                b[i + 1..][.. |p[i + 1..]| - 1];
-                                b[..|p| - 1][i + 1..];
+                            computeRootPathDiffUp(init(drop(p, i + 1)), init(b)[ i + 1..], diff(seed, 0));
+                            calc == { //  i + 1 < |p|
+                                init(drop(b, i + 1));
+                                { seqIndexLemmas(b, i + 1) ; }
+                                drop(init(b), i + 1);
                             }  
-                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[i + 1..][.. |p[i + 1..]| - 1], diff(seed, 0));
-                            computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) ;
+                            computeRootPathDiffUp(init(drop(p, i + 1)), init(drop(b, i + 1)), diff(seed, 0));
+                            //  Definition of computeRootPathDiffUp with last(p) == 0
+                            computeRootPathDiffUp(drop(p, i + 1), drop(b, i + 1), seed) ;
                         }
                     } else {
                         //   i == |p| - 1
                     }
                 } else {
-                    //  p{|p| - 1} == 1, same as p{|p| - 1} == 1 except that diff(seed, 0) is
-                    //  replaced by diff(b[|b| - 1], seed)
+                    //  last(p) == 1, same as last(p) == 0 except that diff(seed, 0) is
+                    //  replaced by diff(last(b), seed)
                     if i < |p| - 1 {
                         calc == {
                             computeRootPathDiffUp(p, b, seed);
-                            computeRootPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed));
+                            computeRootPathDiffUp(init(p), init(b), diff(last(b), seed));
                         }
-                        var a := computeAllPathDiffUp(p[.. |p| - 1], b[..|b| - 1],diff(b[|b| - 1], seed)) + [diff(b[|b| - 1], seed)];
-                        // var b := 
+                        var a := computeAllPathDiffUp(init(p), init(b), diff(last(b), seed)) + [diff(last(b), seed)];
                         calc == {
                             computeAllPathDiffUp(p, b, seed)[i];
                             a[i];
-                            { computeAllDiffUpPrefixes(p[.. |p| - 1], b[.. |p| - 1],diff(b[|b| - 1], seed)); }
-                            computeRootPathDiffUp(p[.. |p| - 1][i + 1..], b[.. |p| - 1][i + 1..], diff(b[|b| - 1], seed)); 
-                            calc == {
-                                p[i + 1..][.. |p[i + 1..]| - 1];
-                                p[..|p| - 1][i + 1..];
+                            { computeAllDiffUpPrefixes(init(p), init(b), diff(last(b), seed)); }
+                            computeRootPathDiffUp(drop(init(p), i + 1), drop(init(b), i + 1), diff(last(b), seed)); 
+                            calc == {   //  i + 1 < |p|
+                                init(drop(p, i + 1)) ; 
+                                { seqIndexLemmas(p, i + 1) ; }
+                                drop(init(p), i + 1);
+                            }    
+                            computeRootPathDiffUp(init(drop(p, i + 1)), drop(init(b), i + 1), diff(last(b), seed));
+                           calc == { //  i + 1 < |p|
+                                init(drop(b, i + 1));
+                                { seqIndexLemmas(b, i + 1) ; }
+                                drop(init(b), i + 1);
                             }   
-                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[.. |p| - 1][i + 1..], diff(b[|b| - 1], seed));
-                            calc == {
-                                b[i + 1..][.. |p[i + 1..]| - 1];
-                                b[..|p| - 1][i + 1..];
-                            }  
-                            computeRootPathDiffUp(p[i + 1..][.. |p[i + 1..]| - 1], b[i + 1..][.. |p[i + 1..]| - 1],diff(b[|b| - 1], seed));
-                            computeRootPathDiffUp(p[i + 1..], b[i + 1..], seed) ;
+                            computeRootPathDiffUp(init(drop(p, i + 1)), init(drop(b, i + 1)) ,diff(last(b), seed));
+                            //  definition of computeRootPathDiffUp for last(p) == 1
+                            computeRootPathDiffUp(drop(p, i + 1), drop(b, i + 1), seed) ;
                         }
                     } else {
                         //   i == |p| - 1
@@ -385,7 +389,7 @@ module ComputeRootPath {
 
         requires |b| == |p|
         /** `b` contains values at left siblings on path `p`. */
-        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
 
         ensures r.v == computeRootPathDiff(p, b, leavesIn(r)[k].v)
 
@@ -398,10 +402,10 @@ module ComputeRootPath {
 
         leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, 0);
         assert(forall i :: 0 <= i < |p| ==> 
-            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+            p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == 0);
 
         siblingsLeft(p, r, b, b', k, 0);
-        assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
+        assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(take(p, i + 1), r).v);
 
         assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
 
@@ -431,7 +435,7 @@ module ComputeRootPath {
 
         requires |b| == |p|
         /** `b` contains values at left siblings on path `p`. */
-        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
 
         ensures r.v == computeRootPathDiff(p, b, leavesIn(r)[k].v)
 
@@ -444,10 +448,10 @@ module ComputeRootPath {
 
         leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, index);
         assert(forall i :: 0 <= i < |p| ==> 
-            p[i] == 0 ==> siblingAt(p[..i + 1], r).v == 0);
+            p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == 0);
 
         siblingsLeft(p, r, b, b', k, index);
-        assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(p[..i + 1], r).v);
+        assert(forall i :: 0 <= i < |p| ==> b'[i] == siblingAt(take(p, i + 1), r).v);
 
         assert(forall i :: 0 <= i < |p| ==> p[i] == 0 ==> b'[i] == 0);
 
@@ -479,7 +483,7 @@ module ComputeRootPath {
 
         requires |b| == |p|
         /** `b` contains values at left siblings on path `p`. */
-        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(p[..i + 1], r).v
+        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
 
         ensures r.v == computeRootDiffUp(p, r, b, k)
     {
@@ -491,10 +495,10 @@ module ComputeRootPath {
     }
 
     /**
-     *  A useful lemma need in the proof of v1Equalsv2 when |p| > 1 and p[|p| - 1] == 1.
+     *  A useful lemma need in the proof of v1Equalsv2 when |p| > 1 and last(p) == 1.
      *  
-     *  It states that the values on  valOnPAt[..|p| - 1] (valOnPAt minus last element) must
-     *  coincide with computations of prefixes of p[.. |p| - 1] starting from a seed that 
+     *  It states that the values on  init(valOnPAt) (valOnPAt minus last element) must
+     *  coincide with computations of prefixes of init(p) starting from a seed that 
      *  is the result of the computation of diff using the last values (node and it sibling).
      *
      *  @note   A tedious proof with lots of indices but not hard.
@@ -502,44 +506,47 @@ module ComputeRootPath {
     lemma prefixOfComputation(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) 
         requires |p| == |valOnLeftAt| ==  |valOnPAt|
         requires |p| >= 2
-        requires forall i :: 0 <= i < |valOnPAt| ==> valOnPAt[i] == computeRootPathDiffUp(p[i + 1..], valOnLeftAt[i + 1..], seed) 
-        ensures p[|p| - 1] == 1 ==> forall i :: 0 <= i < |valOnLeftAt[..|valOnLeftAt| - 1]| ==> 
-                    valOnPAt[..|p| - 1][i] == computeRootPathDiffUp(p[.. |p| - 1][i + 1..], valOnLeftAt[..|valOnLeftAt| - 1][i + 1..], diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) 
+        requires forall i :: 0 <= i < |valOnPAt| ==> valOnPAt[i] == computeRootPathDiffUp(drop(p, i + 1), drop(valOnLeftAt, i + 1), seed) 
+        ensures last(p) == 1 ==> forall i :: 0 <= i < |init(valOnLeftAt)| ==> 
+                    init(valOnPAt)[i] == computeRootPathDiffUp(drop(init(p), i + 1), drop(init(valOnLeftAt), i + 1), diff(last(valOnLeftAt), seed)) 
     {
-        if p[|p| - 1] == 1 {
-            forall (i : nat  | 0 <= i < |valOnPAt[.. |valOnPAt| - 1]|)
-                    ensures valOnPAt[.. |valOnPAt| - 1][i] == computeRootPathDiffUp( p[.. |p| - 1][i + 1..], valOnLeftAt[.. |valOnLeftAt| - 1][i + 1..], diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) 
+        if last(p) == 1 {
+            forall (i : nat  | 0 <= i < |init(valOnPAt)|)
+                    ensures init(valOnPAt)[i] == 
+                        computeRootPathDiffUp( 
+                            drop(init(p), i + 1), 
+                            drop(init(valOnLeftAt), i + 1), 
+                            diff(last(valOnLeftAt), seed)
+                        ) 
             {
+                //  drop does not changes last element
+                calc == {
+                    last(drop(p, i + 1));
+                    { seqIndexLemmas(p, i + 1) ; }
+                    last(p);
+                    1;
+                }
+                //  as i < |init(valOnPAt)|, valOnPAt and init(valOnPAt) coincide
+                calc == {
+                    valOnPAt[i];
+                    { seqIndexLemmas(valOnPAt, i) ; }
+                    init(valOnPAt)[i];
+                }
                 calc == {
                     computeRootPathDiffUp(
-                                p[..|p| - 1][i + 1..], 
-                                valOnLeftAt[..|valOnLeftAt| - 1][i + 1 ..],
-                                diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) ;
-                    calc == {
-                            valOnLeftAt[i + 1..][..|valOnLeftAt[i + 1..]| - 1];
-                            valOnLeftAt[..|valOnLeftAt| - 1][i + 1 ..];
-                    }
+                        drop(init(p), i + 1), 
+                        drop(init(valOnLeftAt), i + 1),
+                        diff(last(valOnLeftAt), seed) );
+                    { seqIndexLemmas(valOnLeftAt, i + 1);  seqIndexLemmas(p, i + 1);  }
                     computeRootPathDiffUp(
-                                p[..|p| - 1][i + 1..], 
-                                valOnLeftAt[i + 1..][..| valOnLeftAt[i + 1..]| - 1],
-                                diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) ;
-                    calc == {
-                            p[i + 1..][.. |p[i + 1..]| - 1];
-                            p[..|p| - 1][i + 1..];
-                    }
-                    computeRootPathDiffUp(
-                                p[i + 1..][.. |p[i + 1..]| - 1], 
-                                valOnLeftAt[i + 1..][..| valOnLeftAt[i + 1..]| - 1],
-                                diff(valOnLeftAt[|valOnLeftAt| - 1], seed)) ;
-                    calc == {
-                            p[i + 1..][|p[i + 1..]| - 1];
-                            1;
-                    }
-                    computeRootPathDiffUp(p[i + 1..], valOnLeftAt[i + 1..],  diff(valOnLeftAt[|valOnLeftAt| - 1], diff(valOnLeftAt[|valOnLeftAt| - 1], seed))); 
+                                init(drop(p, i + 1)), 
+                                init(drop(valOnLeftAt, i + 1)),
+                                diff(last(valOnLeftAt), seed)) ;
+                    //  definition of computeRootPathDiffUp with last(drop(p, i + 1)) == 1
+                    computeRootPathDiffUp(drop(p, i + 1), drop(valOnLeftAt, i + 1),  diff(last(valOnLeftAt), diff(last(valOnLeftAt), seed))); 
                     //  use requires
                     valOnPAt[i];
-                    //  as i < |p| - 2, valOnPAt[i] is same as valOnPAt[..|p| - 1][i]
-                    valOnPAt[..|p| - 1][i];
+                    //  which is same s init(valOnPAt)[i]
                 }
             }
         }
