@@ -122,6 +122,7 @@ module SeqHelpers {
         ensures 0 <= k < |init(p)| ==> p[k] == init(p)[k]
         ensures k >= 1 ==> tail(take(p, k)) == take(tail(p), k - 1)
         ensures k < |p| ==> init(drop(p, k)) == drop(init(p), k)
+        ensures k < |p| ==> last(drop(p, k)) == last(p)
     {   
         //  Thanks Dafny
     }
