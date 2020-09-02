@@ -111,6 +111,7 @@ module SeqHelpers {
         ensures p == take(p, |p|)
         ensures |p| >= 2 ==> init(tail(p)) == tail(init(p))
         ensures |p| >= 2 ==> last(tail(p)) == last(p) 
+        ensures |p| >=1 ==> last(take(p, |p|)) == p[|p| - 1]
     {   
         //  Thanks Dafny
     }
