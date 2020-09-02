@@ -67,6 +67,20 @@ module SeqOfBits {
             natToBitList(n / 2, length - 1) +  [(n % 2) as bit]
     }
 
+    function natToBitList2(n: nat, length: nat) : seq<bit> 
+        requires 0 <= length 
+        /** Number of bits is sufficient to encode `n`. */
+        requires n < power2(length)
+        ensures |natToBitList2(n, length)| == length
+        ensures length >=1 ==> natToBitList2(n, length) == natToBitList(n, length)
+        decreases length
+    {
+        if length == 0 then
+            [] 
+        else 
+            natToBitList2(n / 2, length - 1) +  [(n % 2) as bit]
+    }
+
     /** 
      *  Compute a path (to next leaf) recursively from end.
      *  Alternatively binary add one on seq<bit>.

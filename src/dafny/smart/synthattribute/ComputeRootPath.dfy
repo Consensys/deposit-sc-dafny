@@ -141,7 +141,7 @@ module ComputeRootPath {
 
     /**
      *  Compute root value starting from end of path.
-     *  Recursive computation by simplifying the last node i.e.
+     *  Recursive computation by simplifying the last step of the path i.e.
      *  computing its value and then iterate on the prefix path.
      */
     function computeRootPathDiffUp(p : seq<bit>, b : seq<int>, seed: int) : int
@@ -156,6 +156,65 @@ module ComputeRootPath {
         else        
             computeRootPathDiffUp(init(p), init(b),diff(last(b), seed))
     }
+
+    /**
+     *  This version mixes the binary representation of a path and the corresponding
+     *  positive integer k. It is used to prove that v3 is correct without
+     *  having to do too much work.
+     */
+    function computeRootPathDiffUpv2(p : seq<bit>, h: nat, k : nat, b : seq<int>, seed: int) : int
+        requires h == |p| == |b|
+        requires |p| >= 1
+        requires k < power2(|p|)
+        requires natToBitList(k, |p|) == p
+        ensures computeRootPathDiffUpv2(p, h, k, b, seed) == computeRootPathDiffUp(p, b, seed)
+        decreases p
+    {
+     if |p| == 1 then
+        if first(p) == 0 then diff(seed, 0)  else diff(last(b), seed)
+    else 
+        if last(p) == 0 then
+            assert( k % 2 == 0);
+            assert( h == |p|);
+            computeRootPathDiffUpv2(init(p), h - 1, k / 2, init(b),diff(seed, 0))
+        else        
+            assert( k % 2 == 1);
+            assert( h == |p|);
+            computeRootPathDiffUpv2(init(p), h - 1, k / 2, init(b),diff(last(b), seed))
+    }
+
+    /**
+     *  Compute root value using the integer vaklue of a path.
+     */
+    function method computeRootPathDiffUpv3(h: nat, k : nat, b : seq<int>, seed: int) : int
+        requires h == |b|
+        requires k < power2(h)
+        ensures  h >= 1 ==> 
+            computeRootPathDiffUpv3(h, k, b, seed) 
+                ==  var p := natToBitList(k, h);
+                    computeRootPathDiffUpv2(p, h, k, b, seed) 
+        decreases h
+    {
+    if h == 0 then
+        seed
+    else 
+        if k % 2 == 0 then
+            computeRootPathDiffUpv3(h - 1, k / 2, init(b),diff(seed, 0))
+        else        
+            computeRootPathDiffUpv3(h - 1, k / 2, init(b),diff(last(b), seed))
+    }
+
+    lemma v3computesRootPath(h: nat, k : nat, b : seq<int>, seed: int) 
+        requires 1 <= h == |b|
+        requires k < power2(h)
+        ensures computeRootPathDiffUpv3(h, k, b, seed) == 
+            var p := natToBitList(k, h); computeRootPathDiffUpv2(p, h, k, b, seed) 
+        ensures computeRootPathDiffUpv3(h, k, b, seed) == 
+            var p := natToBitList(k, h); computeRootPathDiffUp(p, b, seed) 
+    {
+        //  Thanks Dafny
+    }
+
 
     /**
      *  Collect all the diff values computed on the path p.

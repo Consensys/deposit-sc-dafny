@@ -61,17 +61,17 @@ module IncAlgoV2 {
         (r, if first(p) == 0 then [seed] else valOnLeftAt) 
     else 
         if last(p) == 0 then
-            var r := computeRootPathDiffAndLeftSiblingsUpv2(
-                        init(p), 
-                        init(valOnLeftAt),   
-                        diff(seed, 0) );
-                    (r.0, init(valOnLeftAt) + [seed])
+            //  Optimise and compute root path only as left sibling unchanged upwards.
+            (
+                computeRootPathDiffUp( init(p), init(valOnLeftAt), diff(seed, 0)), 
+                init(valOnLeftAt) + [seed]
+            )
         else      
             var r :=  computeRootPathDiffAndLeftSiblingsUpv2(
                     init(p), 
                     init(valOnLeftAt),  
                     diff(last(valOnLeftAt), seed));
-                    (r.0, r.1 + [last(valOnLeftAt)])
+            (r.0, r.1 + [last(valOnLeftAt)])
     }
 
     /**
@@ -180,7 +180,7 @@ module IncAlgoV2 {
             valOnPAt[i] == computeRootPathDiffUp(drop(p, i + 1), drop(valOnLeftAt, i + 1), seed) 
 
         ensures computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1 ==
-            computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1
+            computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt).1
 
         decreases p
     {
@@ -246,6 +246,10 @@ module IncAlgoV2 {
     lemma v1Equalsv2subLemma(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
         requires |p| == |valOnLeftAt| ==  |valOnPAt|
         requires |p| >= 1
+
+        /** v2 computes same resukt as optimised, ans optimised is same as non-optimised. */
+        ensures computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt).0 ==
+            computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).0
         ensures computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).0 ==
             computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).0
     {   //  Thanks Dafny.

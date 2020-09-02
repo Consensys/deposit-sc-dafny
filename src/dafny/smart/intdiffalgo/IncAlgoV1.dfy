@@ -90,6 +90,52 @@ module IncAlgoV1 {
     }
 
     /**
+     *  This version switches to computeRootPathDiffUp only as soon as 
+     *  we encounter a path p such that last(p) == 0.
+     */
+    function computeRootPathDiffAndLeftSiblingsUpOpt(
+        p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) : (int, seq<int>)
+        requires |p| == |valOnLeftAt| == |valOnPAt|
+        requires |p| >= 1
+
+        /** Optimised computes same result as non-optimised. */
+        ensures 
+            computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt)
+            == 
+            computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt)
+
+        decreases p
+    {
+     if |p| == 1 then
+        var r := computeRootPathDiff(p, valOnLeftAt, seed);
+        (r, if first(p) == 0 then valOnPAt else valOnLeftAt) 
+    else 
+        if last(p) == 0 then
+            //  Inline the proof that optimised computes same as non optimised
+            //  Compute resuklt with non-optimised
+            ghost var r1 := computeRootPathDiffAndLeftSiblingsUp(
+                    init(p), init(valOnLeftAt),  diff(seed, 0), init(valOnPAt));
+            
+            //  This is the optimisation: we compute RootPathDiff only
+            var r := computeRootPathDiffUp(init(p), init(valOnLeftAt),  diff(seed, 0));
+            //  Prove that r1.0 == r
+            calc == {
+                r1.0;
+                {  computeRootAndSiblingsIsCorrect(init(p),  init(valOnLeftAt),  diff(seed, 0),
+                     init(valOnPAt)) ; }
+                computeRootPathDiffUp(init(p),  init(valOnLeftAt),  diff(seed, 0));
+                r;
+            }
+            (r, init(valOnLeftAt) + [last(valOnPAt)])
+        else      
+            var r :=  computeRootPathDiffAndLeftSiblingsUp(
+                    init(p), init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt));
+                    (r.0, r.1 + [last(valOnLeftAt)])
+    }
+
+    
+
+    /**
      *  For path of size >= 2, computeRootPathDiffAndLeftSiblingsUp and computeRootPathDiffUp
      *  yield the same result.
      */
@@ -168,8 +214,14 @@ module IncAlgoV1 {
             || 
             (p[i] == 0 && v2[i] == 0)
 
+        /** Non-optimsied version is correct. */
         ensures computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 == r.v
         ensures computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).1 
+                                                    == computeLeftSiblingOnNextPath(p, v1, v2)
+
+        /** Optimsied is correct as they compute the same result. */
+        ensures computeRootPathDiffAndLeftSiblingsUpOpt(p, v2, seed, v1).0 == r.v
+        ensures computeRootPathDiffAndLeftSiblingsUpOpt(p, v2, seed, v1).1 
                                                     == computeLeftSiblingOnNextPath(p, v1, v2)
     {
         calc == {

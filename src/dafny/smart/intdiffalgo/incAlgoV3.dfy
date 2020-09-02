@@ -79,13 +79,10 @@ module IncAlgoV3 {
         if last(p) == 0 then
             assert( k % 2 == 0);
             assert( h == |p|);
-            var r := computeRootPathDiffAndLeftSiblingsUpv3(
-                        init(p), 
-                        h - 1,
-                        k / 2,
-                        init(valOnLeftAt),   
-                        diff(seed, 0) );
-                    (r.0, init(valOnLeftAt) + [seed])
+            (
+                computeRootPathDiffUpv2(init(p), h - 1, k / 2, init(valOnLeftAt), diff(seed, 0)),
+                init(valOnLeftAt) + [seed]
+            )
         else      
             assert( k % 2 == 1);
             assert( h == |p|);
@@ -95,12 +92,6 @@ module IncAlgoV3 {
                     k / 2,
                     init(valOnLeftAt),  
                     diff(last(valOnLeftAt), seed));
-                    /*  The last value [last(valOnLeftAt)] is not used on 
-                        the next path as it is not a leftSibling of a node of next path.
-                        at this level. As a consequence we can use any value to append to
-                        the second component of the result .1. We just use the old value 
-                        [last(valOnLeftAt) as it will enable us to "modify" 
-                        in-place a unique array in the imperative version. */
                     (r.0, r.1 + [last(valOnLeftAt)])
     }
 
@@ -131,12 +122,10 @@ module IncAlgoV3 {
             (r, if k == 0 then [seed] else [last(valOnLeftAt)]) 
         else 
             if k % 2 == 0 then
-                var r := computeRootPathDiffAndLeftSiblingsUpv4(
-                            h - 1,
-                            k / 2,
-                            init(valOnLeftAt),   
-                            diff(seed, 0) );
-                (r.0, init(valOnLeftAt) + [seed])
+                (
+                    computeRootPathDiffUpv3(h - 1, k / 2, init(valOnLeftAt), diff(seed, 0)),
+                    init(valOnLeftAt) + [seed]
+                )
             else      
                 var r :=  computeRootPathDiffAndLeftSiblingsUpv4(
                         h - 1,
@@ -160,6 +149,8 @@ module IncAlgoV3 {
             (computeRootPathDiffUp(natToBitList(k, h), valOnLeftAt, seed),
             computeLeftSiblingOnNextPath(natToBitList(k, h), computeAllPathDiffUp(natToBitList(k, h), valOnLeftAt, seed), valOnLeftAt)
             )
+
+        
     {   
         /*
          *  V4 computes same as V3, same as V2 and V2 is correct.
@@ -194,12 +185,10 @@ module IncAlgoV3 {
             (seed, [])
         else 
             if k % 2 == 0 then
-                var r := computeRootPathDiffAndLeftSiblingsUpv4b(
-                            h - 1,
-                            k / 2,
-                            init(valOnLeftAt),   
-                            diff(seed, 0) );
-                (r.0, init(valOnLeftAt) + [seed])
+                (
+                    computeRootPathDiffUpv3(h - 1, k / 2, init(valOnLeftAt), diff(seed, 0)),
+                    init(valOnLeftAt) + [seed]
+                )
             else      
                 var r :=  computeRootPathDiffAndLeftSiblingsUpv4b(
                         h - 1,
@@ -212,15 +201,15 @@ module IncAlgoV3 {
     lemma  computeRootAndSiblingsV4bIsCorrect(h : nat,
         k : nat,
         valOnLeftAt : seq<int>, seed: int)
-        requires 1 <= h == |valOnLeftAt|
+        requires h == |valOnLeftAt|
         requires k < power2(h)
 
-        ensures  computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed) == 
+        ensures  h >= 1 ==> computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed) == 
            computeRootPathDiffAndLeftSiblingsUpv4(h, k, valOnLeftAt, seed)
     {
         if ( h >= 2 ) {
             //  if h >= 2 they compute exactly the same. Thanks Dafny
-        } else {
+        } else if (h == 1) {
             //  The only interesting case is h == 1
             //  If h == 1 then k == 0 or k == 1. We show that v4b computes same as v4
             //  by unfolding the computation.
@@ -242,7 +231,6 @@ module IncAlgoV3 {
                     (diff(seed, 0), [seed]);
                     (computeRootPathDiff([0], valOnLeftAt, seed), [seed]);
                 }
-                //  Thanks Dafny
             } else {
                 //   k % 2 == 1 and k == 1
                 var r := computeRootPathDiffAndLeftSiblingsUpv4b(0, 0, [], diff(valOnLeftAt[0], seed));
@@ -264,8 +252,10 @@ module IncAlgoV3 {
 
     /**
      *  Tail recursive version of algorithm with accumulator newLeft.
+     *  Add a bit to indicate whether left siblings have to computed or whether
+     *  we can skip this step.
      */
-    function method computeRootPathDiffAndLeftSiblingsUpv4c(
+    function method computeRootPathDiffAndLeftSiblingsUpv4d(
         h : nat,
         k : nat,
         valOnLeftAt : seq<int>, 
@@ -275,19 +265,18 @@ module IncAlgoV3 {
         requires k < power2(h)
 
         decreases h
+
     {
         if h == 0 then
             (seed, newLeft)
         else 
             if k % 2 == 0 then
-                computeRootPathDiffAndLeftSiblingsUpv4c(
-                            h - 1,
-                            k / 2,
-                            init(valOnLeftAt),   
-                            diff(seed, 0),
-                            [seed] + newLeft)
+                (
+                    computeRootPathDiffUpv3(h - 1, k / 2, init(valOnLeftAt), diff(seed, 0)),
+                    init(valOnLeftAt) + [seed] + newLeft
+                )
             else      
-                computeRootPathDiffAndLeftSiblingsUpv4c(
+                computeRootPathDiffAndLeftSiblingsUpv4d(
                         h - 1,
                         k / 2,
                         init(valOnLeftAt),  
@@ -295,25 +284,179 @@ module IncAlgoV3 {
                         [last(valOnLeftAt)] + newLeft)
     }
 
+    lemma foo555(h : nat, k : nat, valOnLeftAt : seq<int>, seed: int, newLeft : seq<int>, r : seq<int>) 
+        requires 0 <= h == |valOnLeftAt|
+        requires k < power2(h)
+        ensures computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft + r) ==
+            (computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft).0,
+            computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft).1 + r)
+    {
+       
+        if h == 0 {
+            //  Thanks Dafny
+        } else {
+            if k % 2 == 0  {
+                var r1 :=  computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft);
+                var r2 :=  computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft + r);
+                //  Show that r1 == r2
+                assert(r1.0 == r2.0);
+                calc == {
+                    r2.1;
+                    init(valOnLeftAt) + [seed] + (newLeft + r);
+                    r1.1 + r;
+                }
+            } else {
+               
+                var r1 :=  computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft);
+                var r2 :=  computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft + r);
+                calc == {
+                    computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, newLeft + r);
+                    computeRootPathDiffAndLeftSiblingsUpv4d(
+                        h - 1,
+                        k / 2,
+                        init(valOnLeftAt),  
+                        diff(last(valOnLeftAt), seed),
+                        [last(valOnLeftAt)] + (newLeft + r));
+                    calc == {
+                         [last(valOnLeftAt)] + (newLeft + r);
+                        ([last(valOnLeftAt)] + newLeft) + r;
+                    }
+                    computeRootPathDiffAndLeftSiblingsUpv4d(
+                        h - 1,
+                        k / 2,
+                        init(valOnLeftAt),  
+                        diff(last(valOnLeftAt), seed),
+                        ([last(valOnLeftAt)] + newLeft) + r);
+                    { foo555(h - 1, k / 2, init(valOnLeftAt), diff(last(valOnLeftAt), seed), [last(valOnLeftAt)] + newLeft, r ); }
+                    (
+                    computeRootPathDiffAndLeftSiblingsUpv4d(h - 1, k / 2, init(valOnLeftAt), diff(last(valOnLeftAt), seed), [last(valOnLeftAt)] + newLeft).0,
+                    computeRootPathDiffAndLeftSiblingsUpv4d(h - 1, k / 2,  init(valOnLeftAt), diff(last(valOnLeftAt), seed), [last(valOnLeftAt)] + newLeft).1 + r
+                    );
+                    (
+                        r1.0,
+                        r1.1 + r
+                    );
+                }
+            }
+        }
+    }
+
     /**
      *  Correctness proof of tail recursive version.
      */
-    lemma  {:induction h} computeRootAndSiblingsV4cIsCorrect(h : nat,
+    lemma  {:induction h} computeRootAndSiblingsV4dIsCorrect(h : nat,
         k : nat,
         valOnLeftAt : seq<int>, seed: int,  newLeft : seq<int>)
         requires 1 <= h == |valOnLeftAt|
         requires k < power2(h)
-        requires |valOnLeftAt| + |newLeft| == h - 1
 
         ensures  computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed) == 
-           computeRootPathDiffAndLeftSiblingsUpv4c(h, k, valOnLeftAt, seed, [])
-
-        ensures computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed) ==
-            (computeRootPathDiffUp(natToBitList(k, h), valOnLeftAt, seed),
-            computeLeftSiblingOnNextPath(natToBitList(k, h), computeAllPathDiffUp(natToBitList(k, h), valOnLeftAt, seed), valOnLeftAt)
-            )
-
+           computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, [])
     {   
-        //  Thanks Dafny
+        if h == 1 {
+            if (k % 2 == 0) {
+                //  A little help
+                calc {
+                    init(valOnLeftAt) + [seed] + [];
+                    init(valOnLeftAt) + [seed];
+                }
+            } else {
+                //  h == 1 and k % 2 == 1
+                //  use definitions of the functions.
+                var r :=  computeRootPathDiffAndLeftSiblingsUpv4b(0, 0, init(valOnLeftAt), diff(last(valOnLeftAt), seed));
+                calc == {
+                    r;
+                    computeRootPathDiffAndLeftSiblingsUpv4b(0, 0, init(valOnLeftAt), diff(last(valOnLeftAt), seed));
+
+                    (diff(last(valOnLeftAt), seed), []);
+                }   
+                //  Result of computeRootPathDiffAndLeftSiblingsUpv4b using r:
+                calc == {
+                    computeRootPathDiffAndLeftSiblingsUpv4b(1, 1, valOnLeftAt, seed);
+                    (r.0, r.1 + [last(valOnLeftAt)]);
+                    calc == {
+                        [last(valOnLeftAt)];
+                        [] + [last(valOnLeftAt)];
+                    }
+                    (diff(last(valOnLeftAt), seed), [last(valOnLeftAt)]);
+                }
+                //  Result of computeRootPathDiffAndLeftSiblingsUpv4d
+                calc == {
+                    computeRootPathDiffAndLeftSiblingsUpv4d(1, 1, valOnLeftAt, seed, []);
+                    computeRootPathDiffAndLeftSiblingsUpv4d(0, 0, init(valOnLeftAt), diff(last(valOnLeftAt), seed), [last(valOnLeftAt)] + []);
+                    calc == {
+                         [last(valOnLeftAt)] + [];
+                         [last(valOnLeftAt)];
+                    }
+                    (diff(last(valOnLeftAt), seed), [last(valOnLeftAt)]);
+                } 
+            }
+        } else {
+            if k % 2 == 0 {
+                //  Thanks Dafny
+                 calc {
+                        init(valOnLeftAt) + [seed] + [];
+                        init(valOnLeftAt) + [seed];
+                }
+            } else {
+                // k % 2 == 1, h >= 2
+                //  result of 4b
+                var r1:= computeRootPathDiffAndLeftSiblingsUpv4b(h, k, valOnLeftAt, seed);
+                var r :=  computeRootPathDiffAndLeftSiblingsUpv4b(
+                        h - 1,
+                        k / 2,
+                        init(valOnLeftAt),  
+                        diff(last(valOnLeftAt), seed));
+                //  Result of 4b
+                assert(r1 == (r.0, r.1 + [last(valOnLeftAt)]));
+
+                //  Result of 4d
+                // computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, [])
+                var r' := computeRootPathDiffAndLeftSiblingsUpv4d(
+                        h - 1,
+                        k / 2,
+                        init(valOnLeftAt),  
+                        diff(last(valOnLeftAt), seed),
+                        [last(valOnLeftAt)] + []);
+                assert(r' == computeRootPathDiffAndLeftSiblingsUpv4d(h, k, valOnLeftAt, seed, []));
+                
+                //  Induction on h - 1, k / 2
+                computeRootAndSiblingsV4dIsCorrect(h - 1, k / 2,  init(valOnLeftAt),
+                                    diff(last(valOnLeftAt), seed),  [last(valOnLeftAt)]);
+                assert (
+                    computeRootPathDiffAndLeftSiblingsUpv4b(h - 1, k / 2,  init(valOnLeftAt), diff(last(valOnLeftAt), seed)) ==
+                    computeRootPathDiffAndLeftSiblingsUpv4d(h - 1, k / 2,  init(valOnLeftAt), diff(last(valOnLeftAt), seed), [])
+                    );
+
+                //  Show that r1 == r'
+                calc == {
+                    r.0;
+                    computeRootPathDiffAndLeftSiblingsUpv4b(h - 1, k / 2, init(valOnLeftAt),diff(last(valOnLeftAt), seed)).0;
+                    computeRootPathDiffAndLeftSiblingsUpv4d(h - 1, k / 2,  init(valOnLeftAt), diff(last(valOnLeftAt), seed), []).0;
+                    { foo555(h - 1, k / 2, init(valOnLeftAt), diff(last(valOnLeftAt), seed), [], [last(valOnLeftAt)]);}
+                    computeRootPathDiffAndLeftSiblingsUpv4d(h - 1, k / 2,  init(valOnLeftAt), diff(last(valOnLeftAt), seed), [] + [last(valOnLeftAt)]).0;
+                     calc {
+                         [last(valOnLeftAt)] + [];
+                         [] + [last(valOnLeftAt)];
+                     }
+                    r'.0;
+                }
+
+                calc == {
+                    r.1 + [last(valOnLeftAt)];
+                     computeRootPathDiffAndLeftSiblingsUpv4b(h - 1, k / 2, init(valOnLeftAt),diff(last(valOnLeftAt), seed)).1 + [last(valOnLeftAt)] ;
+                     // Induction
+                     computeRootPathDiffAndLeftSiblingsUpv4d(h - 1, k / 2,  init(valOnLeftAt), diff(last(valOnLeftAt), seed), []).1 + [last(valOnLeftAt)];
+                     { foo555(h - 1, k / 2, init(valOnLeftAt), diff(last(valOnLeftAt), seed), [], [last(valOnLeftAt)]);}
+                    computeRootPathDiffAndLeftSiblingsUpv4d(h - 1, k / 2,  init(valOnLeftAt), diff(last(valOnLeftAt), seed), [] + [last(valOnLeftAt)]).1   ;
+                     calc {
+                         [last(valOnLeftAt)] + [];
+                         [] + [last(valOnLeftAt)];
+                     }
+                     r'.1;
+                }
+            }
+        }
     }
+   
  }
