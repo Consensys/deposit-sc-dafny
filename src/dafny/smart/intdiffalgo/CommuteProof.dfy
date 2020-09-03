@@ -80,8 +80,71 @@ module CommuteProofs {
                 computeLeftSiblingOnNextPathDep(init(p), init(v2), diff(last(v2), seed)) + [last(v2)]
     } 
 
+    /**
+     *  Compute the left siblings of nextPath from current values on left sibling.
+     *  Same version as before but mixing in k anf h.
+     *
+     *  @param  p       A path.
+     *  @param  v2      The values of the nodes that are left siblings of nodes on the path.
+     *  @param  seed    The value added to the leaf of the current path.
+     *  @param  h       Size of p.
+     *  @param  k       The number represented by p on h bits.
+     *  @returns        The values of the nodes that are left siblings of nextPath(p).
+     */
+    function method computeLeftSiblingOnNextPathBridge(h : nat, k : nat, p: seq<bit>, v2 : seq<int>, seed: int) : seq<int>
+        requires 1 <= |v2| == |p| == h
+
+        requires k < power2(h)
+        requires p == natToBitList2(k, h)
+
+        ensures computeLeftSiblingOnNextPathBridge(h, k, p, v2, seed) ==
+            var v1 := computeAllPathDiffUp(p, v2, seed);
+            computeLeftSiblingOnNextPath(p, v1, v2)
+
+        decreases p
+    {
+        if |p| == 1 then
+            if first(p) == 0 then [seed] else v2 
+        else 
+            assert(|p| >= 2);
+            assert(|p| == h);
+            if last(p) == 0 then 
+                assert(k % 2 == 0);
+                init(v2) + [diff(seed, 0)]
+            else 
+                assert(last(p) == 1);
+                assert(k % 2 == 1);
+                computeLeftSiblingOnNextPathBridge(h - 1, k / 2, init(p), init(v2), diff(last(v2), seed)) + [last(v2)]
+    } 
+
     //  Algorithms using k and h instead of the path p.
 
+    /**
+     *  Same version as before but without p.
+     */
+    function method computeLeftSiblingOnNextPathFinal(h : nat, k : nat, v2 : seq<int>, seed: int) : seq<int>
+        requires 1 <= |v2| == h
+
+        requires k < power2(h)
+
+        ensures 
+            var p := natToBitList2(k, h);
+            var v1 := computeAllPathDiffUp(p, v2, seed);
+                computeLeftSiblingOnNextPathBridge(h, k, p, v2, seed) 
+                ==
+                computeLeftSiblingOnNextPathFinal(h, k, v2, seed)
+
+        decreases h
+    {
+        if h == 1 then
+            if k % 2 == 0 then [seed] else v2 
+        else 
+            if k % 2 == 0 then 
+                init(v2) + [diff(seed, 0)]
+            else 
+                computeLeftSiblingOnNextPathFinal(h - 1, k / 2, init(v2), diff(last(v2), seed)) + [last(v2)]
+    } 
+    
     /**
      *  The functional version of the deposit smart contract.
      */
