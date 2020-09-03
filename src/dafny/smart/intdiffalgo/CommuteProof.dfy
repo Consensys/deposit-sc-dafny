@@ -42,15 +42,58 @@ module CommuteProofs {
      *  @param  b       Values of nodes on left of p.
      *  @param  seed    The new value for the leaf at p.
      */
-    lemma foo333(p: seq<bit>, b : seq<int>, seed : int)
+    lemma {:induction p, b, seed} computeRootAndUpdateStateCommutes(p: seq<bit>, b : seq<int>, seed : int)
         requires 1 <= |p| == |b|
-        // requires v1 == computeAllPathDiffUp()
         ensures 
             var v1 := computeAllPathDiffUp(p, b, seed);
-            var b' := computeLeftSiblingOnNextPath(p, v1, b);
+            var b' := computeLeftSiblingOnNextPathDep(p, b, seed);
                 computeRootPathDiffUp(p, b', seed)
                 == computeRootPathDiffUp(p, b, seed)
     {   //  Thanks Dafny
     }
     
+    /**
+     *  Compute the left siblings of nextPath from current values on left sibling.
+     *
+     *  @param  p       A path.
+     *  @param  v2      The values of the nodes that are left siblings of nodes on the path.
+     *  @param  seed    The value added to the leaf of the current path.
+     *  @returns        The values of the nodes that are left siblings of nextPath(p).
+     */
+    function method computeLeftSiblingOnNextPathDep(p: seq<bit>, v2 : seq<int>, seed: int) : seq<int>
+        requires 1 <= |p| 
+        requires |v2| == |p|
+        ensures computeLeftSiblingOnNextPathDep(p, v2, seed) ==
+            var v1 := computeAllPathDiffUp(p, v2, seed);
+            computeLeftSiblingOnNextPath(p, v1, v2)
+
+        decreases p
+    {
+        if |p| == 1 then
+            if first(p) == 0 then [seed] else v2 
+        else 
+            assert(|p| >= 2);
+            if last(p) == 0 then 
+                init(v2) + [diff(seed, 0)]
+            else 
+                assert(last(p) == 1);
+                computeLeftSiblingOnNextPathDep(init(p), init(v2), diff(last(v2), seed)) + [last(v2)]
+    } 
+
+    //  Algorithms using k and h instead of the path p.
+
+    /**
+     *  The functional version of the deposit smart contract.
+     */
+    class Deposit {
+
+        //  Versions of compute left siblings on compute root path using the
+        //  height of the tree and the current leaf number
+
+
+
+        /** The values on the left siblings of the path. */
+        var left : seq<int>
+    }
+
 }
