@@ -157,6 +157,20 @@ module ComputeRootPath {
             computeRootPathDiffUp(init(p), init(b),diff(last(b), seed))
     }
 
+    function computeRootPathDiffUp1(p : seq<bit>, b : seq<int>, seed: int) : int
+        requires 1 <= |p| == |b|
+        decreases p
+        ensures computeRootPathDiffUp1(p, b, seed) == computeRootPathDiffUp(p, b, seed)
+    {
+        if |p| == 1 then
+            if first(p) == 0 then diff(seed, 0) else diff(last(b), seed) 
+        else 
+            if last(p) == 0 then
+                computeRootPathDiffUp1(init(p), init(b),diff(seed, 0))
+            else        
+                computeRootPathDiffUp1(init(p), init(b),diff(last(b), seed))    
+    }
+
     /**
      *  This version mixes the binary representation of a path and the corresponding
      *  positive integer k. It is used to prove that v3 is correct without
