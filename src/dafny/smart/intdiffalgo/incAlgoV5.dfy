@@ -300,6 +300,7 @@ module IncAlgoV5 {
          *  the current leaf.
          */
         var a : array<int>;
+        var branch : array<int>;
 
         constructor(hh: nat) 
             requires hh >= 1;
@@ -309,10 +310,14 @@ module IncAlgoV5 {
             h := hh;
             //  Initialise array with zeros
             a := new int[hh](  (x: int) => 0 );
+            branch := new int[hh](  (x: int) => 0 );
             // valOnLeftAt := a[..];
         }
 
         var rr : int ;
+
+        var deposit_count : nat ;
+
         // ghost var next : seq<int>;
 
         // ghost var valOnLeftAt : seq<int> ;
@@ -320,47 +325,57 @@ module IncAlgoV5 {
        /**
         *  Slight optimisation.
         */
-        method merkleV2(k : nat, seed: int) 
+        method depositAndGetDepositRoot(value: int) 
 
             requires 1 <= TREE_HEIGHT == a.Length 
-            requires k < power2(TREE_HEIGHT) - 1
+            requires deposit_count < power2(TREE_HEIGHT) - 1
+
+            requires branch.Length == a.Length
+            requires forall i :: 0 <= i < a.Length ==> branch[i] == a[TREE_HEIGHT - i - 1]
+
+            //  The two arrays are different objects
+            requires a != branch
 
             ensures TREE_HEIGHT == old(TREE_HEIGHT)
             ensures a.Length == old(a.Length)
             ensures (rr, a[..]) == 
-                var p := natToBitList(k, TREE_HEIGHT);
+                var p := natToBitList(old(deposit_count), TREE_HEIGHT);
                 var valOnLeftAt := old(a[..]);
                 (
-                    computeRootPathDiffUp(p, valOnLeftAt, seed),
+                    computeRootPathDiffUp(p, valOnLeftAt, value),
                     computeLeftSiblingOnNextPath(p, 
-                        computeAllPathDiffUp(p, valOnLeftAt, seed), 
+                        computeAllPathDiffUp(p, valOnLeftAt, value), 
                         valOnLeftAt
                     )
             )
+            // ensures forall i :: 0 <= i < a.Length ==> branch[i] == a[TREE_HEIGHT - i - 1]
 
             // reads this
             // modifies `r
-            modifies a
+            modifies a, branch
             modifies `rr
+            modifies `deposit_count
             // , `rr
         {
             ghost var valOnLeftAt := a[..];
 
             ghost var next : seq<int>;
 
+            var k := deposit_count;
+
             //  Variables used in the loop
             var i := 0;
             var k' : nat := k;
 
             //  variables for result
-            var r := seed ;
+            var r := value ;
             next := [] ; 
 
             //  variables needed for the proof
             ghost var h1 : nat := TREE_HEIGHT;
             //  What the Result of the computation should be:
             ghost var (r', next') := 
-                computeRootPathDiffAndLeftSiblingsUpv4d(TREE_HEIGHT, k, valOnLeftAt, seed, []);
+                computeRootPathDiffAndLeftSiblingsUpv4d(TREE_HEIGHT, k, valOnLeftAt, value, []);
             //  Track the value of natToBitList2(k, h)
             ghost var p : seq<bit> := [];
 
@@ -390,6 +405,9 @@ module IncAlgoV5 {
                 //  Array invariant: suffix of a unchanged by the first loop
                 invariant a[..]  == valOnLeftAt 
                 invariant a[h1..]  == next 
+                invariant a == old(a)
+                invariant branch == old(branch)
+                // branch[i] == a[h1 -1]
 
                 invariant TREE_HEIGHT == old(TREE_HEIGHT)
                 // invariant a[..h1]  == valOnLeftAt[h1..] 
@@ -399,7 +417,8 @@ module IncAlgoV5 {
                 p := [1] + p;
                 
                 next := [valOnLeftAt[TREE_HEIGHT - i - 1]] + next ;
-                assert(valOnLeftAt[TREE_HEIGHT - i - 1] == a[TREE_HEIGHT - i - 1]);
+                assert(valOnLeftAt[TREE_HEIGHT - i - 1] == a[TREE_HEIGHT - i - 1] == branch[i]);
+                // assert(valOnLeftAt[TREE_HEIGHT - i - 1] == a[TREE_HEIGHT - i - 1]);
                 r := diff(a[TREE_HEIGHT - i - 1], r);
                 // r := diff(valOnLeftAt[h - i - 1], r);
 
@@ -418,7 +437,12 @@ module IncAlgoV5 {
                 (r', next') == 
                     computeRootPathDiffAndLeftSiblingsUpv4d(h1, k', take(valOnLeftAt, h1), r, next)
             );
-            
+            assert(a == old(a));
+            assert(branch == old(branch));
+
+            assert(forall j :: 0 <= j < i ==>
+                branch[j] == a[TREE_HEIGHT - j - 1]);
+
             //  Use lemma to prove that h1 >= 1
             calc ==> {
                 true;
@@ -470,7 +494,19 @@ module IncAlgoV5 {
             assert(TREE_HEIGHT == old(TREE_HEIGHT));
             assert(TREE_HEIGHT - i == old(TREE_HEIGHT) - i);
             a[TREE_HEIGHT - i] := r;
+            branch[i - 1] := r; // TREE_HEIGHT - (TREE_HEIGHT -i) - 1 i + 1
+            // assert(a[TREE_HEIGHT - i] == branch[i - 1]);
             assert(a[..h1] == valOnLeftAt[..h1]);
+
+             assert(forall j :: 0 <= j < i ==>
+                branch[j] == a[TREE_HEIGHT - j - 1]);
+
+            // branch[i'] == a[TREE_HEIGHT - (i) - 1]
+
+            // i' such that TREE_HEIGHT - i' - 1 == TREE_HEIGHT - i
+            // -i' - 1 == -i 
+            // i' == i - 1
+            // branch[i] == a[TREE_HEIGHT - 1 - i]
             // assert(a[..] == next);
             // assert(a[..h1 - 1] == valOnLeftAt[..h1 - 1]);
 
@@ -542,32 +578,33 @@ module IncAlgoV5 {
             assert(next == next');
             calc == {
                 (r, next);
-                computeRootPathDiffAndLeftSiblingsUpv4d(TREE_HEIGHT, k, valOnLeftAt, seed, []);
-                { computeRootAndSiblingsV4dIsCorrect(TREE_HEIGHT, k, valOnLeftAt, seed, []) ; }
-                computeRootPathDiffAndLeftSiblingsUpv4b(TREE_HEIGHT, k, valOnLeftAt, seed);
-                { computeRootAndSiblingsV4bIsCorrect(TREE_HEIGHT, k, valOnLeftAt, seed) ; }
-                computeRootPathDiffAndLeftSiblingsUpv4(TREE_HEIGHT, k, valOnLeftAt, seed);
-                { computeRootAndSiblingsV4IsCorrect(TREE_HEIGHT, k, valOnLeftAt, seed) ; }
-                (computeRootPathDiffUp(natToBitList(k, TREE_HEIGHT), valOnLeftAt, seed),
-                computeLeftSiblingOnNextPath(natToBitList(k, TREE_HEIGHT), computeAllPathDiffUp(natToBitList(k, TREE_HEIGHT), valOnLeftAt, seed), valOnLeftAt)
+                computeRootPathDiffAndLeftSiblingsUpv4d(TREE_HEIGHT, k, valOnLeftAt, value, []);
+                { computeRootAndSiblingsV4dIsCorrect(TREE_HEIGHT, k, valOnLeftAt, value, []) ; }
+                computeRootPathDiffAndLeftSiblingsUpv4b(TREE_HEIGHT, k, valOnLeftAt, value);
+                { computeRootAndSiblingsV4bIsCorrect(TREE_HEIGHT, k, valOnLeftAt, value) ; }
+                computeRootPathDiffAndLeftSiblingsUpv4(TREE_HEIGHT, k, valOnLeftAt, value);
+                { computeRootAndSiblingsV4IsCorrect(TREE_HEIGHT, k, valOnLeftAt, value) ; }
+                (computeRootPathDiffUp(natToBitList(k, TREE_HEIGHT), valOnLeftAt, value),
+                computeLeftSiblingOnNextPath(natToBitList(k, TREE_HEIGHT), computeAllPathDiffUp(natToBitList(k, TREE_HEIGHT), valOnLeftAt, value), valOnLeftAt)
                 );
             }
 
             assert(r == r');
             assert(a[..] == next);
             rr := r;
+            deposit_count := deposit_count + 1;
 
         }
 
-    method foo()
-        requires a.Length >= 1
-        modifies a, `rr
+    // method foo()
+    //     requires a.Length >= 1
+    //     modifies a, `r
 
-    {
-        a[0] := 1;
-        rr := 2;
-        a[0] := rr;
-    }
+    // {
+    //     a[0] := 1;
+    //     rr := 2;
+    //     a[0] := rr;
+    // }
     }
 
    
