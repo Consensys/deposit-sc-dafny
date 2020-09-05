@@ -135,5 +135,6 @@ module MerkleTrees {
         ensures |leavesIn(buildMerkle(l, h, f, d))| == power2(h - 1)
         ensures isDecoratedWith(f, buildMerkle(l, h, f, d))
         ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h, f, d), d)
+        ensures hasLeavesIndexedFrom(buildMerkle(l, h, f, d), 0)
 
 }
