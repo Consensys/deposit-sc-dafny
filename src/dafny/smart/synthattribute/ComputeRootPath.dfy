@@ -446,7 +446,7 @@ module ComputeRootPath {
      */
      lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat) 
 
-         requires isCompleteTree(r)
+        requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
         requires height(r) >= 2
@@ -490,6 +490,9 @@ module ComputeRootPath {
         sameComputeDiffPath(p, b, b', leavesIn(r)[k].v);
     }
 
+    /**
+     *  
+     */
     lemma {:induction p, r, b} computeOnPathYieldsRootValueDiff2(p : seq<bit>, r : Tree<int>, b : seq<int>, k : nat, index : nat) 
 
          requires isCompleteTree(r)
@@ -565,6 +568,74 @@ module ComputeRootPath {
         //  Compute computeRootUp yields same value as computeRootPathDiff
         computeUpEqualsComputeDown(p, b, leavesIn(r)[k].v);
         computeRootPathDiffUp(p, b, leavesIn(r)[k].v)
+    }
+
+    /**
+     *  Same as computeRootDiffUp but with simplified pre-conditions.
+     *      1.  r is a Merkle tree
+     *      2.  conditions on the leaves of the tree are given by `l`
+     *      3.  path is given by the integer value k
+     */
+    function computeRootDiffUpMerkle(l: seq<int>, r : Tree<int>, b : seq<int>, k : nat) : int
+        requires height(r) >= 2
+
+        /** r is a Merkle tree for l. */
+        requires |l| == |leavesIn(r)|
+        requires isMerkle2(r, l, diff)
+
+        /**  All leaves after the k leaf in l are zero. */
+        requires k < power2(height(r) - 1)
+        requires forall i :: k < i < |l| ==> l[i] == 0
+
+        /** p is the path to k leaf in r. */
+        requires hasLeavesIndexedFrom(r, 0)
+
+        requires |b| == height(r) - 1
+        /** `b` contains values at left siblings on path `p`. */
+        requires 
+            var p := natToBitList2(k, height(r) - 1);
+            forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
+
+        /** The result is the attribute value on the root of the tree. */
+        ensures r.v == computeRootDiffUpMerkle(l, r, b, k)
+    {
+
+        /*  
+         *  To compute the result we build the path leading to k-th leaf and use
+         *  computeRootDiffUp.
+         */
+
+        //  Pre conditions for computeRootDiffUp
+
+        //  requires k < |leavesIn(r)|
+        calc ==> {
+            true;
+            { completeTreeNumberLemmas(r); }
+            |leavesIn(r)| == power2(height(r) - 1);
+            k < |leavesIn(r)|;
+        }
+
+        //  requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+        calc ==> {
+            true;
+            { assert(isMerkle2(r, l, diff)) ; }
+            forall i :: 0 <= i < |l| ==> l[i] == leavesIn(r)[i].v;
+            { assert( forall i :: k < i < |l| ==> l[i] == 0) ; }
+            forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0;
+        }
+
+        var p := natToBitList2(k, height(r) - 1);
+
+        //  requires nodeAt(p, r) == leavesIn(r)[k]
+        calc ==> {
+            p == natToBitList(k, height(r) - 1);
+            { bitToNatToBitsIsIdentity(k, height(r) - 1); }
+            bitListToNat(p) == k;
+            { indexOfLeafisIntValueOfPath(p, r, k); }
+            nodeAt(p, r) == leavesIn(r)[k];
+        }
+
+        computeRootDiffUp(p, r, b, k)
     }
 
     /**
