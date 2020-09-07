@@ -68,4 +68,93 @@ module LeftSiblings {
         leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, i);   
     }
 
+    /**
+     *  Collect the left siblings of a path.
+     */
+    function collectSiblingsValues(p : seq<bit>, r : Tree<int>, k : nat, index : nat) : seq<int>
+        requires isCompleteTree(r)
+        requires hasLeavesIndexedFrom(r, index)
+        requires height(r) >= 2
+
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
+        // requires isDecoratedWith(diff, r')
+        requires height(r) >= 2
+
+        /**  all leaves after the k leaf are zero. */
+        requires k < |leavesIn(r)| 
+
+        requires 1 <= |p| == height(r) - 1
+        requires nodeAt(p, r) == leavesIn(r)[k]
+
+        ensures |collectSiblingsValues(p, r, k, index)| == |p|
+        // ensures forall i :: 0 <= i < |p| ==> collectSiblingsValues(p, r, k, index)[i] == siblingAt(take(p, i + 1), r).v
+
+    {
+        if |p| == 1 then
+            //  tree has a root and two leaves
+            match r 
+                case Node(_, lc, rc) =>
+                    [if first(p) == 0 then rc.v else lc.v]
+        else 
+            //  collect values of sibling of current node and pre-prend
+            match r 
+                case Node(_, lc, rc) =>
+                    //  Prove pre-conditions on lc or rc before recursive call to collectSiblingsValues.
+                    childrenInCompTreesHaveHeightMinusOne(r);
+                    childrenCompTreeValidIndex(r, height(r), index);
+                    completeTreeNumberLemmas(r);
+                    initPathDeterminesIndex(r, p, k, index);
+                    simplifyNodeAtFirstBit(p, r);
+
+                    if first(p) == 0 then 
+                        [rc.v] + collectSiblingsValues(tail(p), lc, k, index)
+                    else 
+                        [lc.v] + collectSiblingsValues(tail(p), rc, k - power2(height(r) - 1) / 2, index + power2(height(r) - 1) / 2)
+    }
+   
+    // lemma foo000
+
+    lemma leftSiblingsOfPathDoesNotDependOnvalueOfLeafAtPath(p : seq<bit>, r : Tree<int>, r' : Tree<int>, a : int,  b : int, k: nat, index: nat)
+
+        requires isCompleteTree(r)
+        requires isCompleteTree(r')
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(diff, r)
+        requires isDecoratedWith(diff, r')
+        requires height(r) == height(r') >= 2
+
+        requires hasLeavesIndexedFrom(r, index)
+        requires hasLeavesIndexedFrom(r', index)
+
+        /**  all leaves after the k leaf are zero. */
+        requires k < |leavesIn(r)| == |leavesIn(r')|
+        requires 1 <= |p| == height(r) - 1
+
+        requires forall i :: 0 <= i < |leavesIn(r)| && i != k ==> leavesIn(r)[i].v == leavesIn(r')[i].v
+        requires leavesIn(r)[k].v == a
+        requires leavesIn(r')[k].v == b
+
+        requires nodeAt(p, r) == leavesIn(r)[k]
+
+        ensures nodeAt(p, r') == leavesIn(r')[k]
+
+        // ensures leftSiblings(p, r, a, k, index) == leftSiblings(p, r', b, k, index)
+    {   
+        //  nodeAt(p, r') == leavesIn(r')[k]
+        pathToIndexIsBinaryOfIndex(p, r, k, index);
+        assert( bitListToNat(p) == k);
+        leafAtPathIsIntValueOfPath(p, r', k, index);
+        assert(nodeAt(p, r') == leavesIn(r')[k]);
+
+        // if |p| == 1 {
+        //     //  Thanks Dafny
+        //     assume(leftSiblings(p, r, k, index) == leftSiblings(p, r', k, index));
+        // } else {
+        //     //  Thanks Dafny
+        //     assume(leftSiblings(p, r,  k, index) == leftSiblings(p, r', k, index));
+        // }
+    }
+    
+
  }
