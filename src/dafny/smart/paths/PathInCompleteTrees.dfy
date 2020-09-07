@@ -412,6 +412,23 @@ module PathInCompleteTrees {
     }
 
     /**
+     *  Same as above but with parametric index.
+     */
+    lemma {:induction p, r} indexOfLeafisIntValueOfPath2(p : seq<bit>, r :  Tree, k : nat, index: nat) 
+        requires isCompleteTree(r)
+        requires hasLeavesIndexedFrom(r, index)
+        requires 1 <= |p| == height(r) - 1 
+        requires k < |leavesIn(r)|
+        ensures bitListToNat(p) == k <==> nodeAt(p, r) == leavesIn(r)[k]
+    {
+        if (bitListToNat(p) == k) {
+            leafAtPathIsIntValueOfPath(p, r, k, index);
+        } else if ( nodeAt(p, r) == leavesIn(r)[k]) {
+            pathToIndexIsBinaryOfIndex(p, r, k, index);
+        }
+    }
+
+    /**
      *  A path to a leaf of index < |leavesin{r)| -1 has a zero in it.
      */
     lemma {:induction p, r} pathToLeafInInitHasZero(p: seq<bit>, r :  Tree, k : nat)
