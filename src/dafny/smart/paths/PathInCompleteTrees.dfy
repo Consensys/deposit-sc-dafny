@@ -50,6 +50,21 @@ module PathInCompleteTrees {
     }
 
     /**
+     *  For path of length >= 2, nodeAt can be computed 
+     *  recursively by choosing which child (left or right) p starts with.
+     *   
+     */
+    lemma {:induction r} simplifyNodeAtFirstBit(p : seq<bit>, r :Tree)
+        requires 2 <= |p| < height(r) 
+        requires isCompleteTree(r)
+        ensures match r 
+            case Node(_, lc, rc) =>
+                nodeAt(p, r) == 
+                nodeAt(tail(p), if first(p) == 0 then lc else rc)
+    {   //  Thanks Dafny
+    }
+
+    /**
      *  The sibling of a node at a given path.
      *  
      *  @param  p   A path (left/right)..
