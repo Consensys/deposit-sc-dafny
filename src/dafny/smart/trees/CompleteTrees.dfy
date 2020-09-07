@@ -84,6 +84,18 @@ module CompleteTrees {
     }
 
     /**
+     *  Height of children in complete tees.
+     */
+     lemma {:induction r} childrenInCompTreesHaveHeightMinusOne(r : Tree) 
+        requires height(r) >= 2
+        requires isCompleteTree(r)
+        ensures match r
+            case Node(_, lc, rc) => 
+                height(lc) == height(rc) == height(r) - 1
+    {   //  Thanks Dafny
+    }
+
+    /**
      *  Children of a node r in a complete tree of height >-= 2
      *  evenly partition leavesIn(r).
      */
