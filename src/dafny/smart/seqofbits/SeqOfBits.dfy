@@ -72,7 +72,7 @@ module SeqOfBits {
         /** Number of bits is sufficient to encode `n`. */
         requires n < power2(length)
         ensures |natToBitList2(n, length)| == length
-        ensures length >=1 ==> natToBitList2(n, length) == natToBitList(n, length)
+        ensures length >= 1 ==> natToBitList2(n, length) == natToBitList(n, length)
         decreases length
     {
         if length == 0 then
@@ -115,6 +115,7 @@ module SeqOfBits {
         requires length >= 1
         requires n < power2(length)
         ensures bitListToNat(natToBitList(n, length)) == n 
+        ensures bitListToNat(natToBitList2(n, length)) == n 
         decreases length
     {
         if length <= 1 {
@@ -171,7 +172,7 @@ module SeqOfBits {
      *  number represented by `p`.
      */
     lemma {:induction p} nextPathIsSucc(p : seq<bit>)
-         /** Path has at least one element. */
+        /** Path has at least one element. */
         requires |p| >= 1
         /** It is not the path 1+ that has no successors. */
         requires exists i :: 0 <= i < |p| && p[i] == 0
@@ -230,6 +231,24 @@ module SeqOfBits {
     } 
 
     /**
+     *  @todo complete proof of this lemma.
+     */
+    lemma succIsNextpath(p : seq<bit>, nextp : seq<bit>) 
+        /** Path has at least one element. */
+        requires |nextp| == |p| >= 1
+        /** It is not the path 1+ that has no successors. */
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        requires bitListToNat(nextp) == bitListToNat(p) + 1
+        ensures nextp == nextPath(p)
+    {
+        if |p| == 1 {
+            //  Thanks Dafny
+        } else {
+            assume(nextp == nextPath(p));
+        }
+    }
+
+    /**
      *  if all bits are set,  bitListToNat(p) = 2^p - 1.
      */
     lemma {:induction p} valueOfSeqOfOnes(p : seq<bit>)
@@ -237,6 +256,24 @@ module SeqOfBits {
         requires forall i :: 0 <= i < |p| ==> p[i] == 1
         ensures bitListToNat(p) == power2(|p|) - 1
     {   //  Thanks Dafny
+    }
+
+    /**
+     *  If bitListToNat(p) < power2(|p|) - 1 then p has a zero.
+     */
+    lemma pathToNoLasthasZero(p : seq<bit>) 
+        requires |p| >= 1
+        requires bitListToNat(p) < power2(|p|) - 1
+        ensures  exists i :: 0 <= i < |p| && p[i] == 0
+    {
+        calc ==> 
+        {
+            !(exists i :: 0 <= i < |p| && p[i] == 0);
+            forall i :: 0 <= i < |p| ==> p[i] == 1;
+            { valueOfSeqOfOnes(p); }
+            bitListToNat(p) == power2(|p|) - 1;
+            false;
+        }
     }
 
     /**
