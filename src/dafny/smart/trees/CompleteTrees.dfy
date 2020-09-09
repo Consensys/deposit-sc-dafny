@@ -143,5 +143,5 @@ module CompleteTrees {
         } else {
             childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
         }
-    }            
+    }       
 }
