@@ -77,12 +77,12 @@ module SeqHelpers {
      *  @param  k   A integer between 0 and |p|.
      *  @returns    The sequence made of the first k elements of p.
      */
-    function method  take<T>(p : seq<T>, k : nat) : seq<T>
+    function method take<T>(p : seq<T>, k : nat) : seq<T>
         requires |p| >= k 
         ensures |take(p, k)| == k
         ensures take(p, k) ==  p[..k]
     {
-        p[..k]
+        p[..k]   
     }
 
    /**
@@ -111,10 +111,12 @@ module SeqHelpers {
         ensures p == take(p, |p|)
         ensures |p| >= 2 ==> init(tail(p)) == tail(init(p))
         ensures |p| >= 2 ==> last(tail(p)) == last(p) 
-        ensures |p| >=1 ==> last(take(p, |p|)) == p[|p| - 1]
+        ensures |p| >= 1 ==> last(take(p, |p|)) == p[|p| - 1]
     {   
         //  Thanks Dafny
     }
+
+    //  Some standard lemmas combining drop, take, init, first, tail, last
 
     lemma seqIndexLemmas<T>(p : seq<T>, k : nat) 
         requires 1 <= |p|
@@ -122,11 +124,60 @@ module SeqHelpers {
         ensures k < |p| ==> take(p, k) == take(init(p), k)
         ensures 0 <= k < |init(p)| ==> p[k] == init(p)[k]
         ensures k >= 1 ==> tail(take(p, k)) == take(tail(p), k - 1)
+        ensures k >= 1 ==> first(take(p, k)) == first(p)
         ensures k < |p| ==> init(drop(p, k)) == drop(init(p), k)
         ensures k < |p| ==> last(drop(p, k)) == last(p)
     {   
         //  Thanks Dafny
     }
+
+    lemma seqTakeTake<T>(p : seq<T>, k : nat, k' :nat)
+        requires 0 <= k < k' <= |p|
+        ensures take(take(p, k'), k) == take(p, k)
+     {
+        //  Thanks Dafny
+    }
+
+    lemma seqDropDrop<T>(p : seq<T>, k : nat, k' :nat)
+        requires 0 <= k < k' <= |p|
+        ensures drop(drop(p, k), k' - k) == drop(p, k')
+     {
+        //  Thanks Dafny
+    } 
+
+    lemma prefixSeqs<T>(t: seq<T>, u : seq<T>, k : nat, l : nat)
+        requires |t| == |u|
+        requires 0 <= k <= l < |t|
+        ensures t[..l] == u[..l] ==> t[..k] == u[..k] 
+        ensures t[..l] == u[..l] ==> t[k..l] == u[k..l] 
+    {
+        //  Thanks Dafny
+    }
+
+    lemma suffixSeqs<T>(t: seq<T>, u : seq<T>, k : nat, l : nat)
+        requires |t| == |u|
+        requires 0 <= k <= l < |t|
+        requires t[k..] == u[k..]
+        ensures t[k..l] == u[k..l] 
+     {
+        //  Thanks Dafny
+    }
+
+    lemma seqDropTake<T>(p : seq<T>, k : nat, k' :nat)
+        requires 0 <= k <= k' <= |p|
+        ensures drop(take(p, k'), k) == p[k..k']
+        ensures p[..k'][k..] == p[k..k']
+    {
+        //  Thanks Dafny
+    } 
+
+    lemma seqTakeDrop<T>(p : seq<T>, k : nat, k' :nat)
+        requires 0 <= k <= k' <= |p|
+        ensures take(drop(p, k),k' - k) == p[k..k']
+        ensures p[k..][..k' - k] == p[k..k']  
+    {
+        //  Thanks Dafny
+    } 
 
     lemma seqAppendLemmas<T>(p : seq<T>, a : T)
         requires |p| >= 1
