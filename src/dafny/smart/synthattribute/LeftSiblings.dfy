@@ -68,60 +68,13 @@ module LeftSiblings {
         leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, i);   
     }
 
-    /**
-     *  Collect the left siblings of a path.
-     */
-    function collectSiblingsValues(p : seq<bit>, r : Tree<int>, k : nat, index : nat) : seq<int>
-        requires isCompleteTree(r)
-        requires hasLeavesIndexedFrom(r, index)
-        requires height(r) >= 2
-
-        /** `r` is decorated with attribute `f`. */
-        requires isDecoratedWith(diff, r)
-        // requires isDecoratedWith(diff, r')
-        requires height(r) >= 2
-
-        /**  all leaves after the k leaf are zero. */
-        requires k < |leavesIn(r)| 
-
-        requires 1 <= |p| == height(r) - 1
-        requires nodeAt(p, r) == leavesIn(r)[k]
-
-        ensures |collectSiblingsValues(p, r, k, index)| == |p|
-        // ensures forall i :: 0 <= i < |p| ==> collectSiblingsValues(p, r, k, index)[i] == siblingAt(take(p, i + 1), r).v
-
-    {
-        if |p| == 1 then
-            //  tree has a root and two leaves
-            match r 
-                case Node(_, lc, rc) =>
-                    [if first(p) == 0 then rc.v else lc.v]
-        else 
-            //  collect values of sibling of current node and pre-prend
-            match r 
-                case Node(_, lc, rc) =>
-                    //  Prove pre-conditions on lc or rc before recursive call to collectSiblingsValues.
-                    childrenInCompTreesHaveHeightMinusOne(r);
-                    childrenCompTreeValidIndex(r, height(r), index);
-                    completeTreeNumberLemmas(r);
-                    initPathDeterminesIndex(r, p, k, index);
-                    simplifyNodeAtFirstBit(p, r);
-
-                    if first(p) == 0 then 
-                        [rc.v] + collectSiblingsValues(tail(p), lc, k, index)
-                    else 
-                        [lc.v] + collectSiblingsValues(tail(p), rc, k - power2(height(r) - 1) / 2, index + power2(height(r) - 1) / 2)
-    }
-   
-    // lemma foo000
-
-    lemma leftSiblingsOfPathDoesNotDependOnvalueOfLeafAtPath(p : seq<bit>, r : Tree<int>, r' : Tree<int>, a : int,  b : int, k: nat, index: nat)
-
+    lemma testLemma(p : seq<bit>, r : Tree<int>, r' : Tree<int>, k: nat, i: nat, index: nat)
         requires isCompleteTree(r)
         requires isCompleteTree(r')
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
         requires isDecoratedWith(diff, r')
+
         requires height(r) == height(r') >= 2
 
         requires hasLeavesIndexedFrom(r, index)
@@ -131,30 +84,434 @@ module LeftSiblings {
         requires k < |leavesIn(r)| == |leavesIn(r')|
         requires 1 <= |p| == height(r) - 1
 
-        requires forall i :: 0 <= i < |leavesIn(r)| && i != k ==> leavesIn(r)[i].v == leavesIn(r')[i].v
-        requires leavesIn(r)[k].v == a
-        requires leavesIn(r')[k].v == b
+        requires leavesIn(r)[..k] == leavesIn(r')[..k]
+        requires leavesIn(r)[k + 1..] == leavesIn(r')[k + 1..]
 
-        requires nodeAt(p, r) == leavesIn(r)[k]
+        requires nodeAt(p, r) == leavesIn(r)[k]    
+        requires nodeAt(p, r') == leavesIn(r')[k]
 
-        ensures nodeAt(p, r') == leavesIn(r')[k]
+        requires 0 <= i < |p|
+        ensures siblingAt(take(p, i + 1), r).v == siblingAt(take(p, i + 1), r').v
+    {
+            assert(isCompleteTree(r));
+            assert(isCompleteTree(r'));
+            childrenInCompTreesHaveSameNumberOfLeaves(r);
+            childrenInCompTreesHaveSameNumberOfLeaves(r');
 
-        // ensures leftSiblings(p, r, a, k, index) == leftSiblings(p, r', b, k, index)
-    {   
-        //  nodeAt(p, r') == leavesIn(r')[k]
-        pathToIndexIsBinaryOfIndex(p, r, k, index);
-        assert( bitListToNat(p) == k);
-        leafAtPathIsIntValueOfPath(p, r', k, index);
-        assert(nodeAt(p, r') == leavesIn(r')[k]);
+            match (r, r')
+                case (Node(_, lc, rc), Node(_, lc', rc')) =>
+                //  Prove some properties that guarantee pre-conditions of
+                //  functions/lemmas called in the proof.
+                completeTreeNumberLemmas(r);
+                assert(power2(height(r) - 1) == |leavesIn(r)|);
 
-        // if |p| == 1 {
-        //     //  Thanks Dafny
-        //     assume(leftSiblings(p, r, k, index) == leftSiblings(p, r', k, index));
-        // } else {
-        //     //  Thanks Dafny
-        //     assume(leftSiblings(p, r,  k, index) == leftSiblings(p, r', k, index));
-        // }
+            if |p| == 1 {
+                //  Thanks Dafny
+            } else {
+                childrenCompTreeValidIndex(r, height(r), index);
+                childrenCompTreeValidIndex(r', height(r'), index);
+
+                childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
+                childrenInCompTreesHaveHalfNumberOfLeaves(r', height(r'));
+
+                completeTreeNumberLemmas(r);
+                completeTreeNumberLemmas(r');
+
+                if first(p) == 0 {
+                    //  sibling is the right node (rc, rc'), but path leads to left nodes.
+                    //  So all leaves in right trees are equal.
+                    //  Prove that k < power2(height(r) - 1)
+                    initPathDeterminesIndex(r, p, k, index);
+                    assert(k < power2(height(r) - 1) / 2);
+                    // assert(r.Node?);
+                    // childrenInCompTreesHaveSameNumberOfLeaves(r);
+                    // childrenInCompTreesHaveSameNumberOfLeaves(r');
+                    assert(|leavesIn(lc)| == |leavesIn(lc')| == power2(height(r) - 1) / 2);
+                    assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
+                    //  Prove property for siblingAt(take(p, i + 1)).v in left trees by induction
+                    //  and first sibling is rc (rc') using sameLeavesSameRoot
+                    if (i >= 1) {
+                        assert(1 <= i + 1 <= |p|);
+                        calc {
+                            first(take(p,i + 1));
+                            { seqIndexLemmas(p, i + 1) ; }
+                            first(p);
+                            0;
+                        }
+                        
+                        //  Induction on lc, lc'
+                        //  Prove pre conditions
+                       
+                        //    siblingAt(take(p,i + 1), r).v is the same as siblingAt(take(tail(p), i), lc).v;
+                        calc == {
+                            siblingAt(take(p,i + 1), r).v;
+                            { simplifySiblingAtFirstBit(take(p,i + 1), r) ; }
+                            siblingAt(tail(take(p,i + 1)), lc).v;
+                            { seqIndexLemmas(p, i + 1); }
+                            siblingAt(take(tail(p), i), lc).v;
+                        }
+                        
+                        calc == {
+                            siblingAt(take(tail(p), i), lc).v;
+                            { 
+                                // var k' := k;
+                                // assert(k + 1 <=  power2(height(r) - 1) / 2);
+
+                                calc == {
+                                    leavesIn(lc)[..k];
+                                    leavesIn(r)[..power2(height(r) - 1) / 2][..k];
+                                    { seqTakeTake(leavesIn(r), k, power2(height(r) - 1) / 2); }
+                                    leavesIn(r)[..k];
+                                    leavesIn(r')[..k];
+                                    { seqTakeTake(leavesIn(r'), k, power2(height(r) - 1) / 2); }
+                                    leavesIn(r')[..power2(height(r) - 1) / 2][..k];
+                                    leavesIn(lc')[..k];
+                                }
+                                assert(leavesIn(lc)[..k] == leavesIn(lc')[..k]);
+                            
+                                assert(k + 1 <=  power2(height(r) - 1) / 2);
+                                calc == {
+                                    leavesIn(lc)[k  + 1..];
+                                    leavesIn(r)[..power2(height(r) - 1) / 2][k + 1 ..];
+                                    { 
+                                        // assume(k + 1 <=  power2(height(r) - 1) / 2);
+                                        seqDropTake(leavesIn(r), k + 1, power2(height(r) - 1) / 2); 
+                                    }
+                                    leavesIn(r)[k + 1 .. power2(height(r) - 1) / 2];
+                                    { suffixSeqs(leavesIn(r), leavesIn(r'), k + 1, power2(height(r) - 1) / 2); } 
+                                    leavesIn(r')[k + 1 .. power2(height(r) - 1) / 2];
+                                    { 
+                                        // assume(k + 1 <=  power2(height(r) - 1) / 2);
+                                        seqDropTake(leavesIn(r'), k + 1, power2(height(r) - 1) / 2); 
+                                    }
+                                    leavesIn(r')[..power2(height(r) - 1) / 2][k + 1..];
+                                    leavesIn(lc')[k + 1..];
+                                }
+
+                                assert(leavesIn(lc)[k + 1..] == leavesIn(lc')[k + 1..]);
+
+                                calc == {
+                                    leavesIn(lc)[k];
+                                    leavesIn(r)[k];
+                                    nodeAt(p, r);
+                                    { simplifyNodeAtFirstBit(p, r); }
+                                    nodeAt(tail(p), lc);
+                                }
+                                assert(nodeAt(tail(p), lc) == leavesIn(lc)[k]);
+
+                                calc == {
+                                    leavesIn(lc')[k];
+                                    leavesIn(r')[k];
+                                    nodeAt(p, r');
+                                    { simplifyNodeAtFirstBit(p, r'); }
+                                    nodeAt(tail(p), lc');
+                                }
+                                assert(nodeAt(tail(p), lc') == leavesIn(lc')[k]);
+                                assert(isDecoratedWith(diff, r));
+                                assert(isDecoratedWith(diff, r'));
+                                testLemma(tail(p), lc, lc', k, i - 1, index); 
+                            }
+                            siblingAt(take(tail(p), i), lc').v;
+                        }
+                        //    siblingAt(take(p,i + 1), r').v is the same as siblingAt(take(tail(p), i), lc').v;
+                        calc == {
+                            siblingAt(take(p,i + 1), r').v;
+                            { simplifySiblingAtFirstBit(take(p,i + 1), r') ; }
+                            siblingAt(tail(take(p,i + 1)), lc').v;
+                            { seqIndexLemmas(p, i + 1); }
+                            siblingAt(take(tail(p), i), lc').v;
+                        }
+                        calc {
+                             siblingAt(take(p,i + 1), r).v;
+                             siblingAt(take(tail(p), i), lc).v;
+                             siblingAt(take(tail(p), i), lc').v;
+                             siblingAt(take(p,i + 1), r').v;
+                        }
+                        assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(p,i + 1), r').v);
+
+                    } else {
+                        //  i == 0
+                        assert(i == 0);
+                        assert(i <= |p|);
+                        //  Prove that leavesIn(rc) == leavesIn(rc')
+                        calc == {
+                            leavesIn(rc);
+                            leavesIn(r)[power2(height(r) - 1) / 2..];
+                            leavesIn(r')[power2(height(r) - 1) / 2..];
+                            leavesIn(rc');
+                        }
+
+                        calc == {
+                            [] + [1];
+                            [1];
+                        }
+                        calc == {
+                            siblingAt(take(p,i + 1), r).v;
+                            calc == {
+                                i + 1;
+                                0 + 1;
+                                1;
+                            }
+                        siblingAt(take(p, 1), r).v;
+                        calc == {
+                            take(p, 1);
+                            p[..1];
+                            [p[0]];
+                        }
+                        siblingAt([p[0]], r).v;
+                        siblingAt([0], r).v;
+                        nodeAt([] + [1], r).v;
+                        calc == {
+                            [] + [1];
+                            [1];
+                        }
+                        nodeAt([1], r).v;
+                        rc.v;
+                        { 
+                            assert(leavesIn(rc) == leavesIn(rc')); 
+                            assert(hasLeavesIndexedFrom(rc,  index + power2(height(r) - 1) / 2));
+                            assert(hasLeavesIndexedFrom(rc',  index + power2(height(r) - 1) / 2));
+                            assert(isCompleteTree(r));
+                            assert(isCompleteTree(r'));
+                            assert(isDecoratedWith(diff, r));
+                            assert(isDecoratedWith(diff, r'));
+                            sameLeavesSameRoot(rc, rc', diff, index + power2(height(r) - 1) / 2) ; 
+                        }
+                        rc'.v;
+                        nodeAt([1], r').v;
+                        nodeAt([] + [1], r').v;
+                        siblingAt([0], r').v;
+                        siblingAt([p[0]], r').v;
+                        siblingAt(take(p,i + 1), r').v;
+                        }
+                    }
+                } else {
+                    //  Prove property for siblingAt(take(p, i + 1)).v in right trees by induction
+                    //  and first sibling is lc (lc') using sameLeavesSameRoot
+                    //  Prove that k >= power2(height(r) - 1)
+                    initPathDeterminesIndex(r, p, k, index);
+                    assert(k >= power2(height(r) - 1) / 2);
+                    assert(|leavesIn(rc)| == |leavesIn(rc')| == power2(height(r) - 1) / 2);
+                    assert(|leavesIn(lc)| == |leavesIn(lc')| == power2(height(r) - 1) / 2);
+
+                    if (i >= 1) {
+                         //  Prove property for siblingAt(take(p, i + 1)).v in right trees by induction
+                        //  and first sibling is lc (lc') using sameLeavesSameRoot
+                        assert(1 <= i + 1 <= |p|);
+                        calc {
+                            first(take(p,i + 1));
+                            { seqIndexLemmas(p, i + 1) ; }
+                            first(p);
+                            1;
+                        }
+
+                        //  Induction on rc, rc'
+                        //  Prove pre conditions
+                       
+                        //    siblingAt(take(p,i + 1), r).v is the same as siblingAt(take(tail(p), i), lc).v;
+                        calc == {
+                            siblingAt(take(p,i + 1), r).v;
+                            { simplifySiblingAtFirstBit(take(p,i + 1), r) ; }
+                            siblingAt(tail(take(p,i + 1)), rc).v;
+                            { seqIndexLemmas(p, i + 1); }
+                            siblingAt(take(tail(p), i), rc).v;
+                        }
+                        
+                        calc == {
+                            siblingAt(take(tail(p), i), rc).v;
+                            { 
+                                 //  this var k' and the assert 
+                                 // (although not used) for some reason computing them speeds up the provers' time ...
+                                var k' := k  - power2(height(r) - 1) / 2;
+                                assert(k + 1 >  power2(height(r) - 1) / 2);
+
+                                calc == {
+                                    leavesIn(rc)[..k -  power2(height(r) - 1) / 2];
+                                    leavesIn(r)[power2(height(r) - 1) / 2..][..k -  power2(height(r) - 1) / 2];
+                                    {
+                                        seqTakeDrop(leavesIn(r), power2(height(r) - 1) / 2, k);
+                                    }
+                                    leavesIn(r)[power2(height(r) - 1) / 2..k];
+                                    {
+                                        prefixSeqs(leavesIn(r), leavesIn(r'), power2(height(r) - 1) / 2, k);
+                                    }
+
+                                    leavesIn(r')[power2(height(r) - 1) / 2..k];
+                                    {
+                                        seqTakeDrop(leavesIn(r'), power2(height(r) - 1) / 2, k);
+                                    }
+                                    leavesIn(r')[power2(height(r) - 1) / 2..][..k -  power2(height(r) - 1) / 2];
+                                    leavesIn(rc')[.. k -  power2(height(r) - 1) / 2];
+                                }
+                                assert(leavesIn(rc)[..k - power2(height(r) - 1) / 2] == leavesIn(rc')[..k - power2(height(r) - 1) / 2]);
+                            
+                                calc == {
+                                    leavesIn(rc)[k  - power2(height(r) - 1) / 2 + 1..];
+                                    leavesIn(r)[power2(height(r) - 1) / 2..][k - power2(height(r) - 1) / 2 + 1 ..]; 
+                                    { 
+                                        seqDropDrop(leavesIn(r), power2(height(r) - 1) / 2, k + 1); 
+                                    }
+                                    leavesIn(r)[k + 1..];
+                                    leavesIn(r')[k + 1 ..];
+                                    { 
+                                        seqDropDrop(leavesIn(r'), power2(height(r) - 1) / 2, k + 1); 
+                                    }
+                                    leavesIn(r')[power2(height(r) - 1) / 2..][k - power2(height(r) - 1) / 2 + 1 ..]; 
+                                    leavesIn(rc')[k - power2(height(r) - 1) / 2 + 1..];
+                                }
+
+                                assert(leavesIn(rc)[k - power2(height(r) - 1) / 2 + 1..] == leavesIn(rc')[k - power2(height(r) - 1) / 2 + 1..]);
+
+                                calc == {
+                                    leavesIn(rc)[k - power2(height(r) - 1) / 2];
+                                    leavesIn(r)[k];
+                                    nodeAt(p, r);
+                                    { simplifyNodeAtFirstBit(p, r); }
+                                    nodeAt(tail(p), rc);
+                                }
+                                assert(nodeAt(tail(p), rc) == leavesIn(rc)[k - power2(height(r) - 1) / 2]);
+
+                                calc == {
+                                    leavesIn(rc')[k - power2(height(r) - 1) / 2];
+                                    leavesIn(r')[k];
+                                    nodeAt(p, r');
+                                    { simplifyNodeAtFirstBit(p, r'); }
+                                    nodeAt(tail(p), rc');
+                                }
+                                assert(nodeAt(tail(p), rc') == leavesIn(rc')[k - power2(height(r) - 1) / 2]);
+                               
+                                assert(isDecoratedWith(diff, r));
+                                assert(isDecoratedWith(diff, r'));
+                                testLemma(tail(p), rc, rc', k - power2(height(r) - 1) / 2, i - 1, index + power2(height(r) - 1) / 2); 
+                            }
+                            siblingAt(take(tail(p), i), rc').v;
+                        }
+
+                        //    siblingAt(take(p,i + 1), r').v is the same as siblingAt(take(tail(p), i), rc').v;
+                        calc == {
+                            siblingAt(take(p,i + 1), r').v;
+                            { simplifySiblingAtFirstBit(take(p,i + 1), r') ; }
+                            siblingAt(tail(take(p,i + 1)), rc').v;
+                            { seqIndexLemmas(p, i + 1); }
+                            siblingAt(take(tail(p), i), rc').v;
+                        }
+                        calc == {
+                             siblingAt(take(p,i + 1), r).v;
+                             siblingAt(take(tail(p), i), rc).v;
+                             siblingAt(take(tail(p), i), rc').v;
+                             siblingAt(take(p,i + 1), r').v;
+                        }
+                        assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(p,i + 1), r').v);
+                        // assume( siblingAt(take(p,i + 1), r).v == siblingAt(take(p, i +1), r').v);
+                    } else {
+                        //  i == 0
+                        assert(i == 0);
+                        assert(i <= |p|);
+                        calc == {
+                            [] + [0];
+                            [0];
+                        }
+                        calc == {
+                            siblingAt(take(p,i + 1), r).v;
+                            calc == {
+                                i + 1;
+                                0 + 1;
+                                1;
+                            }
+                        siblingAt(take(p, 1), r).v;
+                        calc == {
+                            take(p, 1);
+                            p[..1];
+                            [p[0]];
+                        }
+                        siblingAt([p[0]], r).v;
+                        siblingAt([1], r).v;
+                        nodeAt([] + [0], r).v;
+                        nodeAt([0], r).v;
+                        lc.v;
+                        { 
+                            calc == {
+                            leavesIn(lc);
+                            leavesIn(r)[..power2(height(r) - 1) / 2];
+                            { 
+                                assert(k >= power2(height(r) - 1) / 2); 
+                                assert(leavesIn(r)[..k] == leavesIn(r')[..k]); 
+                                prefixSeqs(leavesIn(r), leavesIn(r'), power2(height(r) - 1) / 2, k);
+                            }
+                            leavesIn(r')[..power2(height(r) - 1) / 2];
+                            leavesIn(lc');
+                            }
+                            assert(leavesIn(lc) == leavesIn(lc')); 
+                            assert(hasLeavesIndexedFrom(lc,  index));
+                            assert(hasLeavesIndexedFrom(lc',  index));
+                            assert(isCompleteTree(r));
+                            assert(isCompleteTree(r));
+                            assert(isDecoratedWith(diff, r));
+                            assert(isDecoratedWith(diff, r'));
+                            sameLeavesSameRoot(lc, lc', diff, index) ; 
+                        }
+                        lc'.v;
+                        nodeAt([0], r').v;
+                        nodeAt([] + [0], r').v;
+                        siblingAt([1], r').v;
+                        siblingAt([p[0]], r').v;
+                        siblingAt(take(p,i + 1), r').v;
+                        }
+                    }
+                }
+            // }
+        }
+
+        
     }
-    
+
+  
+
+    lemma sameLeavesSameRoot<T>(r : Tree<T>, r2 : Tree<T>, f : (T, T) -> T, index : nat) 
+        requires isCompleteTree(r)
+        requires isCompleteTree(r2)
+        /** `r` is decorated with attribute `f`. */
+        requires isDecoratedWith(f, r)
+        requires isDecoratedWith(f, r2)
+
+        requires height(r) == height(r2) >= 1
+
+        requires hasLeavesIndexedFrom(r, index)
+        requires hasLeavesIndexedFrom(r2, index)
+
+        requires leavesIn(r) == leavesIn(r2)
+
+        ensures r.v == r2.v
+
+        {
+            if height(r) == 1 {
+                //  Thanks Dafny
+            } else {
+                //  Induction on lc and rc and combine root with f
+                match (r, r2) 
+                    case (Node(_, lc, rc), Node(_, lc2, rc2)) => 
+                        //  Check pre-conditions on lc rc before induction
+                        childrenInCompTreesHaveHeightMinusOne(r);
+                        childrenInCompTreesHaveHeightMinusOne(r2);
+                        childrenCompTreeValidIndex(r, height(r), index);
+                        childrenCompTreeValidIndex(r2, height(r2), index);
+                        completeTreeNumberLemmas(r);
+                        completeTreeNumberLemmas(r2);
+                        childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
+                        childrenInCompTreesHaveHalfNumberOfLeaves(r2, height(r2));
+
+                        calc == {
+                            r.v;
+                            f(lc.v, rc.v);
+                            { sameLeavesSameRoot(lc, lc2, f, index); }
+                            f(lc2.v, rc.v);
+                            { sameLeavesSameRoot(rc, rc2, f, index + power2(height(r) - 1) / 2); }
+                            f(lc2.v, rc2.v);
+                            r2.v;
+                        }
+            }
+        }
+
+   
 
  }
