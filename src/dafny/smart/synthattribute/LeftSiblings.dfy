@@ -22,6 +22,7 @@ include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
+include "./LeftSiblingsPlus.dfy"
 
 module LeftSiblings {
  
@@ -35,6 +36,7 @@ module LeftSiblings {
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees
+    import opened LeftSiblingsPlus
 
     /**
      *  If b and b' agree on values at which p[i] == 1 and b has siblings at p[..], then 
@@ -230,60 +232,8 @@ module LeftSiblings {
                         assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(p,i + 1), r').v);
 
                     } else {
-                        //  i == 0
                         assert(i == 0);
-                        assert(i <= |p|);
-                        //  Prove that leavesIn(rc) == leavesIn(rc')
-                        calc == {
-                            leavesIn(rc);
-                            leavesIn(r)[power2(height(r) - 1) / 2..];
-                            leavesIn(r')[power2(height(r) - 1) / 2..];
-                            leavesIn(rc');
-                        }
-
-                        calc == {
-                            [] + [1];
-                            [1];
-                        }
-                        calc == {
-                            siblingAt(take(p,i + 1), r).v;
-                            calc == {
-                                i + 1;
-                                0 + 1;
-                                1;
-                            }
-                        siblingAt(take(p, 1), r).v;
-                        calc == {
-                            take(p, 1);
-                            p[..1];
-                            [p[0]];
-                        }
-                        siblingAt([p[0]], r).v;
-                        siblingAt([0], r).v;
-                        nodeAt([] + [1], r).v;
-                        calc == {
-                            [] + [1];
-                            [1];
-                        }
-                        nodeAt([1], r).v;
-                        rc.v;
-                        { 
-                            assert(leavesIn(rc) == leavesIn(rc')); 
-                            assert(hasLeavesIndexedFrom(rc,  index + power2(height(r) - 1) / 2));
-                            assert(hasLeavesIndexedFrom(rc',  index + power2(height(r) - 1) / 2));
-                            assert(isCompleteTree(r));
-                            assert(isCompleteTree(r'));
-                            assert(isDecoratedWith(diff, r));
-                            assert(isDecoratedWith(diff, r'));
-                            sameLeavesSameRoot(rc, rc', diff, index + power2(height(r) - 1) / 2) ; 
-                        }
-                        rc'.v;
-                        nodeAt([1], r').v;
-                        nodeAt([] + [1], r').v;
-                        siblingAt([0], r').v;
-                        siblingAt([p[0]], r').v;
-                        siblingAt(take(p,i + 1), r').v;
-                        }
+                        testLemmaBaseCase(p, r, r', k, index);
                     }
                 } else {
                     //  Prove property for siblingAt(take(p, i + 1)).v in right trees by induction
@@ -404,59 +354,9 @@ module LeftSiblings {
                         assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(p,i + 1), r').v);
                         // assume( siblingAt(take(p,i + 1), r).v == siblingAt(take(p, i +1), r').v);
                     } else {
-                        //  i == 0
                         assert(i == 0);
-                        assert(i <= |p|);
-                        calc == {
-                            [] + [0];
-                            [0];
-                        }
-                        calc == {
-                            siblingAt(take(p,i + 1), r).v;
-                            calc == {
-                                i + 1;
-                                0 + 1;
-                                1;
-                            }
-                        siblingAt(take(p, 1), r).v;
-                        calc == {
-                            take(p, 1);
-                            p[..1];
-                            [p[0]];
-                        }
-                        siblingAt([p[0]], r).v;
-                        siblingAt([1], r).v;
-                        nodeAt([] + [0], r).v;
-                        nodeAt([0], r).v;
-                        lc.v;
-                        { 
-                            calc == {
-                            leavesIn(lc);
-                            leavesIn(r)[..power2(height(r) - 1) / 2];
-                            { 
-                                assert(k >= power2(height(r) - 1) / 2); 
-                                assert(leavesIn(r)[..k] == leavesIn(r')[..k]); 
-                                prefixSeqs(leavesIn(r), leavesIn(r'), power2(height(r) - 1) / 2, k);
-                            }
-                            leavesIn(r')[..power2(height(r) - 1) / 2];
-                            leavesIn(lc');
-                            }
-                            assert(leavesIn(lc) == leavesIn(lc')); 
-                            assert(hasLeavesIndexedFrom(lc,  index));
-                            assert(hasLeavesIndexedFrom(lc',  index));
-                            assert(isCompleteTree(r));
-                            assert(isCompleteTree(r));
-                            assert(isDecoratedWith(diff, r));
-                            assert(isDecoratedWith(diff, r'));
-                            sameLeavesSameRoot(lc, lc', diff, index) ; 
-                        }
-                        lc'.v;
-                        nodeAt([0], r').v;
-                        nodeAt([] + [0], r').v;
-                        siblingAt([1], r').v;
-                        siblingAt([p[0]], r').v;
-                        siblingAt(take(p,i + 1), r').v;
-                        }
+                        testLemmaBaseCase(p, r, r', k, index);
+                        //  i == 0
                     }
                 }
             // }
@@ -467,50 +367,50 @@ module LeftSiblings {
 
   
 
-    lemma sameLeavesSameRoot<T>(r : Tree<T>, r2 : Tree<T>, f : (T, T) -> T, index : nat) 
-        requires isCompleteTree(r)
-        requires isCompleteTree(r2)
-        /** `r` is decorated with attribute `f`. */
-        requires isDecoratedWith(f, r)
-        requires isDecoratedWith(f, r2)
+    // lemma sameLeavesSameRoot<T>(r : Tree<T>, r2 : Tree<T>, f : (T, T) -> T, index : nat) 
+    //     requires isCompleteTree(r)
+    //     requires isCompleteTree(r2)
+    //     /** `r` is decorated with attribute `f`. */
+    //     requires isDecoratedWith(f, r)
+    //     requires isDecoratedWith(f, r2)
 
-        requires height(r) == height(r2) >= 1
+    //     requires height(r) == height(r2) >= 1
 
-        requires hasLeavesIndexedFrom(r, index)
-        requires hasLeavesIndexedFrom(r2, index)
+    //     requires hasLeavesIndexedFrom(r, index)
+    //     requires hasLeavesIndexedFrom(r2, index)
 
-        requires leavesIn(r) == leavesIn(r2)
+    //     requires leavesIn(r) == leavesIn(r2)
 
-        ensures r.v == r2.v
+    //     ensures r.v == r2.v
 
-        {
-            if height(r) == 1 {
-                //  Thanks Dafny
-            } else {
-                //  Induction on lc and rc and combine root with f
-                match (r, r2) 
-                    case (Node(_, lc, rc), Node(_, lc2, rc2)) => 
-                        //  Check pre-conditions on lc rc before induction
-                        childrenInCompTreesHaveHeightMinusOne(r);
-                        childrenInCompTreesHaveHeightMinusOne(r2);
-                        childrenCompTreeValidIndex(r, height(r), index);
-                        childrenCompTreeValidIndex(r2, height(r2), index);
-                        completeTreeNumberLemmas(r);
-                        completeTreeNumberLemmas(r2);
-                        childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
-                        childrenInCompTreesHaveHalfNumberOfLeaves(r2, height(r2));
+    //     {
+    //         if height(r) == 1 {
+    //             //  Thanks Dafny
+    //         } else {
+    //             //  Induction on lc and rc and combine root with f
+    //             match (r, r2) 
+    //                 case (Node(_, lc, rc), Node(_, lc2, rc2)) => 
+    //                     //  Check pre-conditions on lc rc before induction
+    //                     childrenInCompTreesHaveHeightMinusOne(r);
+    //                     childrenInCompTreesHaveHeightMinusOne(r2);
+    //                     childrenCompTreeValidIndex(r, height(r), index);
+    //                     childrenCompTreeValidIndex(r2, height(r2), index);
+    //                     completeTreeNumberLemmas(r);
+    //                     completeTreeNumberLemmas(r2);
+    //                     childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
+    //                     childrenInCompTreesHaveHalfNumberOfLeaves(r2, height(r2));
 
-                        calc == {
-                            r.v;
-                            f(lc.v, rc.v);
-                            { sameLeavesSameRoot(lc, lc2, f, index); }
-                            f(lc2.v, rc.v);
-                            { sameLeavesSameRoot(rc, rc2, f, index + power2(height(r) - 1) / 2); }
-                            f(lc2.v, rc2.v);
-                            r2.v;
-                        }
-            }
-        }
+    //                     calc == {
+    //                         r.v;
+    //                         f(lc.v, rc.v);
+    //                         { sameLeavesSameRoot(lc, lc2, f, index); }
+    //                         f(lc2.v, rc.v);
+    //                         { sameLeavesSameRoot(rc, rc2, f, index + power2(height(r) - 1) / 2); }
+    //                         f(lc2.v, rc2.v);
+    //                         r2.v;
+    //                     }
+    //         }
+    //     }
 
    
 
