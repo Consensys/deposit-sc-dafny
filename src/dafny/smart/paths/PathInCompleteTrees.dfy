@@ -118,7 +118,30 @@ module PathInCompleteTrees {
                     siblingAt(tail(p), if first(p) == 0 then lc else rc);
                 }
     }
-    
+
+    /**
+     *  Simplify a path to a sibling at a given index.
+     */
+    lemma {:induction r} simplifySiblingAtIndexFirstBit(p : seq<bit>, r :Tree, i : nat)
+        requires 2 <= i <= |p| < height(r) 
+        requires isCompleteTree(r)
+        // requires 1 <= i <= |p|
+        ensures match r 
+            case Node(_, lc, rc) =>
+                siblingAt(take(p, i), r) == 
+                siblingAt(take(tail(p), i - 1), if first(p) == 0 then lc else rc)
+    {
+        match r 
+        case Node(_, lc, rc) =>
+            calc == {
+                siblingAt(take(p, i), r);
+                { simplifySiblingAtFirstBit(take(p, i), r) ; }
+                siblingAt(tail(take(p, i)), if first(p) == 0 then lc else rc);
+                { seqIndexLemmas(p, i); }
+                siblingAt(take(tail(p), i - 1), if first(p) == 0 then lc else rc);
+            }
+    }
+
     /**
      *  In a complete tree, the height if a node after a path is
      *  the height of the tree minus length of the path.
