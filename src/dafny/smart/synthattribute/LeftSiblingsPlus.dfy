@@ -40,29 +40,34 @@ module LeftSiblingsPlus {
     import opened Trees
 
     /**
-     *  In a decorated tree, 
-     *  The values on the siblings of a path do not depend on the value at the end of the path.
+     *  This is the base case for the proof of Lemma [[LeftSiblings.]]
+     *  Let two trees r and r' (same height) that agree on all values of their leaves except possibly at k.
+     *  Let p be the path to the k-th leaf.
+     *  Then the values on the i-th left siblings of p in r is equal to the values on the i-th left siblings of p in r'.
+     *
+     *  @param  p       A path to a leaf.
+     *  @param  r       A tree.
+     *  @param  r'      A tree.
+     *  @param  k       The index of a leaf in r and r'.
+     *  @param  f       The synthesised attribute to decorate the trees.
+     *  @param  i       An index on the path p.
+     *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-     lemma testLemmaBaseCase<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, index: nat) 
+     lemma {:induction r, r'} testLemmaBaseCase<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, index: nat) 
 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
-        /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(f, r)
         requires isDecoratedWith(f, r')
-
         requires height(r) == height(r') >= 2
-
         requires hasLeavesIndexedFrom(r, index)
         requires hasLeavesIndexedFrom(r', index)
 
-        /**  all leaves after the k leaf are zero. */
-        requires k < |leavesIn(r)| == |leavesIn(r')|
         requires 1 <= |p| == height(r) - 1
 
-        requires leavesIn(r)[..k] == leavesIn(r')[..k]
-        requires leavesIn(r)[k + 1..] == leavesIn(r')[k + 1..]
-
+        requires k < |leavesIn(r)| == |leavesIn(r')|
+        requires take(leavesIn(r), k) == take(leavesIn(r'), k)
+        requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
         requires nodeAt(p, r) == leavesIn(r)[k]    
         requires nodeAt(p, r') == leavesIn(r')[k]
 
@@ -133,7 +138,9 @@ module LeftSiblingsPlus {
                     siblingAt(take(p, 1), r').v;
                 }
              } else {
-                 
+                assert(first(p) == 1);
+                var k' := power2(height(r) - 1) / 2;
+                assert(k >= k');
                 calc == {
                     [] + [0];
                     [0];
@@ -154,11 +161,14 @@ module LeftSiblingsPlus {
                     calc == {
                         leavesIn(lc);
                         leavesIn(r)[..power2(height(r) - 1) / 2];
+                        take(leavesIn(r), power2(height(r) - 1) / 2);
                         { 
                             assert(k >= power2(height(r) - 1) / 2); 
-                            assert(leavesIn(r)[..k] == leavesIn(r')[..k]); 
+                            assert(take(leavesIn(r), k) == take(leavesIn(r'), k)); 
+                            // assert(leavesIn(r)[..k] == leavesIn(r')[..k]); 
                             prefixSeqs(leavesIn(r), leavesIn(r'), power2(height(r) - 1) / 2, k);
                         }
+                        take(leavesIn(r'), power2(height(r) - 1) / 2);
                         leavesIn(r')[..power2(height(r) - 1) / 2];
                         leavesIn(lc');
                     }
