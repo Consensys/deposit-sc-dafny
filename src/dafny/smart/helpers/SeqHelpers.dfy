@@ -53,6 +53,7 @@ module SeqHelpers {
         requires 1 <= |p|
         ensures |init(p)| == |p| - 1
         ensures init(p) ==  p[..|p| - 1]
+        ensures init(p) < p
     {
         p[..|p| - 1]
     }
@@ -81,6 +82,8 @@ module SeqHelpers {
         requires |p| >= k 
         ensures |take(p, k)| == k
         ensures take(p, k) ==  p[..k]
+        ensures take(p, k) <= p 
+        ensures k < |p| ==> take(p, k) < p 
     {
         p[..k]   
     }
@@ -149,6 +152,7 @@ module SeqHelpers {
         requires |t| == |u|
         requires 0 <= k <= l < |t|
         ensures t[..l] == u[..l] ==> t[..k] == u[..k] 
+        ensures take(t, l) == take(u, l) ==> take(t, k) == take(u, k) 
         ensures t[..l] == u[..l] ==> t[k..l] == u[k..l] 
     {
         //  Thanks Dafny
@@ -158,7 +162,9 @@ module SeqHelpers {
         requires |t| == |u|
         requires 0 <= k <= l < |t|
         requires t[k..] == u[k..]
+        ensures drop(t, k) == drop(u, k)
         ensures t[k..l] == u[k..l] 
+        ensures drop(take(t, l), k) == drop(take(u, l), k)
      {
         //  Thanks Dafny
     }
