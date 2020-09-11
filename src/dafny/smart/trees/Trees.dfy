@@ -34,17 +34,17 @@ module Trees {
         |   Node(v: T, left: Tree, right: Tree)
 
     /**
-     *  Height of a tree.
+     *  Height of a tree. Length of longest path from root to a leaf.
      *
      *  @param  root    The root of the tree.
      *  @returns        The height of the tree.
      */
     function height(root : Tree) : nat 
-        ensures height(root) >= 1
+        ensures height(root) >= 0
         decreases root
     {
         match root 
-            case Leaf(_, _) => 1
+            case Leaf(_, _) => 0
 
             case Node(_, lc, rc) => 1 + max(height(lc), height(rc))
     }
@@ -161,7 +161,7 @@ module Trees {
         ensures isConstant(r, c) 
         decreases r 
     {
-        if (height(r) == 1) {
+        if (height(r) == 0) {
             //  In this case, there is only one node.
             assert(nodesIn(r)[0] == r);
         } else {

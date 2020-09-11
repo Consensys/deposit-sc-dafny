@@ -53,8 +53,8 @@ module CompleteTrees {
      */
     lemma {:induction root} completeTreeNumberLemmas(root : Tree) 
         requires isCompleteTree(root)
-        ensures |leavesIn(root)| == power2(height(root) - 1)
-        ensures |nodesIn(root)| == power2(height(root)) - 1
+        ensures |leavesIn(root)| == power2(height(root))
+        ensures |nodesIn(root)| == power2(height(root) + 1) - 1
     {   //  Thanks Dafny
     }
 
@@ -72,11 +72,11 @@ module CompleteTrees {
      *  Children of a node in a complete tree have same number of leaves.
      */
     lemma {:induction r} childrenInCompTreesHaveSameNumberOfLeaves(r : Tree) 
-        requires height(r) >= 2
+        requires height(r) >= 1
         requires isCompleteTree(r)
         ensures match r
             case Node(_, lc, rc) => 
-                |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r) - 1) / 2
+                |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r)) / 2
     {
         match r 
             case Node(_, lc, rc) =>
@@ -87,7 +87,7 @@ module CompleteTrees {
      *  Height of children in complete tees.
      */
      lemma {:induction r} childrenInCompTreesHaveHeightMinusOne(r : Tree) 
-        requires height(r) >= 2
+        requires height(r) >= 1
         requires isCompleteTree(r)
         ensures match r
             case Node(_, lc, rc) => 
@@ -100,15 +100,15 @@ module CompleteTrees {
      *  evenly partition leavesIn(r).
      */
     lemma {:induction r} childrenInCompTreesHaveHalfNumberOfLeaves(r : Tree, h : nat) 
-        requires h == height(r) >= 2
+        requires h == height(r) >= 1
         requires isCompleteTree(r)
-        ensures |leavesIn(r)| == power2(h - 1)
+        ensures |leavesIn(r)| == power2(h)
         ensures match r
             case Node(_, lc, rc) => 
-                leavesIn(lc) == leavesIn(r)[.. power2(height(r) - 1) / 2]
-                && leavesIn(rc) == leavesIn(r)[power2(height(r) - 1) / 2 ..]
+                leavesIn(lc) == leavesIn(r)[.. power2(height(r)) / 2]
+                && leavesIn(rc) == leavesIn(r)[power2(height(r)) / 2 ..]
     {
-        if h == 2 {
+        if h == 1 {
             //  Thanks Dafny
         } else {
             match r
@@ -122,23 +122,23 @@ module CompleteTrees {
      */
     lemma {:induction r} childrenCompTreeValidIndex(r : Tree, h : nat, i : nat)
         requires hasLeavesIndexedFrom(r, i)
-        requires h == height(r) >= 2
+        requires h == height(r) >= 1
         requires isCompleteTree(r)
         ensures match r
             case Node(_, lc, rc) => 
                 hasLeavesIndexedFrom(lc, i)
-                && hasLeavesIndexedFrom(rc, i + power2(height(r) - 1) / 2)
+                && hasLeavesIndexedFrom(rc, i + power2(height(r)) / 2)
     {
-        if h == 2 {
+        if h == 1 {
             match r
             case Node(_, lc, rc) => 
                 calc == {
                     leavesIn(r) == [lc, rc];
                     leavesIn(r)[0] == lc;                
-                    leavesIn(r)[0].index == i ;
+                    leavesIn(r)[0].index == 0 + i ;
                     leavesIn(r)[1] == rc;
                     leavesIn(r)[1].index == i + 1;
-                    power2(height(r) - 1) / 2 == 1;
+                    power2(height(r) - 1) / 2 == 0;
                 }
         } else {
             childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
