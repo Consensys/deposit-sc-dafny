@@ -143,6 +143,11 @@ module ComputeRootPath {
      *  Compute root value starting from end of path.
      *  Recursive computation by simplifying the last step of the path i.e.
      *  computing its value and then iterate on the prefix path.
+     *
+     *  @param  p       A path to leaf.
+     *  @param  b       The values on the left siblings of p.
+     *  @param  seed    The new value to add at the end of p.
+     *  @returns        The value of the root.
      */
     function computeRootPathDiffUp(p : seq<bit>, b : seq<int>, seed: int) : int
         requires |p| == |b|
@@ -449,7 +454,7 @@ module ComputeRootPath {
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -457,7 +462,7 @@ module ComputeRootPath {
 
         /** p is the path to k leaf in r. */
         requires hasLeavesIndexedFrom(r, 0)
-        requires |p| == height(r) - 1
+        requires |p| == height(r) 
         requires nodeAt(p, r) == leavesIn(r)[k]
 
         requires |b| == |p|
@@ -498,7 +503,7 @@ module ComputeRootPath {
          requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -506,7 +511,7 @@ module ComputeRootPath {
 
         /** p is the path to k leaf in r. */
         requires hasLeavesIndexedFrom(r, index)
-        requires |p| == height(r) - 1
+        requires |p| == height(r) 
         requires nodeAt(p, r) == leavesIn(r)[k]
 
         requires |b| == |p|
@@ -546,7 +551,7 @@ module ComputeRootPath {
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -554,7 +559,7 @@ module ComputeRootPath {
 
         /** p is the path to k leaf in r. */
         requires hasLeavesIndexedFrom(r, 0)
-        requires |p| == height(r) - 1
+        requires |p| == height(r) 
         requires nodeAt(p, r) == leavesIn(r)[k]
 
         requires |b| == |p|
@@ -577,23 +582,23 @@ module ComputeRootPath {
      *      3.  path is given by the integer value k
      */
     function computeRootDiffUpMerkle(l: seq<int>, r : Tree<int>, b : seq<int>, k : nat) : int
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /** r is a Merkle tree for l. */
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, diff)
 
         /**  All leaves after the k leaf in l are zero. */
-        requires k < power2(height(r) - 1)
+        requires k < power2(height(r))
         requires forall i :: k < i < |l| ==> l[i] == 0
 
         /** p is the path to k leaf in r. */
         requires hasLeavesIndexedFrom(r, 0)
 
-        requires |b| == height(r) - 1
+        requires |b| == height(r) 
         /** `b` contains values at left siblings on path `p`. */
         requires 
-            var p := natToBitList2(k, height(r) - 1);
+            var p := natToBitList2(k, height(r));
             forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
 
         /** The result is the attribute value on the root of the tree. */
@@ -611,7 +616,7 @@ module ComputeRootPath {
         calc ==> {
             true;
             { completeTreeNumberLemmas(r); }
-            |leavesIn(r)| == power2(height(r) - 1);
+            |leavesIn(r)| == power2(height(r) );
             k < |leavesIn(r)|;
         }
 
@@ -624,12 +629,12 @@ module ComputeRootPath {
             forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0;
         }
 
-        var p := natToBitList2(k, height(r) - 1);
+        var p := natToBitList2(k, height(r) );
 
         //  requires nodeAt(p, r) == leavesIn(r)[k]
         calc ==> {
-            p == natToBitList(k, height(r) - 1);
-            { bitToNatToBitsIsIdentity(k, height(r) - 1); }
+            p == natToBitList(k, height(r));
+            { bitToNatToBitsIsIdentity(k, height(r)); }
             bitListToNat(p) == k;
             { indexOfLeafisIntValueOfPath(p, r, k); }
             nodeAt(p, r) == leavesIn(r)[k];
@@ -705,7 +710,7 @@ module ComputeRootPath {
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -713,7 +718,7 @@ module ComputeRootPath {
 
         /** p is the path to k leaf in r. */
         requires hasLeavesIndexedFrom(r, index)
-        requires |p| == height(r) - 1
+        requires |p| == height(r) 
         requires nodeAt(p, r) == leavesIn(r)[k]
         requires seed == nodeAt(p,r).v 
 
@@ -752,18 +757,18 @@ module ComputeRootPath {
                         true;
                         { childrenCompTreeValidIndex(r, height(r), index); }
                         hasLeavesIndexedFrom(lc, index) 
-                            && hasLeavesIndexedFrom(rc, index + power2(height(r) - 1)/ 2);
+                            && hasLeavesIndexedFrom(rc, index + power2(height(r))/ 2);
                     }
                     calc ==> {
                         true;
                         { childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r)); }
-                        leavesIn(lc) == leavesIn(r)[.. power2(height(r) - 1) / 2]
-                            && leavesIn(rc) == leavesIn(r)[power2(height(r) - 1) / 2 ..];
+                        leavesIn(lc) == leavesIn(r)[.. power2(height(r)) / 2]
+                            && leavesIn(rc) == leavesIn(r)[power2(height(r)) / 2 ..];
                     }
                     calc ==> {
                         true;
                         { completeTreeNumberLemmas(r); }
-                         k < |leavesIn(r)| == power2(height(r) - 1);
+                         k < |leavesIn(r)| == power2(height(r));
                     }
                     calc ==> {
                         true;
@@ -786,7 +791,7 @@ module ComputeRootPath {
                             calc ==> {
                                 first(p) == 0;
                                 { initPathDeterminesIndex(r, p, k, index); }
-                                 k < power2(height(r) - 1)/ 2;
+                                 k < power2(height(r))/ 2;
                             }
                             calc == {
                                 nodeAt(take(p, i + 1), r).v;
@@ -811,9 +816,9 @@ module ComputeRootPath {
                             }
                         } else {
                             initPathDeterminesIndex(r, p, k, index);
-                            assert(k  >= power2(height(r) - 1)/ 2);
-                            var k' := k - power2(height(r) - 1)/ 2;
-                            var index' := index + power2(height(r) - 1)/ 2;
+                            assert(k  >= power2(height(r))/ 2);
+                            var k' := k - power2(height(r))/ 2;
+                            var index' := index + power2(height(r))/ 2;
                             calc == {
                                 nodeAt(take(p, i + 1), r).v;
                                 { 
@@ -842,7 +847,7 @@ module ComputeRootPath {
                             calc ==> {
                                 first(p) == 0;
                                 { initPathDeterminesIndex(r, p, k, index); }
-                                 k < power2(height(r) - 1)/ 2;
+                                 k < power2(height(r))/ 2;
                             }
                             calc == {
                                 computeAllPathDiffUp(p, b, seed)[0];
@@ -860,10 +865,10 @@ module ComputeRootPath {
                            calc ==> {
                                 first(p) == 0;
                                 { initPathDeterminesIndex(r, p, k, index); }
-                                k >= power2(height(r) - 1)/ 2;
+                                k >= power2(height(r))/ 2;
                             }
-                            var k' := k - power2(height(r) - 1)/ 2;
-                            var index':= index + power2(height(r) - 1)/ 2;
+                            var k' := k - power2(height(r))/ 2;
+                            var index':= index + power2(height(r))/ 2;
                             calc == {
                                 computeAllPathDiffUp(p, b, seed)[0];
                                 { computeAllDiffUpPrefixes(p, b, seed); }

@@ -52,11 +52,11 @@ module LeftSiblingsPlus {
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
         requires isDecoratedWith(f, r')
-        requires height(r) == height(r') >= 2
+        requires height(r) == height(r') >= 1
         requires hasLeavesIndexedFrom(r, index)
         requires hasLeavesIndexedFrom(r', index)
 
-        requires 1 <= |p| == height(r) - 1
+        requires 1 <= |p| == height(r)
 
         requires k < |leavesIn(r)| == |leavesIn(r')|
         requires take(leavesIn(r), k) == take(leavesIn(r'), k)
@@ -72,7 +72,7 @@ module LeftSiblingsPlus {
                 //  Prove some properties that guarantee pre-conditions of
                 //  functions/lemmas called in the proof.
                 completeTreeNumberLemmas(r);
-                assert(power2(height(r) - 1) == |leavesIn(r)|);
+                assert(power2(height(r)) == |leavesIn(r)|);
 
         if |p| == 1 {
 
@@ -88,8 +88,8 @@ module LeftSiblingsPlus {
 
              if first(p) == 0 {
                 initPathDeterminesIndex(r, p, k, index);
-                assert(k < power2(height(r) - 1) / 2);
-                var k' := power2(height(r) - 1) / 2;
+                assert(k < power2(height(r)) / 2);
+                var k' := power2(height(r)) / 2;
                 assert(k < k');
                 assert(|leavesIn(lc)| == |leavesIn(lc')| == k');
                 assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
@@ -133,7 +133,7 @@ module LeftSiblingsPlus {
                 }
              } else {
                 assert(first(p) == 1);
-                var k' := power2(height(r) - 1) / 2;
+                var k' := power2(height(r)) / 2;
                 assert(k >= k');
                 calc == {
                     [] + [0];
@@ -204,11 +204,11 @@ module LeftSiblingsPlus {
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
         requires isDecoratedWith(f, r')
-        requires height(r) == height(r') >= 2
+        requires height(r) == height(r') >= 1
         requires hasLeavesIndexedFrom(r, index)
         requires hasLeavesIndexedFrom(r', index)
 
-        requires 1 <= |p| == height(r) - 1
+        requires 1 <= |p| == height(r)
 
         requires k < |leavesIn(r)| == |leavesIn(r')|
         requires take(leavesIn(r), k) == take(leavesIn(r'), k)
@@ -217,12 +217,12 @@ module LeftSiblingsPlus {
         requires nodeAt(p, r') == leavesIn(r')[k]
 
        
-        requires 2 <= i + 1 <= |p| == height(r) - 1
+        requires 2 <= i + 1 <= |p| == height(r) 
         requires first(p) == 0
         
         ensures match (r, r') 
             case (Node(_, lc, rc), Node(_, lc', rc')) => 
-                k < power2(height(r) - 1) / 2
+                k < power2(height(r)) / 2
                 && k < |leavesIn(lc)| == |leavesIn(lc')|
                 && take(leavesIn(lc), k) == take(leavesIn(lc'), k)
                 && drop(leavesIn(lc), k + 1) == drop(leavesIn(lc'), k + 1)
@@ -247,12 +247,12 @@ module LeftSiblingsPlus {
                 //  Prove some properties that guarantee pre-conditions of
                 //  functions/lemmas called in the proof.
                 completeTreeNumberLemmas(r);
-                assert(power2(height(r) - 1) == |leavesIn(r)|);
+                assert(power2(height(r)) == |leavesIn(r)|);
                 initPathDeterminesIndex(r, p, k, index);
-                assert(k < power2(height(r) - 1) / 2);
-                var k' :=  power2(height(r) - 1) / 2;
+                assert(k < power2(height(r)) / 2);
+                var k' :=  power2(height(r)) / 2;
                 assert(k < k');
-                assert(|leavesIn(lc)| == |leavesIn(lc')| == power2(height(r) - 1) / 2 == k');
+                assert(|leavesIn(lc)| == |leavesIn(lc')| == power2(height(r)) / 2 == k');
                 assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
 
                 assert(1 <= i + 1 <= |p|);
@@ -272,6 +272,7 @@ module LeftSiblingsPlus {
                     calc == {
                     take(leavesIn(lc), k);
                     take(leavesIn(r)[..k'], k);
+                    take(take(leavesIn(r), k'), k);
                     { seqTakeTake(leavesIn(r), k, k'); }
                     take(leavesIn(r), k);
                     take(leavesIn(r'), k);
@@ -344,7 +345,7 @@ module LeftSiblingsPlus {
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
         requires isDecoratedWith(f, r')
-        requires height(r) == height(r') >= 2
+        requires height(r) == height(r') >= 1
         requires hasLeavesIndexedFrom(r, index)
         requires hasLeavesIndexedFrom(r', index)
 
@@ -352,8 +353,8 @@ module LeftSiblingsPlus {
         requires take(leavesIn(r), k) == take(leavesIn(r'), k)
         requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
        
-        requires power2(height(r) - 1) / 2  <= k < |leavesIn(r)| == |leavesIn(r')|
-        requires 2 <= i + 1 <= |p| == height(r) - 1
+        requires power2(height(r)) / 2  <= k < |leavesIn(r)| == |leavesIn(r')|
+        requires 2 <= i + 1 <= |p| == height(r) 
         requires first(p) == 1
 
         requires nodeAt(p, r) == leavesIn(r)[k]    
@@ -361,9 +362,9 @@ module LeftSiblingsPlus {
 
         ensures match (r, r') 
             case (Node(_, lc, rc), Node(_, lc', rc')) => 
-                var k' := k  - power2(height(r) - 1) / 2;
-                k >= power2(height(r) - 1) / 2
-                && 0 <= k - power2(height(r) - 1) / 2  < |leavesIn(rc)| == |leavesIn(rc')|
+                var k' := k  - power2(height(r)) / 2;
+                k >= power2(height(r)) / 2
+                && 0 <= k - power2(height(r)) / 2  < |leavesIn(rc)| == |leavesIn(rc')|
                 && take(leavesIn(rc), k') ==  take(leavesIn(rc'), k')
                 && drop(leavesIn(rc), k' + 1) ==  drop(leavesIn(rc'), k' +  1)
                 && nodeAt(tail(p), rc) == leavesIn(rc)[k']
@@ -386,10 +387,10 @@ module LeftSiblingsPlus {
                 completeTreeNumberLemmas(r');
 
                 //  Use vars to store power2(height(r) - 1) / 2 and prove some useful inequalities.
-                var k'' := power2(height(r) - 1) / 2;
+                var k'' := power2(height(r)) / 2;
                 initPathDeterminesIndex(r, p, k, index);
-                assert(k >= power2(height(r) - 1) / 2 == k'');
-                var k' := k  - power2(height(r) - 1) / 2;
+                assert(k >= power2(height(r)) / 2 == k'');
+                var k' := k  - power2(height(r)) / 2;
                 assert(k + 1 >  k'');
 
                 calc == {
@@ -483,7 +484,7 @@ module LeftSiblingsPlus {
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
         requires isDecoratedWith(f, r')
-        requires height(r) == height(r') >= 1
+        requires height(r) == height(r') >= 0
         requires hasLeavesIndexedFrom(r, index)
         requires hasLeavesIndexedFrom(r', index)
         requires leavesIn(r) == leavesIn(r')
@@ -491,7 +492,7 @@ module LeftSiblingsPlus {
         ensures r.v == r'.v
 
         {
-            if height(r) == 1 {
+            if height(r) == 0 {
                 //  Thanks Dafny
             } else {
                 //  Induction on lc and rc and combine root with f
@@ -512,7 +513,7 @@ module LeftSiblingsPlus {
                             f(lc.v, rc.v);
                             { sameLeavesSameRoot(lc, lc', f, index); }
                             f(lc'.v, rc.v);
-                            { sameLeavesSameRoot(rc, rc', f, index + power2(height(r) - 1) / 2); }
+                            { sameLeavesSameRoot(rc, rc', f, index + power2(height(r)) / 2); }
                             f(lc'.v, rc'.v);
                             r'.v;
                         }

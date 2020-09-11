@@ -200,7 +200,7 @@ module IncAlgoV1 {
 
         /** Path to k-th leaf. */
         requires hasLeavesIndexedFrom(r, 0)
-        requires 1 <= |p| == height(r) - 1      
+        requires 1 <= |p| == height(r)   
         requires nodeAt(p, r) == leavesIn(r)[k]
         requires seed == nodeAt(p,r).v 
 

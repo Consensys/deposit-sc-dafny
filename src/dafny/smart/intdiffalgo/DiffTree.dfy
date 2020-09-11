@@ -63,9 +63,9 @@ module DiffTree {
      *  @param  l   
      */
     function buildMerkleDiff(l: seq<int>, h : nat) : Tree<int> 
-        requires h >= 1
+        requires h >= 0
         /** Tree has enough leaves to store `l`. */
-        requires |l| <= power2(h - 1)      
+        requires |l| <= power2(h)      
     {
         buildMerkle(l , h, diff, 0)
     }
@@ -102,10 +102,10 @@ module DiffTree {
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /**  all leaves at index >= k are zero. */
-        requires k <= power2(height(r) - 1) / 2
+        requires k <= power2(height(r)) / 2
         requires forall i :: k <= i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
         ensures match r 
@@ -119,16 +119,16 @@ module DiffTree {
                     {
                         //  This is because there leaves of index >= k for which l[k] == leavesIn(r)[k] == 0
                         childrenInCompTreesHaveSameNumberOfLeaves(r);
-                        assert(leavesIn(r)[i + power2(height(r) - 1)/2] == leavesIn(rc)[i ]);
-                        assert(i + power2(height(r) - 1)/2 < |leavesIn(r)|);
+                        assert(leavesIn(r)[i + power2(height(r))/2] == leavesIn(rc)[i ]);
+                        assert(i + power2(height(r))/2 < |leavesIn(r)|);
                         calc >= {
-                            i + power2(height(r) - 1)/2;
+                            i + power2(height(r))/2;
                             k;
                         }
                         calc == {
                             leavesIn(rc)[i].v;
                             { childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));}
-                            leavesIn(r)[i + power2(height(r) - 1)/2].v;
+                            leavesIn(r)[i + power2(height(r))/2].v;
                             0;
                         }
                     }
@@ -158,7 +158,7 @@ module DiffTree {
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -167,7 +167,7 @@ module DiffTree {
          /** Proper indexing. */
         requires hasLeavesIndexedFrom(r, j)
         /** p is the path to k-th leaf in r. */
-        requires |p| == height(r) - 1
+        requires |p| == height(r) 
         requires nodeAt(p, r) == leavesIn(r)[k]
 
         /** For all right siblings on p, value of diff is zero. */
@@ -183,7 +183,7 @@ module DiffTree {
         forall ( i : nat | 0 <= i < |p|)
             ensures p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == 0
         {
-            if (height(r) == 2) {
+            if (height(r) == 1) {
                 if ( first(p) == 0 ) {
                     calc == {
                         siblingAt(take(p, 1), r).v ;
@@ -194,17 +194,17 @@ module DiffTree {
                     }
                 }
             } else {
-                //  height(r) >= 3, so lc and rc have children
+                //  height(r) >= 2, so lc and rc have children
                 match r
                     case Node(v, lc, rc) => 
                         if (first(p) == 0) {
                             //  number of nodes and leaves in complete trees.
                             completeTreeNumberLemmas(r);
-                            assert( k < power2(height(r) - 1));
+                            assert( k < power2(height(r)));
 
                             //  First bit of a path determines range for index of target leaf.
                             initPathDeterminesIndex(r, p, k, j);
-                            assert(p[0] == 0 ==> k < power2(height(r) - 1) / 2);
+                            assert(p[0] == 0 ==> k < power2(height(r)) / 2);
 
                             //  Conclusion if i == 0 sibling is rc, and otherwise
                             //  siblings are in lc
@@ -225,7 +225,7 @@ module DiffTree {
                                 //   i >= 1, siblings are in lc
                                 //  Check pre-condition before applying induction on lc
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
-                                assert(|leavesIn(r)[.. power2(height(r) - 1)/2]| == |leavesIn(lc)|);
+                                assert(|leavesIn(r)[.. power2(height(r))/2]| == |leavesIn(lc)|);
                                 //  Induction on lc
                                 leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
                                     lc, 
@@ -257,17 +257,17 @@ module DiffTree {
                                 //  siblingAt(p[..i + 1], r) are  in rc and all leaves in rc are zero
                                 completeTreeNumberLemmas(r);
                                 initPathDeterminesIndex(r, p, k, j);
-                                assert( k >= power2(height(r) - 1) / 2);
+                                assert( k >= power2(height(r)) / 2);
 
                                 childrenInCompTreesHaveSameNumberOfLeaves(r);
-                                assert(|leavesIn(r)[power2(height(r) - 1)/2..]| == |leavesIn(rc)|);
+                                assert(|leavesIn(r)[power2(height(r))/2..]| == |leavesIn(rc)|);
 
                                 //  Induction on rc
                                 leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(
                                     rc, 
-                                    k - power2(height(r) - 1)/2,
+                                    k - power2(height(r))/2,
                                     tail(p),
-                                    j + power2(height(r) - 1)/2);
+                                    j + power2(height(r))/2);
                                 //  We conclude that 
                                 assert(forall i :: 0 <= i < |tail(p)| ==> 
                                     tail(p)[i] == 0 ==> siblingAt(take(tail(p), i + 1), rc).v == 0);

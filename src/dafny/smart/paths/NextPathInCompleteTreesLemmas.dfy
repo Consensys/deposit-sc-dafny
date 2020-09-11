@@ -296,7 +296,7 @@ module NextPathInCompleteTreesLemmas {
      */
     lemma {:induction p, v1, v2} computeLeftSiblingOnNextPathIsCorrect<T>(p: seq<bit>, r :  Tree<T>, v1 : seq<T>, v2 : seq<T>)
         requires isCompleteTree(r)                              
-        requires 1 <= |p| <= height(r) - 1      
+        requires 1 <= |p| <= height(r)     
 
         requires exists i :: 0 <= i < |p| && p[i] == 0  //  Req1
         requires |v1| == |v2| == |p|

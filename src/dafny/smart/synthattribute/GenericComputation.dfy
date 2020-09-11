@@ -58,7 +58,7 @@ module GenericComputation {
      *  then p[1..] corresponds to siblings of lc or rc depending on p[0].
      */
     lemma {:induction r} projectValuesOnChild<T>(p : seq<bit>, r : Tree<T>, b : seq<T>)  
-        requires 1 <= |p| < height(r) 
+        requires 1 <= |p| <= height(r) 
         requires isCompleteTree(r)
         requires |b| == |p|
         requires forall k :: 0 <= k < |b| ==> b[k] == siblingAt(take(p, k + 1), r).v
@@ -126,7 +126,7 @@ module GenericComputation {
      *  @param  seed    A value.
      */
     lemma {:induction p, r, b} computeOnPathYieldsRootValue<T>(p : seq<bit>, r : Tree<T>, b : seq<T>, f : (T,T) -> T, seed: T) 
-        requires 1 <= |p| == height(r) - 1
+        requires 1 <= |p| == height(r) 
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(f, r)

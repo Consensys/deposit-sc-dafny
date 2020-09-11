@@ -86,7 +86,7 @@ module MerkleTrees {
     }
 
     /**
-     *  For tree of height >= 2, Merkle projects onto lc and rc for 
+     *  For tree of height >= 1, Merkle projects onto lc and rc for 
      *  split list. 
      *  @param  root    A complete tree.
      *  @param  l       A list of values.
@@ -99,16 +99,16 @@ module MerkleTrees {
     lemma {:induction h} treeIsMerkleImpliesChildrenAreMerkle<T>(r: Tree<T>, l: seq<T>, f : (T, T) -> T, h : nat)
         requires |l| == |leavesIn(r)|
         requires isMerkle2(r, l, f)
-        requires h == height(r) >= 2
-        ensures |l| == power2(height(r) - 1)
+        requires h == height(r) >= 1
+        ensures |l| == power2(height(r) )
         ensures match r 
             case Node(_, lc, rc) =>
-                |leavesIn(lc)| == power2(height(r) - 1)/2
-                && |l[.. power2(height(r) - 1)/2]| <=  |leavesIn(lc)|
-                && isMerkle2(lc, l[..  power2(height(r) - 1)/2], f)
-                && |leavesIn(rc)| == power2(height(r) - 1)/2
-                && |l[power2(height(r) - 1)/2..]| <=  |leavesIn(rc)|
-                && isMerkle2(rc, l[power2(height(r) - 1)/2..], f)
+                |leavesIn(lc)| == power2(height(r))/2
+                && |l[.. power2(height(r))/2]| <=  |leavesIn(lc)|
+                && isMerkle2(lc, l[..  power2(height(r))/2], f)
+                && |leavesIn(rc)| == power2(height(r))/2
+                && |l[power2(height(r))/2..]| <=  |leavesIn(rc)|
+                && isMerkle2(rc, l[power2(height(r))/2..], f)
     {
         childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
     }
@@ -126,13 +126,13 @@ module MerkleTrees {
     *   @param  d   A default value for the leaves not in `l`.
     */
     function buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : Tree<T> 
-        requires h >= 1
+        requires h >= 0
         /** Tree has enough leaves to store `l`. */
-        requires |l| <= power2(h - 1)      
+        requires |l| <= power2(h)      
 
         ensures height(buildMerkle(l, h, f, d)) == h
         ensures isCompleteTree(buildMerkle(l, h, f, d))
-        ensures |leavesIn(buildMerkle(l, h, f, d))| == power2(h - 1)
+        ensures |leavesIn(buildMerkle(l, h, f, d))| == power2(h)
         ensures isDecoratedWith(f, buildMerkle(l, h, f, d))
         ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h, f, d), d)
         ensures hasLeavesIndexedFrom(buildMerkle(l, h, f, d), 0)

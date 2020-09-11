@@ -189,7 +189,7 @@ module CommuteProofs {
         /** The list of values after count is zero. */
         predicate listIsValid() 
             requires TREE_HEIGHT >= 1
-            requires |values| == power2(TREE_HEIGHT - 1)
+            requires |values| == power2(TREE_HEIGHT)
             reads this
         {
             forall k :: count <= k < |values| ==> values[k] == 0
@@ -211,24 +211,24 @@ module CommuteProofs {
         predicate Valid()
             reads this
         {
-            height(t) == TREE_HEIGHT >= 2
-            && |values| == power2(TREE_HEIGHT - 1) == |leavesIn(t)|
-            && |branch| == TREE_HEIGHT - 1
+            height(t) == TREE_HEIGHT >= 1
+            && |values| == power2(TREE_HEIGHT) == |leavesIn(t)|
+            && |branch| == TREE_HEIGHT
             && listIsValid()
             && treeIsMerkle()
             && (r == t.v)
-            && count < power2(TREE_HEIGHT - 1)
-            && p == natToBitList2(count, TREE_HEIGHT - 1)
-            && |p| == TREE_HEIGHT - 1
+            && count < power2(TREE_HEIGHT)
+            && p == natToBitList2(count, TREE_HEIGHT)
+            && |p| == TREE_HEIGHT
         }
 
         /**
          *  Initialise the system, tree of size >= 1.
          */
         constructor(h: nat, l : seq<int>, l' : seq<int>, tt: Tree<int>) 
-            requires h >= 2
-            requires |l| == power2(h - 1) && forall i :: 0 <= i < |l| ==> l[i] == 0
-            requires |l'| == h - 1 && forall i :: 0 <= i < |l'| ==> l'[i] == 0
+            requires h >= 1
+            requires |l| == power2(h) && forall i :: 0 <= i < |l| ==> l[i] == 0
+            requires |l'| == h && forall i :: 0 <= i < |l'| ==> l'[i] == 0
             requires tt == buildMerkle(l, h, diff, 0);
             ensures Valid()
         {
@@ -244,7 +244,7 @@ module CommuteProofs {
             //  possibly left could be left uninitialised
             // left := l';
             t := tt;
-            p := natToBitList2(0, h - 1);
+            p := natToBitList2(0, h);
 
             //  Initially r == 0
             r := 0;
@@ -257,22 +257,23 @@ module CommuteProofs {
          */
         method deposit(value : int) 
             requires Valid()
-            requires count < power2(TREE_HEIGHT - 1) - 1
+            requires count < power2(TREE_HEIGHT) - 1
 
            
             //  requires that branch has the left siblings on current path
-            requires  p == natToBitList2(count, TREE_HEIGHT - 1)
+            requires  p == natToBitList2(count, TREE_HEIGHT)
             requires // var p := natToBitList2(count, TREE_HEIGHT - 1);
                 forall i :: 0 <= i < |p| ==> p[i] == 1 ==> 
                     branch[i] == siblingAt(take(p, i + 1), t).v
 
-            ensures height(t) == TREE_HEIGHT >= 2
-                && |values| == power2(TREE_HEIGHT - 1) == |leavesIn(t)|
-                && |branch| == TREE_HEIGHT - 1
+            ensures 
+                    height(t) == TREE_HEIGHT >= 1
+                && |values| == power2(TREE_HEIGHT) == |leavesIn(t)|
+                && |branch| == TREE_HEIGHT
                 && listIsValid()
-                && treeIsMerkle()
+            //     && treeIsMerkle()
                 // && (count >= 1 ==> r == t.v)
-                && count < power2(TREE_HEIGHT - 1) 
+                && count < power2(TREE_HEIGHT) 
                 // && (count < power2(TREE_HEIGHT - 1) ==> p == natToBitList2(count, TREE_HEIGHT - 1))
 
             //  at the end branch has siblings on next p.
@@ -280,7 +281,7 @@ module CommuteProofs {
             //     forall i :: 0 <= i < |p| ==> p[i] == 1 ==> 
             //         branch[i] == siblingAt(take(p, i + 1), t).v
 
-            ensures p == natToBitList2(count, TREE_HEIGHT - 1)
+            ensures p == natToBitList2(count, TREE_HEIGHT)
 
 
             modifies this
@@ -288,7 +289,7 @@ module CommuteProofs {
         {
             ghost var oldCount := count;
             //  The root value computed before update of branch
-            ghost var r' := computeRootPathDiffUpv3(TREE_HEIGHT - 1, count, branch, value);
+            ghost var r' := computeRootPathDiffUpv3(TREE_HEIGHT, count, branch, value);
             ghost var leftSiblingsBeforeUpdate := branch; 
             calc ==> {
                 forall i :: 0 <= i < |p| ==> p[i] == 1 ==> 
@@ -305,13 +306,13 @@ module CommuteProofs {
             //  Prove pre-conditions for aplying lemma computeLeftSiblingOnNextPathIsCorrect
             calc == {
                 bitListToNat(p);
-                bitListToNat(natToBitList(count, TREE_HEIGHT - 1));
-                { bitToNatToBitsIsIdentity(count, TREE_HEIGHT - 1) ; }
+                bitListToNat(natToBitList(count, TREE_HEIGHT));
+                { bitToNatToBitsIsIdentity(count, TREE_HEIGHT) ; }
                 count;
                 <
-                power2(TREE_HEIGHT - 1) - 1;
+                power2(TREE_HEIGHT) - 1;
                 calc == {
-                    TREE_HEIGHT - 1;
+                    TREE_HEIGHT;
                     |p|;
                 }
                 power2(|p|) - 1;
@@ -326,7 +327,7 @@ module CommuteProofs {
                 siblingsOnNextPath[i] == siblingAt(take(nextPath(p), i + 1), t).v);
 
             //  compute new value for branch
-            branch := computeLeftSiblingOnNextPathFinal(TREE_HEIGHT - 1, count, branch, value);
+            branch := computeLeftSiblingOnNextPathFinal(TREE_HEIGHT, count, branch, value);
             assert(branch ==  computeLeftSiblingOnNextPath(p, v1, leftSiblingsBeforeUpdate));
 
             //  Branch contains siblings on next path
@@ -343,23 +344,23 @@ module CommuteProofs {
             //  Update count
             count := count + 1;
 
-            p :=  natToBitList2(count, TREE_HEIGHT - 1);
+            p :=  natToBitList2(count, TREE_HEIGHT);
             
             // Prove that p is nextPath(old(p))
             calc ==>  {
-                old(p) == natToBitList2(old(count), TREE_HEIGHT - 1);
-                { bitToNatToBitsIsIdentity(old(count), TREE_HEIGHT - 1) ; }
+                old(p) == natToBitList2(old(count), TREE_HEIGHT);
+                { bitToNatToBitsIsIdentity(old(count), TREE_HEIGHT) ; }
                 bitListToNat(old(p)) == old(count) ;
             }
             calc ==> {
-                p == natToBitList2(count, TREE_HEIGHT - 1);
-                { bitToNatToBitsIsIdentity(count, TREE_HEIGHT - 1) ; }
+                p == natToBitList2(count, TREE_HEIGHT);
+                { bitToNatToBitsIsIdentity(count, TREE_HEIGHT) ; }
                 bitListToNat(p) == count ;       
                 bitListToNat(p) == old(count) + 1;
                 bitListToNat(p) == bitListToNat(old(p)) + 1;
             }
-            isNextPathFromNat(old(p), p);
-            assert(p == nextPath(old(p)));
+            // isNextPathFromNat(old(p), p);
+            // assert(p == nextPath(old(p)));
 
             // calc ==> {
 

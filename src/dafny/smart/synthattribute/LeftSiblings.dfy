@@ -41,7 +41,7 @@ module LeftSiblings {
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(diff, r)
-        requires height(r) >= 2
+        requires height(r) >= 1
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -49,7 +49,7 @@ module LeftSiblings {
 
         /** p is the path to k leaf in r. */
         requires hasLeavesIndexedFrom(r, i)
-        requires |p| == height(r) - 1
+        requires |p| == height(r)
         requires nodeAt(p, r) == leavesIn(r)[k]
 
         requires |b| == |p|
@@ -83,11 +83,11 @@ module LeftSiblings {
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
         requires isDecoratedWith(f, r')
-        requires height(r) == height(r') >= 2
+        requires height(r) == height(r') >= 1
         requires hasLeavesIndexedFrom(r, index)
         requires hasLeavesIndexedFrom(r', index)
 
-        requires 1 <= |p| == height(r) - 1
+        requires 1 <= |p| == height(r)
 
         requires k < |leavesIn(r)| == |leavesIn(r')|
         requires take(leavesIn(r), k) == take(leavesIn(r'), k)
@@ -110,7 +110,7 @@ module LeftSiblings {
                 //  Prove some properties that guarantee pre-conditions of
                 //  functions/lemmas called in the proof.
                 completeTreeNumberLemmas(r);
-                assert(power2(height(r) - 1) == |leavesIn(r)|);
+                assert(power2(height(r)) == |leavesIn(r)|);
 
             if |p| == 1 {
                 //  Thanks Dafny
@@ -129,7 +129,7 @@ module LeftSiblings {
                     //  So all leaves in right trees are equal.
                     //  Prove that k < power2(height(r) - 1)
                     initPathDeterminesIndex(r, p, k, index);
-                    assert(k < power2(height(r) - 1) / 2);
+                    assert(k < power2(height(r)) / 2);
                     assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
                     //  Prove property for siblingAt(take(p, i + 1)).v in left trees by induction
                     //  and first sibling is rc (rc') using sameLeavesSameRoot
@@ -154,18 +154,18 @@ module LeftSiblings {
                     //  and first sibling is lc (lc') using sameLeavesSameRoot
                     //  Prove that k >= power2(height(r) - 1)
                     initPathDeterminesIndex(r, p, k, index);
-                    assert(k >= power2(height(r) - 1) / 2);
+                    assert(k >= power2(height(r)) / 2);
 
                     if (i >= 1) {
-                        var k' := k  - power2(height(r) - 1) / 2;
-                        assert(k + 1 >  power2(height(r) - 1) / 2);
+                        var k' := k  - power2(height(r)) / 2;
+                        assert(k + 1 >  power2(height(r)) / 2);
  
                         leftSiblingsInEquivTreesNonBaseCaseFirstRight(p, r, r', k, f, i, index);
                         calc == {
                             siblingAt(take(p,i + 1), r).v;
                             siblingAt(take(tail(p), i), rc).v;
                             { 
-                                leftSiblingsInEquivTrees(tail(p), rc, rc', k - power2(height(r) - 1) / 2, f, i - 1, index + power2(height(r) - 1) / 2); 
+                                leftSiblingsInEquivTrees(tail(p), rc, rc', k - power2(height(r)) / 2, f, i - 1, index + power2(height(r)) / 2); 
                             }
                             siblingAt(take(tail(p), i), rc').v;
                             siblingAt(take(p,i + 1), r').v;

@@ -77,8 +77,8 @@ module IntTreeIncAlgo {
             && diffRoot == root.v
             //  height preserved.
             && h == height(root) == |valLeft|
-            && 0 <= |store| == counter <= power2(h - 1)
-            && |leavesIn(root)| == power2(h - 1)
+            && 0 <= |store| == counter <= power2(h)
+            && |leavesIn(root)| == power2(h)
 
             //  tree leftmost leaves are in store.
             && treeLeftmostLeavesMatchList(store, root, 0)
