@@ -34,7 +34,7 @@ module NextPathInCompleteTreesLemmas {
     lemma {:induction p, r} nextPathNextLeaf(p: seq<bit>, r :  Tree, k : nat) 
         requires isCompleteTree(r)                              
         requires hasLeavesIndexedFrom(r, 0)
-        requires 1 <= |p| == height(r) - 1                      
+        requires 1 <= |p| == height(r)                    
         requires 0 <= k < |leavesIn(r)| - 1                     
         requires nodeAt(p, r) == leavesIn(r)[k]                 
         ensures exists i ::  0 <= i < |p| && p[i] == 0          //  P1
