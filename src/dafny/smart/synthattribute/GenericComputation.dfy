@@ -19,6 +19,10 @@ include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
+/**
+ *  Provide simple results on computation of root value of a synthesised attribute
+ *  on a tree.
+ */
 module GenericComputation {
  
     import opened CompleteTrees
@@ -29,10 +33,10 @@ module GenericComputation {
     import opened Trees
 
     /**
-     *  Compute the value of attribute `f` on a path.
+     *  Compute the value of attribute `f` given path, seed and values on siblings.
      *  
      *  @param  p       A path.
-     *  @param  b       The value of `f` on each sibling after path[..k + 1]
+     *  @param  b       The value of `f` on each sibling of a node on the path.
      *  @param  f       The binary operation to compute.
      *  @param  seed    The value at the end of the path.
      *  @returns        The value of `f` synthesised on `p`.
@@ -51,7 +55,39 @@ module GenericComputation {
                 f(first(b), r)
     }
 
-    //  Properties of computeRootPath
+    /**
+     *  Compute the value of attribute `f` on a path given left and right siblings.
+     *  
+     *  @param  p       A path.
+     *  @param  left    The value of `f` on each left sibling.
+     *  @param  right   The value of `f` on each right sibling.
+     *  @param  f       The binary operation to compute.
+     *  @param  seed    The value at the end of the path.
+     *  @returns        The value of `f` synthesised on `p`.
+     */
+    function computeRootLeftRight<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f : (T,T) -> T, seed: T) : T
+        requires |p| == |left| == |right|
+
+        /** This function computes the same as  `computeRootPath`. */
+        ensures 
+            computeRootLeftRight(p, left, right, f, seed) 
+            == 
+            var b :=  zipCond(p, right, left);
+            computeRootPath(p, b, f, seed)
+
+        decreases p
+    {
+        if |p| == 0 then 
+            seed
+        else 
+            var r := computeRootLeftRight(tail(p), tail(left), tail(right), f, seed);
+            if first(p) == 0 then
+                f(r, first(right))
+            else 
+                f(first(left), r)
+    }
+
+    //  Properties of computeRootPath and computeRootLeftRight.
 
     /**
      *  If a seq of values b corresponds to the values of siblings on a path,
@@ -117,16 +153,16 @@ module GenericComputation {
 
     /**
      *  The value computed by computeRootPath is the same as the value of the root
-     *  of the tree.
+     *  of the tree, for a complete tree decorated with `f`.
      *
      *  @param  p       A path.
      *  @param  r       A tree.
-     *  @param  b       The value of `f` on siblings on path `p`.
+     *  @param  b       The values on the siblings of nodes on path `p`.
      *  @param  f       A binary operation.
-     *  @param  seed    A value.
+     *  @param  seed    A value (at the end of the path).
      */
     lemma {:induction p, r, b} computeOnPathYieldsRootValue<T>(p : seq<bit>, r : Tree<T>, b : seq<T>, f : (T,T) -> T, seed: T) 
-        requires 1 <= |p| == height(r) 
+        requires |p| == height(r) 
         requires isCompleteTree(r)
         /** `r` is decorated with attribute `f`. */
         requires isDecoratedWith(f, r)
@@ -136,30 +172,30 @@ module GenericComputation {
         /** `b` contains values at siblings on path `p`. */
         requires forall i :: 0 <= i < |b| ==> b[i] == siblingAt(take(p, i + 1), r).v
 
+        /** computeRootPath computes the value of the root.  */
         ensures r.v == computeRootPath(p, b, f, seed)
 
         decreases p
     {
-        if |p| <= 1 {
+        if |p| == 0 {
             //  Thanks Dafny
         } else {  
             match r
                 case Node(_, lc, rc) =>
 
                 //  By definition r.v == f(lc.v, rc.v)
-                //  We show that whatever child is on path `p`  we have 
-                //  the value of the sibling.
+                //  We show that whatever child is on path `p`  we have the value of the sibling.
 
                 var child := if first(p) == 0 then lc else rc ;
                 var a := if first(p) == 0 then 1 else 0;
 
-                //  this ensures we can use computeOnPathYieldsRootValue inductively
-                //  it proves that tail(b)[i] == siblingAt(take(tail(p), i + 1), r).v
+                //  This ensures we can use computeOnPathYieldsRootValue inductively
+                //  Tt proves that tail(b)[i] == siblingAt(take(tail(p), i + 1), r).v
                 projectValuesOnChild(p, r, b);
                 
                 //  Induction on lc or rc depending on p[0]
                 computeOnPathYieldsRootValue(tail(p), child, tail(b), f, seed);
-                // this implies that if first(p) == 0 then lc.v else rc.v  
+                // This implies that if first(p) == 0 then lc.v else rc.v  
 
                 calc == {
                     b[0] ;
@@ -172,6 +208,43 @@ module GenericComputation {
                     (if first(p) == 0 then rc.v else lc.v);
                 }
         }
+    }
+
+     /**
+     *  The value computed by computeRootPath is the same as the value of the root
+     *  of the tree.
+     *
+     *  @param  p       A path.
+     *  @param  r       A tree.
+     *  @param  left    The value of `f` on siblings on path `p`.
+     *  @param  right   The value of `f` on siblings on path `p`.
+     *  @param  f       A binary operation.
+     *  @param  seed    A value.
+     */
+    lemma {:induction p, r} computeRootLeftRightIsCorrectForTree<T>(p : seq<bit>, r : Tree<T>, left : seq<T>, right: seq<T>, f : (T,T) -> T, seed: T) 
+
+        requires |p| == height(r) 
+        requires isCompleteTree(r)
+        requires isDecoratedWith(f, r)
+
+        requires seed == nodeAt(p, r).v
+        requires |right| == |left| == |p|
+
+        /** Left and right contains siblings left and right values.  */
+        requires forall i :: 0 <= i < |p| ==>
+            siblingAt(take(p, i + 1), r).v == 
+                if p[i] == 0 then 
+                    right[i]
+                else 
+                    left[i]
+          
+        ensures r.v == computeRootLeftRight(p, left, right, f, seed)
+
+    {
+        //  As computeRootLeftRight computes the same as computeRootPath(p, b, f, seed)
+        //  for b == zipCond(p, right, left) we can use the lemma `computeOnPathYieldsRootValue`
+        var b := zipCond(p, right, left);
+        computeOnPathYieldsRootValue(p, r, b, f, seed);
     }
 
  }
