@@ -61,8 +61,8 @@ module LeftSiblingsPlus {
         requires k < |leavesIn(r)| == |leavesIn(r')|
         requires take(leavesIn(r), k) == take(leavesIn(r'), k)
         requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
-        requires nodeAt(p, r) == leavesIn(r)[k]    
-        requires nodeAt(p, r') == leavesIn(r')[k]
+
+        requires bitListToNat(p) == k
 
         ensures siblingAt(take(p, 1), r).v == siblingAt(take(p, 1), r').v
 
@@ -75,7 +75,7 @@ module LeftSiblingsPlus {
                 assert(power2(height(r)) == |leavesIn(r)|);
 
         if |p| == 1 {
-
+            //  Thanks Dafny
         } else {
             childrenCompTreeValidIndex(r, height(r), index);
             childrenCompTreeValidIndex(r', height(r'), index);
@@ -85,6 +85,11 @@ module LeftSiblingsPlus {
 
             completeTreeNumberLemmas(r);
             completeTreeNumberLemmas(r');
+
+            leafAtPathIsIntValueOfPath(p, r, k, index);
+            leafAtPathIsIntValueOfPath(p, r', k, index);
+            assert(nodeAt(p, r) == leavesIn(r)[k]);
+            assert(nodeAt(p, r') == leavesIn(r')[k]);
 
              if first(p) == 0 {
                 initPathDeterminesIndex(r, p, k, index);
@@ -213,8 +218,9 @@ module LeftSiblingsPlus {
         requires k < |leavesIn(r)| == |leavesIn(r')|
         requires take(leavesIn(r), k) == take(leavesIn(r'), k)
         requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
-        requires nodeAt(p, r) == leavesIn(r)[k]    
-        requires nodeAt(p, r') == leavesIn(r')[k]
+
+        requires bitListToNat(p) == k
+       
 
        
         requires 2 <= i + 1 <= |p| == height(r) 
@@ -244,6 +250,11 @@ module LeftSiblingsPlus {
                 completeTreeNumberLemmas(r);
                 completeTreeNumberLemmas(r');
 
+                leafAtPathIsIntValueOfPath(p, r, k, index);
+                leafAtPathIsIntValueOfPath(p, r', k, index);
+                assert(nodeAt(p, r) == leavesIn(r)[k]);
+                assert(nodeAt(p, r') == leavesIn(r')[k]);
+                
                 //  Prove some properties that guarantee pre-conditions of
                 //  functions/lemmas called in the proof.
                 completeTreeNumberLemmas(r);

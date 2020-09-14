@@ -92,9 +92,9 @@ module LeftSiblings {
         requires k < |leavesIn(r)| == |leavesIn(r')|
         requires take(leavesIn(r), k) == take(leavesIn(r'), k)
         requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
-        requires nodeAt(p, r) == leavesIn(r)[k]    
-        requires nodeAt(p, r') == leavesIn(r')[k]
 
+        requires bitListToNat(p) == k 
+ 
         requires 0 <= i < |p|
         ensures siblingAt(take(p, i + 1), r).v == siblingAt(take(p, i + 1), r').v
 
@@ -123,12 +123,18 @@ module LeftSiblings {
 
                 completeTreeNumberLemmas(r);
                 completeTreeNumberLemmas(r');
+                
+                leafAtPathIsIntValueOfPath(p, r, k, index);
+                leafAtPathIsIntValueOfPath(p, r', k, index);
+                assert(nodeAt(p, r) == leavesIn(r)[k]);
+                assert(nodeAt(p, r') == leavesIn(r')[k]);
 
                 if first(p) == 0 {
                     //  sibling is the right node (rc, rc'), but path leads to left nodes.
                     //  So all leaves in right trees are equal.
                     //  Prove that k < power2(height(r) - 1)
                     initPathDeterminesIndex(r, p, k, index);
+                    
                     assert(k < power2(height(r)) / 2);
                     assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
                     //  Prove property for siblingAt(take(p, i + 1)).v in left trees by induction
