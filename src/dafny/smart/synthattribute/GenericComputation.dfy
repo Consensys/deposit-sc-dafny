@@ -12,11 +12,10 @@
  * under the License.
  */
 
-include "../trees/CompleteTrees.dfy"
-include "../MerkleTrees.dfy"
+include "../helpers/SeqHelpers.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
-include "../helpers/SeqHelpers.dfy"
+include "../trees/CompleteTrees.dfy"
 include "../trees/Trees.dfy"
 
 /**
@@ -25,11 +24,10 @@ include "../trees/Trees.dfy"
  */
 module GenericComputation {
  
-    import opened CompleteTrees
-    import opened MerkleTrees
+    import opened SeqHelpers
     import opened PathInCompleteTrees
     import opened SeqOfBits
-    import opened SeqHelpers
+    import opened CompleteTrees
     import opened Trees
 
     /**
