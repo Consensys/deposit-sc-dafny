@@ -230,7 +230,7 @@ module PathInCompleteTrees {
         /** p is a path to the k-th leaf. */
         requires hasLeavesIndexedFrom(r, i)
 
-        requires nodeAt(p,r) == leavesIn(r)[k]
+        requires nodeAt(p,r) == leavesIn(r)[k] || bitListToNat(p) == k
 
         ensures match r 
             case Node(_, lc, rc) =>
