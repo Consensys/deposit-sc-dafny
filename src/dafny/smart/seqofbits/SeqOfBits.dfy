@@ -68,7 +68,7 @@ module SeqOfBits {
     }
 
     function natToBitList2(n: nat, length: nat) : seq<bit> 
-        requires 0 <= length 
+        // requires 0 <= length 
         /** Number of bits is sufficient to encode `n`. */
         requires n < power2(length)
         ensures |natToBitList2(n, length)| == length
@@ -79,6 +79,27 @@ module SeqOfBits {
             [] 
         else 
             natToBitList2(n / 2, length - 1) +  [(n % 2) as bit]
+    }
+
+    /**
+     *  Combine two sequences of equal length using a condition.
+     *  
+     *  @param  a   A sequence.
+     *  @param  b   A sequence.
+     *  @param  c   A sequence of truth values.
+     *  @returns    The sequence d such that d[i] = if c[i] then a[i] else b[i].
+     */
+    function zipCond<T>(c : seq<bit>, a : seq<T>, b : seq<T>) : seq<T>
+        requires |a| == |b| == |c|
+        ensures |zipCond(c, a, b)| == |a|
+        ensures forall i :: 0 <= i < |a| ==>
+            zipCond(c, a, b)[i] == if c[i] == 0 then a[i] else b[i]
+        decreases |a|
+    {
+        if |a| == 0 then    
+            []
+        else 
+            [if c[0] == 0 then a[0] else b[0]] + zipCond(tail(c), tail(a), tail(b))
     }
 
     /** 
@@ -277,7 +298,7 @@ module SeqOfBits {
     }
 
     /**
-     *  If sequence contains a value and it is not the last, then it
+     *  If a sequence contains a value and it is not the last, then it
      *  is in the prefix.
      */
     lemma {:induction p} pushExistsToInitPrefixIfNotLast(p : seq<bit>)
@@ -291,8 +312,8 @@ module SeqOfBits {
         var i :| 0 <= i < |p| && p[i] == 0;
         //  show that i < |p| - 1
         if ( i == |p| - 1) {
-            //  impossible, assert false
-            assert(last(p) == 0);
+            //  impossible as last(p) != 0, assert false
+            assert(false);
         } else {
             //  because i < |p|, and i != |p| - 1
             assert( i < |p| - 1);
