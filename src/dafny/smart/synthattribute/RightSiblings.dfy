@@ -97,8 +97,17 @@ module RightSiblings {
     }
 
     /**
-     *  Give a tree that corresponds to a list l, the path p to the leaf that corresponds
-     *  to last(l), the right siblings are constant (for each level in the tree).
+     *  Given a tree decorated with synthesised attribute f, an index k to a leaf
+     *  and the path p leading to this leaf, if all leaves at indices > k are default,
+     *  then any right sibling at index i on p has default value for height(r) - (i + 1)
+     *
+     *  @param  p       A path to a leaf.
+     *  @param  r       A complete tree.
+     *  @param  k       The index of a leaf in r.
+     *  @param  f       The synthesied attribute to compute.
+     *  @param  index   The offset of the indexing of r.
+     *  @param  d       The default value attached to the leaves.
+     *  @param  i       An index on path p.
      *    
      */
     lemma {:induction p, r} siblingsRightOfPathAreConstant<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, i : nat) 
@@ -194,9 +203,18 @@ module RightSiblings {
     }
 
     /**
-     *  The right siblings of the current path are equal to zeroes.
-     *  
-     *  @param  zeroes  The default values at each level.
+     *  Given a tree decorated with synthesised attribute f, an index k to a leaf
+     *  and the path p leading to this leaf, if all leaves at indices > k are default,
+     *  the values of the right siblings are the list of zeroes. 
+     *
+     *  @param  p       A path to a leaf.
+     *  @param  r       A complete tree.
+     *  @param  k       The index of a leaf in r.
+     *  @param  f       The synthesied attribute to compute.
+     *  @param  index   The offset of the indexing of r.
+     *  @param  d       The default value attached to the leaves.
+     *  @param  zeroes  The default f-value for each level.
+     *    
      */
     lemma {:induction p, r} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, zeroes: seq<T>) 
         requires isCompleteTree(r)
