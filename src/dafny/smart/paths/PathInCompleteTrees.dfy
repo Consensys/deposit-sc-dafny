@@ -82,6 +82,16 @@ module PathInCompleteTrees {
             nodeAt(init(p) + [0], r)
     }      
 
+    function {:opaque} siblingValueAt<T>(p : seq<bit>, r : Tree<T>, i : nat) : T
+        requires isCompleteTree(r)
+        requires 1 <= i <= |p|
+        requires |p| == height(r)
+        requires bitListToNat(p) < power2(height(r))
+    {
+        siblingAt(take(p, i), r).v
+    }
+
+
     /**
      *  For path of length >= 2, siblingAt can be computed 
      *  recursively by choosing which child (left or right) p starts with.
@@ -253,6 +263,8 @@ module PathInCompleteTrees {
         ensures bitListToNat(p) == k
         decreases p 
     {
+        completeTreeNumberLemmas(r);
+        
         if |p| == 1 {
             calc == {
                 bitListToNat(p);
@@ -304,7 +316,7 @@ module PathInCompleteTrees {
 
                         calc >= {
                             k;
-                            { initPathDeterminesIndex(r, p, k, i); }
+                            { initPathDeterminesIndex(r, p, k, i); reveal_power2(); }
                             power2(height(r) - 1)/ 2;
                         }
 
