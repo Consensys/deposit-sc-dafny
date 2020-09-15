@@ -12,16 +12,15 @@
  * under the License.
  */
  
-// include "../intdiffalgo/DiffTree.dfy"
 include "../trees/CompleteTrees.dfy"
 include "../helpers/Helpers.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
-include "./LeftSiblingsPlus.dfy"
+include "./SiblingsPlus.dfy"
 
-module LeftSiblings {
+module Siblings {
  
     // import opened DiffTree
     import opened CompleteTrees
@@ -30,39 +29,7 @@ module LeftSiblings {
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees
-    import opened LeftSiblingsPlus
-
-    /**
-     *  If b and b' agree on values at which p[i] == 1 and b has siblings at p[..], then 
-     *  b' has siblings at same location.  
-     */
-    // lemma {:induction p, r} siblingsLeft(p : seq<bit>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat, i : nat) 
-
-    //     requires isCompleteTree(r)
-    //     /** `r` is decorated with attribute `f`. */
-    //     requires isDecoratedWith(diff, r)
-    //     requires height(r) >= 1
-
-    //     /**  all leaves after the k leaf are zero. */
-    //     requires k < |leavesIn(r)|
-    //     requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
-
-    //     /** p is the path to k leaf in r. */
-    //     requires hasLeavesIndexedFrom(r, i)
-    //     requires |p| == height(r)
-    //     requires nodeAt(p, r) == leavesIn(r)[k]
-
-    //     requires |b| == |p|
-    //     /** `b` contains values at left siblings on path `p`. */
-    //     requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
-
-    //     /** b and b' agree on values at indices where p[i] == 1, and otherwise b'[i] == 0 */
-    //     requires |b'| == |b| && forall i :: 0 <= i < |b'| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 
-
-    //     ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(take(p, i + 1), r).v
-    // {
-    //     leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, i);   
-    // }
+    import opened SiblingsPlus 
 
     /**
      *  Let two trees r and r' (same height) that agree on all values of their leaves except possibly at k.
@@ -97,7 +64,7 @@ module LeftSiblings {
             ensures siblingValueAt(p, r, i + 1) == siblingValueAt(p, r', i + 1)
         {
             //  Apply lemma for each index
-            leftSiblingsInEquivTrees(p, r, r', k, f, i, index);
+            siblingsInEquivTreesAreEqual(p, r, r', k, f, i, index);
         }
         reveal_siblingValueAt();
     }    
@@ -115,7 +82,7 @@ module LeftSiblings {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma {:induction p, r, r'} leftSiblingsInEquivTrees<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f: (T, T) -> T, i: nat, index: nat)
+    lemma {:induction p, r, r'} siblingsInEquivTreesAreEqual<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f: (T, T) -> T, i: nat, index: nat)
 
         requires isCompleteTree(r) && isCompleteTree(r')
         requires isDecoratedWith(f, r) && isDecoratedWith(f, r')
@@ -178,12 +145,12 @@ module LeftSiblings {
                     //  Prove property for siblingAt(take(p, i + 1)).v in left trees by induction
                     //  and first sibling is rc (rc') using sameLeavesSameRoot
                     if (i >= 1) {
-                         leftSiblingsInEquivTreesNonBaseCaseFirstLeft(p, r, r', k, f, i, index);
+                        siblingsInEquivTreesNonBaseCaseFirstLeft(p, r, r', k, f, i, index);
                         calc == {
                             siblingAt(take(p,i + 1), r).v;
                             siblingAt(take(tail(p), i), lc).v;
                             { 
-                                leftSiblingsInEquivTrees(tail(p), lc, lc', k, f, i - 1, index); 
+                                siblingsInEquivTreesAreEqual(tail(p), lc, lc', k, f, i - 1, index); 
                             }
                             siblingAt(take(tail(p), i), lc').v;
                             siblingAt(take(p,i + 1), r').v;
@@ -204,12 +171,12 @@ module LeftSiblings {
                         var k' := k  - power2(height(r)) / 2;
                         assert(k + 1 >  power2(height(r)) / 2);
  
-                        leftSiblingsInEquivTreesNonBaseCaseFirstRight(p, r, r', k, f, i, index);
+                        siblingsInEquivTreesNonBaseCaseFirstRight(p, r, r', k, f, i, index);
                         calc == {
                             siblingAt(take(p,i + 1), r).v;
                             siblingAt(take(tail(p), i), rc).v;
                             { 
-                                leftSiblingsInEquivTrees(tail(p), rc, rc', k - power2(height(r)) / 2, f, i - 1, index + power2(height(r)) / 2); 
+                                siblingsInEquivTreesAreEqual(tail(p), rc, rc', k - power2(height(r)) / 2, f, i - 1, index + power2(height(r)) / 2); 
                             }
                             siblingAt(take(tail(p), i), rc').v;
                             siblingAt(take(p,i + 1), r').v;
@@ -223,6 +190,5 @@ module LeftSiblings {
         }
     }
 
-   
 
  }
