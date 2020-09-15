@@ -208,7 +208,7 @@ module GenericComputation {
         }
     }
 
-     /**
+    /**
      *  The value computed by computeRootPath is the same as the value of the root
      *  of the tree.
      *
