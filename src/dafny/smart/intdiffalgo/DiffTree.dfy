@@ -94,8 +94,8 @@ module DiffTree {
     }
 
     /**
-     *  For a tree of height >= 2, decorated with diff,
-     *  If for some k <= power2(height(r) - 1) / 2, all leaves are zero,
+     *  For a tree of height >= 1, decorated with diff,
+     *  If for some k <= power2(height(r)) / 2, all leaves are zero,
      *  then the right child is the zero tree.
      */
     lemma {:induction r} rightHalfOfListZeroImpliesRightTreeZero(r: Tree<int>, k : nat) 
@@ -184,6 +184,8 @@ module DiffTree {
             ensures p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == 0
         {
             if (height(r) == 1) {
+                //  Only interesting case is first(p) == 0 as otherwise p[i] != 0
+                //  and implication is trivially true.
                 if ( first(p) == 0 ) {
                     calc == {
                         siblingAt(take(p, 1), r).v ;
