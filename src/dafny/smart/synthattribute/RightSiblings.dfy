@@ -210,7 +210,7 @@ module RightSiblings {
      *  @param  p       A path to a leaf.
      *  @param  r       A complete tree.
      *  @param  k       The index of a leaf in r.
-     *  @param  f       The synthesied attribute to compute.
+     *  @param  f       The synthesised attribute to compute.
      *  @param  index   The offset of the indexing of r.
      *  @param  d       The default value attached to the leaves.
      *  @param  zeroes  The default f-value for each level.
