@@ -39,6 +39,7 @@ module SeqOfBits {
         decreases p
         ensures 0 <= bitListToNat(p) < power2(|p|)
     {
+        reveal_power2();
         if |p| == 1 then 
             first(p) as nat
         else 
@@ -61,6 +62,7 @@ module SeqOfBits {
         ensures |natToBitList(n, length)| == length
         decreases length
     {
+        reveal_power2();
         if length == 1 then
             [n as bit] 
         else 
@@ -75,6 +77,7 @@ module SeqOfBits {
         ensures length >= 1 ==> natToBitList2(n, length) == natToBitList(n, length)
         decreases length
     {
+        reveal_power2();
         if length == 0 then
             [] 
         else 
@@ -151,6 +154,17 @@ module SeqOfBits {
                 2 * ( n / 2) + ((n % 2) as bit) as nat;
             }
         }
+    }
+
+    /**
+     *  (In)equalities between  bitListToNat(tail(p)) and bitListToNat(p).
+     */
+    lemma bitListOfTailForFirstZero(p : seq<bit>)
+        requires |p| >= 2
+        requires first(p) == 0
+        ensures  first(p) == 0 ==> bitListToNat(tail(p)) == bitListToNat(p)
+        ensures  first(p) == 1 ==> bitListToNat(tail(p)) <= bitListToNat(p) / 2
+    {   //  Thanks Dafny
     }
 
     /**
