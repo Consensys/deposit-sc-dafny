@@ -139,6 +139,30 @@ module ComputeRootPath {
         }
     }
 
+    lemma {:induction p, left, right} simplifyComputeRootLeftRight<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f : (T, T) -> T, seed: T) 
+        requires 1 <= |p| == |left| == |right|
+        ensures computeRootLeftRight(p, left, right, f, seed) == 
+            computeRootLeftRight(
+                init(p), init(left), init(right), f, 
+                if last(p) == 0 then 
+                    f(seed, last(right))
+                else 
+                    f(last(left), seed)
+                )
+        decreases p 
+    {
+        if |p| == 1 {
+            // Thanks Dafny
+        } else {
+            //  use the fact that init(tail(x)) == tail(init(x)) for p, left and right.
+            seqLemmas(p) ;
+            seqLemmas(left) ;
+            seqLemmas(right) ;
+            //  Dafny can work out the proof, with hint induction on tail(p), ...
+            simplifyComputeRootLeftRight(tail(p), tail(left), tail(right), f, seed); 
+        }
+    }
+
     /**
      *  Compute root value starting from end of path.
      *  Recursive computation by simplifying the last step of the path i.e.
@@ -160,6 +184,28 @@ module ComputeRootPath {
             computeRootPathDiffUp(init(p), init(b),diff(seed, 0))
         else        
             computeRootPathDiffUp(init(p), init(b),diff(last(b), seed))
+    }
+
+    /**  
+     *  Compute the root value bottom up.
+     *  @param  p       A path.
+     *  @param  left    The value of `f` on each left sibling.
+     *  @param  right   The value of `f` on each right sibling.
+     *  @param  f       The binary operation to compute.
+     *  @param  seed    The value at the end of the path.
+     * 
+     */
+    function computeRootLeftRightUp<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f : (T, T) -> T, seed: T) : T
+        requires |p| == |left| == |right|
+        decreases p
+    {
+     if |p| == 0 then
+        seed 
+    else 
+        computeRootLeftRightUp(
+            init(p), init(left), init(right), f,
+            if last(p) == 0 then f(seed, last(right)) else f(last(left), seed)
+        )
     }
 
     function computeRootPathDiffUp1(p : seq<bit>, b : seq<int>, seed: int) : int
@@ -365,6 +411,42 @@ module ComputeRootPath {
                     { simplifyComputeRootPathDiffOnLast(p, b, seed); }
                     computeRootPathDiff(p, b, seed);
                 }
+            }
+        }
+    }
+
+    lemma  computeLeftRightUpEqualsComputeLeftRight<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f : (T, T) -> T, seed: T)
+        requires |p| == |left| == |right|
+        ensures computeRootLeftRightUp(p, left, right, f, seed) == computeRootLeftRight(p, left, right, f, seed)
+    {
+        if |p| == 0 {
+            //  Thanks Dafny
+        } else {    
+            //  |p| >= 1
+            //  Split on values of last(p) 
+            if last(p) == 0 {
+                calc == {
+                    computeRootLeftRightUp(p, left, right, f, seed);
+                    computeRootLeftRightUp(init(p), init(left), init(right), f, f(seed, last(right)));
+                    //  Induction assumption
+                    { computeLeftRightUpEqualsComputeLeftRight(init(p), init(left), init(right), f, f(seed, last(right)));} 
+                    computeRootLeftRight(init(p), init(left), init(right), f, f(seed, last(right)));
+                    { simplifyComputeRootLeftRight(p, left, right, f, seed); }
+                    computeRootLeftRight(p, left, right, f, seed);
+                }
+            } else  {
+                assume(
+                    computeRootLeftRightUp(p, left, right, f, seed) == computeRootLeftRight(p, left, right, f, seed)
+                );
+                // assert(last(p) == 1 );
+                // calc == {
+                //     computeRootPathDiffUp(p, b, seed);
+                //      computeRootPathDiffUp(init(p), init(b), diff(last(b), seed));
+                //     //  Induction assumption
+                //     computeRootPathDiff(init(p), init(b),  diff(last(b), seed));
+                //     { simplifyComputeRootPathDiffOnLast(p, b, seed); }
+                //     computeRootPathDiff(p, b, seed);
+                // }
             }
         }
     }
