@@ -44,27 +44,26 @@ module LeftSiblingsPlus {
      *  @param  f       The synthesised attribute to decorate the trees.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-     lemma {:induction } leftSiblingsInEquivTreesBaseCase<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, index: nat) 
+     lemma {:induction p} siblingsInEquivTreesBaseCase<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, index: nat) 
 
-        requires isCompleteTree(r)
-        requires isCompleteTree(r')
-        requires isDecoratedWith(f, r)
-        requires isDecoratedWith(f, r')
+        requires isCompleteTree(r) && isCompleteTree(r')
+        requires isDecoratedWith(f, r) && isDecoratedWith(f, r')
         requires height(r) == height(r') >= 1
-        requires hasLeavesIndexedFrom(r, index)
-        requires hasLeavesIndexedFrom(r', index)
-
-        requires 1 <= |p| == height(r)
+        requires hasLeavesIndexedFrom(r, index) && hasLeavesIndexedFrom(r', index)
 
         requires k < |leavesIn(r)| == |leavesIn(r')|
-        requires take(leavesIn(r), k) == take(leavesIn(r'), k)
-        requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
+        requires takeLeavesIn(r, k) == takeLeavesIn(r', k)
+        requires dropLeavesIn(r, k + 1) == dropLeavesIn(r', k + 1)
 
-        requires bitListToNat(p) == k
-
-        ensures siblingAt(take(p, 1), r).v == siblingAt(take(p, 1), r').v
-
+        requires 1 <= |p| == height(r)
+        requires bitListToNat(p) == k 
+ 
+        ensures siblingValueAt(p, r, 1) == siblingValueAt(p, r', 1)
     {
+        reveal_takeLeavesIn();
+        reveal_dropLeavesIn();
+        reveal_siblingValueAt();
+
         match (r, r')
                 case (Node(_, lc, rc), Node(_, lc', rc')) =>
                 //  Prove some properties that guarantee pre-conditions of
@@ -98,17 +97,13 @@ module LeftSiblingsPlus {
                 assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
 
                 calc == {
-                    [] + [1];
-                    [1];
-                }
-                calc == {
                     siblingAt(take(p, 1), r).v;
                     calc == {
                         take(p, 1);
                         p[..1];
                         [p[0]];
+                        [0];
                     }
-                    siblingAt([p[0]], r).v;
                     siblingAt([0], r).v;
                     nodeAt([] + [1], r).v;
                     calc == {
@@ -117,73 +112,75 @@ module LeftSiblingsPlus {
                     }
                     nodeAt([1], r).v;
                     rc.v;
-                    { 
-                        assert(leavesIn(rc) == leavesIn(rc')); 
-                        assert(hasLeavesIndexedFrom(rc,  index + k'));
-                        assert(hasLeavesIndexedFrom(rc',  index + k'));
-                        assert(isCompleteTree(r));
-                        assert(isCompleteTree(r'));
-                        assert(isDecoratedWith(f, r));
-                        assert(isDecoratedWith(f, r'));
-                        sameLeavesSameRoot(rc, rc', f, index + k') ; 
-                    }
+                    { sameLeavesSameRoot(rc, rc', f, index + k') ; }
                     rc'.v;
                     nodeAt([1], r').v;
+                    calc == {
+                        [] + [1];
+                        [1];
+                    }
                     nodeAt([] + [1], r').v;
                     siblingAt([0], r').v;
-                    siblingAt([p[0]], r').v;
+                    calc == {
+                        take(p, 1);
+                        p[..1];
+                        [p[0]];
+                        [0];
+                    }
                     siblingAt(take(p, 1), r').v;
                 }
              } else {
-                assert(first(p) == 1);
+                assert(first(p) == p[0] == 1);
                 var k' := power2(height(r)) / 2;
                 assert(k >= k');
-                calc == {
-                    [] + [0];
-                    [0];
-                }
                 calc == {
                     siblingAt(take(p, 1), r).v;
                     calc == {
                         take(p, 1);
                         p[..1];
                         [p[0]];
+                        [1];
                     }
-                    siblingAt([p[0]], r).v;
                     siblingAt([1], r).v;
                     nodeAt([] + [0], r).v;
+                    calc == {
+                        [] + [0];
+                        [0];
+                    }
                     nodeAt([0], r).v;
                     lc.v;
                     { 
-                    calc == {
-                        leavesIn(lc);
-                        leavesIn(r)[..k'];
-                        take(leavesIn(r), k');
-                        { 
-                            assert(k >= k'); 
-                            assert(take(leavesIn(r), k) == take(leavesIn(r'), k)); 
-                            prefixSeqs(leavesIn(r), leavesIn(r'), k', k);
+                        calc == {
+                            leavesIn(lc);
+                            leavesIn(r)[..k'];
+                            take(leavesIn(r), k');
+                            { 
+                                assert(k >= k'); 
+                                assert(take(leavesIn(r), k) == take(leavesIn(r'), k)); 
+                                prefixSeqs(leavesIn(r), leavesIn(r'), k', k);
+                            }
+                            take(leavesIn(r'), k');
+                            leavesIn(r')[..k'];
+                            leavesIn(lc');
                         }
-                        take(leavesIn(r'), k');
-                        leavesIn(r')[..k'];
-                        leavesIn(lc');
+                        sameLeavesSameRoot(lc, lc', f, index) ; 
                     }
-                    assert(leavesIn(lc) == leavesIn(lc')); 
-                    assert(hasLeavesIndexedFrom(lc,  index));
-                    assert(hasLeavesIndexedFrom(lc',  index));
-                    assert(isCompleteTree(r));
-                    assert(isCompleteTree(r));
-                    assert(isDecoratedWith(f, r));
-                    assert(isDecoratedWith(f, r'));
-                    sameLeavesSameRoot(lc, lc', f, index) ; 
-                        }
-                        lc'.v;
-                        nodeAt([0], r').v;
-                        nodeAt([] + [0], r').v;
-                        siblingAt([1], r').v;
-                        siblingAt([p[0]], r').v;
-                        siblingAt(take(p, 1), r').v;
-                        }
+                    lc'.v;
+                    nodeAt([0], r').v;
+                    calc == {
+                        [] + [0];
+                        [0] ;
+                    }
+                    nodeAt([] + [0], r').v;
+                    siblingAt([1], r').v;
+                    calc == {
+                        take(p, 1);
+                        p[..1];
+                        [p[0]];
+                        [1];
+                    }
+                    siblingAt(take(p, 1), r').v;
+                }
              }
         }
     }
@@ -211,15 +208,12 @@ module LeftSiblingsPlus {
         requires hasLeavesIndexedFrom(r, index)
         requires hasLeavesIndexedFrom(r', index)
 
-        requires 1 <= |p| == height(r)
-
         requires k < |leavesIn(r)| == |leavesIn(r')|
-        requires take(leavesIn(r), k) == take(leavesIn(r'), k)
-        requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
+        requires takeLeavesIn(r, k) == takeLeavesIn(r', k)
+        requires dropLeavesIn(r, k + 1) == dropLeavesIn(r', k + 1)
 
+        requires 1 <= |p| == height(r)
         requires bitListToNat(p) == k
-       
-
        
         requires 2 <= i + 1 <= |p| == height(r) 
         requires first(p) == 0
@@ -228,15 +222,19 @@ module LeftSiblingsPlus {
             case (Node(_, lc, rc), Node(_, lc', rc')) => 
                 k < power2(height(r)) / 2
                 && k < |leavesIn(lc)| == |leavesIn(lc')|
-                && take(leavesIn(lc), k) == take(leavesIn(lc'), k)
-                && drop(leavesIn(lc), k + 1) == drop(leavesIn(lc'), k + 1)
+                && takeLeavesIn(lc, k) == takeLeavesIn(lc', k)
+                && dropLeavesIn(lc, k + 1) == dropLeavesIn(lc', k + 1)
                 && nodeAt(tail(p), lc) == leavesIn(lc)[k]
                 && leavesIn(lc')[k] == nodeAt(tail(p), lc')
-                && isDecoratedWith(f, lc)
-                && isDecoratedWith(f, lc')
-                && siblingAt(take(p,i + 1), r').v == siblingAt(take(tail(p), i), lc').v
-                && siblingAt(take(p,i + 1), r).v == siblingAt(take(tail(p), i), lc).v
+                // i <= |tail(p)|
+                // && bitListToNat(tail(p)) < power2(height(lc)) == power2(height(lc'))
+                && siblingValueAt(p, r', i + 1) == siblingValueAt(tail(p), lc', i)
+                && siblingValueAt(p, r, i + 1) == siblingValueAt(tail(p), lc, i)
     {
+        reveal_siblingValueAt();
+        reveal_takeLeavesIn();
+        reveal_dropLeavesIn();
+
         match (r, r')
                 case (Node(_, lc, rc), Node(_, lc', rc')) =>
                 childrenCompTreeValidIndex(r, height(r), index);
@@ -265,6 +263,10 @@ module LeftSiblingsPlus {
                 assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
 
                 assert(1 <= i + 1 <= |p|);
+                // assert(0 <= i  <= |tail(p)|);
+                // bitListOfTailForFirstZero(p);
+                // assert(bitListToNat(tail(p)) ==  bitListToNat(p) == k);
+
                 calc == {
                     first(take(p,i + 1));
                     { seqIndexLemmas(p, i + 1) ; }
@@ -273,22 +275,34 @@ module LeftSiblingsPlus {
                 }
                 //    siblingAt(take(p,i + 1), r).v is the same as siblingAt(take(tail(p), i), lc).v;
                 calc == {
+                    siblingValueAt(p, r, i + 1);
+                    { reveal_siblingValueAt(); }
                     siblingAt(take(p,i + 1), r).v;
                     { assert(first(p) == 0) ; simplifySiblingAtIndexFirstBit(p, r, i + 1); }
                     siblingAt(take(tail(p), i), lc).v;
+                    { reveal_siblingValueAt(); }
+                    siblingValueAt(tail(p), lc, i);
                 }
                 assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(tail(p), i), lc).v); 
-                    calc == {
+                reveal_siblingValueAt();
+                calc == {
                     take(leavesIn(lc), k);
                     take(leavesIn(r)[..k'], k);
                     take(take(leavesIn(r), k'), k);
                     { seqTakeTake(leavesIn(r), k, k'); }
                     take(leavesIn(r), k);
+                    { reveal_takeLeavesIn() ; }
+                    takeLeavesIn(r, k);
+                    takeLeavesIn(r', k);
+                    { reveal_takeLeavesIn() ; }
                     take(leavesIn(r'), k);
                     { seqTakeTake(leavesIn(r'), k, k'); }
                     take(take(leavesIn(r'), k), k);
                     take(leavesIn(lc'), k);
                 }
+                assert(take(leavesIn(lc), k) == take(leavesIn(lc'), k));
+                reveal_takeLeavesIn();
+
                 assert(k + 1 <=  k');
                 calc == {
                     drop(leavesIn(lc), k  + 1);
@@ -308,6 +322,7 @@ module LeftSiblingsPlus {
                 }
 
                 assert(drop(leavesIn(lc), k + 1) == drop(leavesIn(lc'), k + 1));
+                reveal_dropLeavesIn();
 
                 calc == {
                     leavesIn(lc)[k];
@@ -327,13 +342,14 @@ module LeftSiblingsPlus {
                 }
                 assert(leavesIn(lc')[k] == nodeAt(tail(p), lc'));
 
-                 //    siblingAt(take(p,i + 1), r').v is the same as siblingAt(take(tail(p), i), lc').v;
                 calc == {
                     siblingAt(take(p,i + 1), r').v;
                     { simplifySiblingAtIndexFirstBit(p, r', i + 1); }
                     siblingAt(take(tail(p), i), lc').v;
+
                 }
                 assert(siblingAt(take(p,i + 1), r').v == siblingAt(take(tail(p), i), lc').v);
+                reveal_siblingValueAt();
     }
 
     /**
@@ -359,31 +375,33 @@ module LeftSiblingsPlus {
         requires hasLeavesIndexedFrom(r', index)
 
         requires k < |leavesIn(r)| == |leavesIn(r')|
-        requires take(leavesIn(r), k) == take(leavesIn(r'), k)
-        requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
        
+        requires takeLeavesIn(r, k) == takeLeavesIn(r', k)
+        requires dropLeavesIn(r, k + 1) == dropLeavesIn(r', k + 1)
+
         requires power2(height(r)) / 2  <= k < |leavesIn(r)| == |leavesIn(r')|
         requires 2 <= i + 1 <= |p| == height(r) 
         requires first(p) == 1
 
-        requires nodeAt(p, r) == leavesIn(r)[k]    
-        requires nodeAt(p, r') == leavesIn(r')[k]
+        requires bitListToNat(p) == k
 
         ensures match (r, r') 
             case (Node(_, lc, rc), Node(_, lc', rc')) => 
                 var k' := k  - power2(height(r)) / 2;
                 k >= power2(height(r)) / 2
                 && 0 <= k - power2(height(r)) / 2  < |leavesIn(rc)| == |leavesIn(rc')|
-                && take(leavesIn(rc), k') ==  take(leavesIn(rc'), k')
-                && drop(leavesIn(rc), k' + 1) ==  drop(leavesIn(rc'), k' +  1)
+                && takeLeavesIn(rc, k') == takeLeavesIn(rc', k')
+                && dropLeavesIn(rc, k' + 1) == dropLeavesIn(rc', k' + 1)
                 && nodeAt(tail(p), rc) == leavesIn(rc)[k']
                 && nodeAt(tail(p), rc') == leavesIn(rc')[k']
-                && isDecoratedWith(f, lc)
-                && isDecoratedWith(f, lc')
-                && siblingAt(take(p,i + 1), r').v == siblingAt(take(tail(p), i), rc').v
-                && siblingAt(take(p,i + 1), r).v == siblingAt(take(tail(p), i), rc).v
+                && siblingValueAt(p, r', i + 1) == siblingValueAt(tail(p), rc', i)
+                && siblingValueAt(p, r, i + 1) == siblingValueAt(tail(p), rc, i)
 
     {
+        reveal_siblingValueAt();
+        reveal_takeLeavesIn();
+        reveal_dropLeavesIn();
+
             match (r, r')
                 case (Node(_, lc, rc), Node(_, lc', rc')) =>
                 childrenCompTreeValidIndex(r, height(r), index);
@@ -395,7 +413,12 @@ module LeftSiblingsPlus {
                 completeTreeNumberLemmas(r);
                 completeTreeNumberLemmas(r');
 
-                //  Use vars to store power2(height(r) - 1) / 2 and prove some useful inequalities.
+                leafAtPathIsIntValueOfPath(p, r, k, index);
+                leafAtPathIsIntValueOfPath(p, r', k, index);
+                assert(nodeAt(p, r) == leavesIn(r)[k]);
+                assert(nodeAt(p, r') == leavesIn(r')[k]);
+
+                //  Use vars to store power2(height(r)) / 2 and prove some useful inequalities.
                 var k'' := power2(height(r)) / 2;
                 initPathDeterminesIndex(r, p, k, index);
                 assert(k >= power2(height(r)) / 2 == k'');
@@ -416,42 +439,38 @@ module LeftSiblingsPlus {
                     siblingAt(take(tail(p), i), rc).v;
                 }
                 assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(tail(p), i), rc).v);
+                reveal_siblingValueAt();
 
                 calc == {
                     take(leavesIn(rc), k');
                     take(drop(leavesIn(r), k''), k');
-                    {
-                        seqTakeDrop(leavesIn(r), k'', k);
-                    }
+                    { seqTakeDrop(leavesIn(r), k'', k); }
                     leavesIn(r)[k''..k];
-                    {
-                        prefixSeqs(leavesIn(r), leavesIn(r'), k'', k);
-                    }
-
+                    { prefixSeqs(leavesIn(r), leavesIn(r'), k'', k); }
                     leavesIn(r')[k''..k];
-                    {
-                        seqTakeDrop(leavesIn(r'), k'', k);
-                    }
+                    { seqTakeDrop(leavesIn(r'), k'', k); }
                     take(drop(leavesIn(r'), k''),k');
                     take(leavesIn(rc'), k');
                 }
                 assert(take(leavesIn(rc), k') == take(leavesIn(rc'), k'));
+                reveal_takeLeavesIn();
 
                 calc == {
                     drop(leavesIn(rc), k' + 1);
                     drop(drop(leavesIn(r), k''), k' + 1); 
-                    { 
-                        seqDropDrop(leavesIn(r), k'', k + 1); 
-                    }
+                    {  seqDropDrop(leavesIn(r), k'', k + 1); }
                     drop(leavesIn(r), k + 1);
+                    { reveal_dropLeavesIn() ; }
+                    dropLeavesIn(r, k + 1);
+                    dropLeavesIn(r', k + 1);
+                    { reveal_dropLeavesIn() ; }                    
                     drop(leavesIn(r'), k + 1);
-                    { 
-                        seqDropDrop(leavesIn(r'), k'', k + 1); 
-                    }
+                    { seqDropDrop(leavesIn(r'), k'', k + 1); }
                     drop(drop(leavesIn(r'), k''), k' + 1); 
                     drop(leavesIn(rc'), k' + 1);
                 }
                 assert(drop(leavesIn(rc), k' + 1) == drop(leavesIn(rc'), k' + 1));
+                reveal_dropLeavesIn();
 
                 calc == {
                     leavesIn(rc)[k'];
@@ -477,6 +496,8 @@ module LeftSiblingsPlus {
                     siblingAt(take(tail(p), i), rc').v;
                 }
                 assert(siblingAt(take(p,i + 1), r').v == siblingAt(take(tail(p), i), rc').v); 
+                reveal_siblingValueAt();
+
     }
 
     /**
