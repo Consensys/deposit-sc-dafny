@@ -28,7 +28,7 @@ module Helpers {
     //  Power of two stuff
 
     /** Define 2^n. */
-    function power2(n : nat): nat 
+    function {:opaque} power2(n : nat): nat 
         ensures power2(n) >= 1
         ensures n >= 1 ==> power2(n) >= 2 
 
@@ -42,10 +42,11 @@ module Helpers {
      *      (2^n) * (2^n) == 2 ^(n + 1)
      *      2 * 2^n == 2^n * 2 == 2^(n + 1)
      */
-    lemma {:induction n} power2Lemmas(n : nat) 
+    lemma {:induction n} {:opaque} power2Lemmas(n : nat) 
         ensures power2(n) + power2(n) == power2(n + 1)
         ensures 2 * power2(n) == power2(n) * 2 == power2(n + 1)
     {   //  Thanks Dafny
+        reveal_power2();
     }
 
 }
