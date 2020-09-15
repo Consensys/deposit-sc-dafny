@@ -12,7 +12,7 @@
  * under the License.
  */
  
-include "../intdiffalgo/DiffTree.dfy"
+// include "../intdiffalgo/DiffTree.dfy"
 include "../trees/CompleteTrees.dfy"
 include "../helpers/Helpers.dfy"
 include "../paths/PathInCompleteTrees.dfy"
@@ -23,7 +23,7 @@ include "./LeftSiblingsPlus.dfy"
 
 module LeftSiblings {
  
-    import opened DiffTree
+    // import opened DiffTree
     import opened CompleteTrees
     import opened Helpers
     import opened PathInCompleteTrees
@@ -36,33 +36,33 @@ module LeftSiblings {
      *  If b and b' agree on values at which p[i] == 1 and b has siblings at p[..], then 
      *  b' has siblings at same location.  
      */
-    lemma {:induction p, r} siblingsLeft(p : seq<bit>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat, i : nat) 
+    // lemma {:induction p, r} siblingsLeft(p : seq<bit>, r : Tree<int>, b : seq<int>, b': seq<int>, k : nat, i : nat) 
 
-        requires isCompleteTree(r)
-        /** `r` is decorated with attribute `f`. */
-        requires isDecoratedWith(diff, r)
-        requires height(r) >= 1
+    //     requires isCompleteTree(r)
+    //     /** `r` is decorated with attribute `f`. */
+    //     requires isDecoratedWith(diff, r)
+    //     requires height(r) >= 1
 
-        /**  all leaves after the k leaf are zero. */
-        requires k < |leavesIn(r)|
-        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+    //     /**  all leaves after the k leaf are zero. */
+    //     requires k < |leavesIn(r)|
+    //     requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
 
-        /** p is the path to k leaf in r. */
-        requires hasLeavesIndexedFrom(r, i)
-        requires |p| == height(r)
-        requires nodeAt(p, r) == leavesIn(r)[k]
+    //     /** p is the path to k leaf in r. */
+    //     requires hasLeavesIndexedFrom(r, i)
+    //     requires |p| == height(r)
+    //     requires nodeAt(p, r) == leavesIn(r)[k]
 
-        requires |b| == |p|
-        /** `b` contains values at left siblings on path `p`. */
-        requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
+    //     requires |b| == |p|
+    //     /** `b` contains values at left siblings on path `p`. */
+    //     requires forall i :: 0 <= i < |b| ==> p[i] == 1 ==> b[i] == siblingAt(take(p, i + 1), r).v
 
-        /** b and b' agree on values at indices where p[i] == 1, and otherwise b'[i] == 0 */
-        requires |b'| == |b| && forall i :: 0 <= i < |b'| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 
+    //     /** b and b' agree on values at indices where p[i] == 1, and otherwise b'[i] == 0 */
+    //     requires |b'| == |b| && forall i :: 0 <= i < |b'| ==> if p[i] == 1 then b'[i] == b[i] else b'[i] == 0 
 
-        ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(take(p, i + 1), r).v
-    {
-        leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, i);   
-    }
+    //     ensures forall i :: 0 <= i < |b'| ==> b'[i] == siblingAt(take(p, i + 1), r).v
+    // {
+    //     leavesRightOfNodeAtPathZeroImpliesRightSiblingsOnPathZero(r, k, p, i);   
+    // }
 
     /**
      *  Let two trees r and r' (same height) that agree on all values of their leaves except possibly at k.
@@ -182,6 +182,34 @@ module LeftSiblings {
                         leftSiblingsInEquivTreesBaseCase(p, r, r', k, f, index);
                     }
                 }
+        }
+    }
+
+     lemma {:induction p, r, r'} leftSiblingsInEquivTrees2<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f: (T, T) -> T, index: nat)
+
+        requires isCompleteTree(r)
+        requires isCompleteTree(r')
+        requires isDecoratedWith(f, r)
+        requires isDecoratedWith(f, r')
+        requires height(r) == height(r') >= 1
+        requires hasLeavesIndexedFrom(r, index)
+        requires hasLeavesIndexedFrom(r', index)
+
+        requires 1 <= |p| == height(r)
+
+        requires k < |leavesIn(r)| == |leavesIn(r')|
+        requires take(leavesIn(r), k) == take(leavesIn(r'), k)
+        requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
+
+        requires bitListToNat(p) == k 
+
+        ensures forall i :: 0 <= i < |p| ==> 
+            siblingAt(take(p, i + 1), r).v == siblingAt(take(p, i + 1), r').v
+    {
+        forall ( i : nat | 0 <= i < |p|) 
+            ensures siblingAt(take(p, i + 1), r).v == siblingAt(take(p, i + 1), r').v
+        {
+            leftSiblingsInEquivTrees(p, r, r', k, f, i, index);
         }
     }
  }

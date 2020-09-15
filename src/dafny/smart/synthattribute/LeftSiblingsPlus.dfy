@@ -12,7 +12,6 @@
  * under the License.
  */
  
-include "../intdiffalgo/DiffTree.dfy"
 include "../trees/CompleteTrees.dfy"
 include "../helpers/Helpers.dfy"
 include "../paths/PathInCompleteTrees.dfy"
@@ -25,7 +24,6 @@ include "../trees/Trees.dfy"
  */
 module LeftSiblingsPlus {
  
-    import opened DiffTree
     import opened CompleteTrees
     import opened Helpers
     import opened PathInCompleteTrees
@@ -46,7 +44,7 @@ module LeftSiblingsPlus {
      *  @param  f       The synthesised attribute to decorate the trees.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-     lemma {:induction r, r'} leftSiblingsInEquivTreesBaseCase<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, index: nat) 
+     lemma {:induction } leftSiblingsInEquivTreesBaseCase<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, index: nat) 
 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
@@ -203,7 +201,7 @@ module LeftSiblingsPlus {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma leftSiblingsInEquivTreesNonBaseCaseFirstLeft<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
+    lemma {:induction } leftSiblingsInEquivTreesNonBaseCaseFirstLeft<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
@@ -267,7 +265,7 @@ module LeftSiblingsPlus {
                 assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
 
                 assert(1 <= i + 1 <= |p|);
-                calc {
+                calc == {
                     first(take(p,i + 1));
                     { seqIndexLemmas(p, i + 1) ; }
                     first(p);
@@ -351,7 +349,7 @@ module LeftSiblingsPlus {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma leftSiblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
+    lemma {:induction } leftSiblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
@@ -501,6 +499,8 @@ module LeftSiblingsPlus {
         requires leavesIn(r) == leavesIn(r')
 
         ensures r.v == r'.v
+
+        decreases r 
 
         {
             if height(r) == 0 {

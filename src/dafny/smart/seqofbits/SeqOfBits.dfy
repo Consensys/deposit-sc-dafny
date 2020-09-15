@@ -254,7 +254,7 @@ module SeqOfBits {
     /**
      *  @todo complete proof of this lemma.
      */
-    lemma succIsNextpath(p : seq<bit>, nextp : seq<bit>) 
+    lemma {:induction p} succIsNextpath(p : seq<bit>, nextp : seq<bit>) 
         /** Path has at least one element. */
         requires |nextp| == |p| >= 1
         /** It is not the path 1+ that has no successors. */
@@ -282,7 +282,7 @@ module SeqOfBits {
     /**
      *  If bitListToNat(p) < power2(|p|) - 1 then p has a zero.
      */
-    lemma pathToNoLasthasZero(p : seq<bit>) 
+    lemma {:induction p} pathToNoLasthasZero(p : seq<bit>) 
         requires |p| >= 1
         requires bitListToNat(p) < power2(|p|) - 1
         ensures  exists i :: 0 <= i < |p| && p[i] == 0
