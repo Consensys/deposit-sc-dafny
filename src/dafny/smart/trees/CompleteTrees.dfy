@@ -14,6 +14,7 @@
 
 include "Trees.dfy"
 include "../helpers/Helpers.dfy"
+include "../helpers/SeqHelpers.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 
 /**
@@ -26,6 +27,7 @@ module CompleteTrees {
 
     import opened Trees
     import opened Helpers
+    import opened SeqHelpers
     import opened SeqOfBits
 
     /**
@@ -46,6 +48,30 @@ module CompleteTrees {
                 && isCompleteTree(lc) && isCompleteTree(rc)
     }
 
+    /**
+     *  Collect first k leaves in a tree.
+     */
+    function {:opaque} takeLeavesIn<T>(r : Tree<T>, k : nat) : seq<Tree<T>>
+        requires isCompleteTree(r)
+        requires k <= |leavesIn(r)|
+        ensures |takeLeavesIn(r, k)| == k 
+    {
+        completeTreeNumberLemmas(r);
+        take(leavesIn(r), k)
+    }
+
+    /**
+     *  Drop first k leaves in a tree.
+     */
+    function {:opaque} dropLeavesIn<T>(r : Tree<T>, k : nat) : seq<Tree<T>>
+        requires isCompleteTree(r)
+        requires k <= |leavesIn(r)|
+        ensures |takeLeavesIn(r, k)| == k 
+    {
+        completeTreeNumberLemmas(r);
+        drop(leavesIn(r), k)
+    }
+
     //  Helper lemmas for complete trees.
 
     /**
@@ -56,6 +82,7 @@ module CompleteTrees {
         ensures |leavesIn(root)| == power2(height(root))
         ensures |nodesIn(root)| == power2(height(root) + 1) - 1
     {   //  Thanks Dafny
+        reveal_power2();
     }
 
     /**
@@ -78,6 +105,7 @@ module CompleteTrees {
             case Node(_, lc, rc) => 
                 |leavesIn(lc)| == |leavesIn(rc)| == power2(height(r)) / 2
     {
+        reveal_power2();
         match r 
             case Node(_, lc, rc) =>
                 completeTreesOfSameHeightHaveSameNumberOfLeaves(lc, rc);
@@ -95,6 +123,8 @@ module CompleteTrees {
     {   //  Thanks Dafny
     }
 
+    
+
     /**
      *  Children of a node r in a complete tree of height >-= 2
      *  evenly partition leavesIn(r).
@@ -105,16 +135,15 @@ module CompleteTrees {
         ensures |leavesIn(r)| == power2(h)
         ensures match r
             case Node(_, lc, rc) => 
-                leavesIn(lc) == leavesIn(r)[.. power2(height(r)) / 2]
-                && leavesIn(rc) == leavesIn(r)[power2(height(r)) / 2 ..]
+                (leavesIn(lc) == leavesIn(r)[.. power2(height(r)) / 2] 
+                 == takeLeavesIn(r, power2(height(r)) / 2))
+                && (leavesIn(rc) == leavesIn(r)[power2(height(r)) / 2 ..]
+                 == dropLeavesIn(r, power2(height(r)) / 2))
     {
-        if h == 1 {
-            //  Thanks Dafny
-        } else {
-            match r
-                case Node(_, lc, rc) => 
-                    childrenInCompTreesHaveSameNumberOfLeaves(r);
-        }
+        reveal_power2();
+        reveal_takeLeavesIn();
+        reveal_dropLeavesIn();
+        childrenInCompTreesHaveSameNumberOfLeaves(r);
     }
 
     /**
@@ -129,19 +158,6 @@ module CompleteTrees {
                 hasLeavesIndexedFrom(lc, i)
                 && hasLeavesIndexedFrom(rc, i + power2(height(r)) / 2)
     {
-        if h == 1 {
-            match r
-            case Node(_, lc, rc) => 
-                calc == {
-                    leavesIn(r) == [lc, rc];
-                    leavesIn(r)[0] == lc;                
-                    leavesIn(r)[0].index == 0 + i ;
-                    leavesIn(r)[1] == rc;
-                    leavesIn(r)[1].index == i + 1;
-                    power2(height(r) - 1) / 2 == 0;
-                }
-        } else {
-            childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
-        }
+        childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
     }       
 }
