@@ -281,7 +281,6 @@ module PathInCompleteTrees {
                         childrenCompTreeValidIndex(r, height(r), i);
                         assert(hasLeavesIndexedFrom(lc, i));
 
-                        
                         //  Now use result on tail(p) 
                         calc == {
                             bitListToNat(p);
