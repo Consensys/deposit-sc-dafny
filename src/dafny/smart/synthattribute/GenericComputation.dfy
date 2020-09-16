@@ -21,6 +21,12 @@ include "../trees/Trees.dfy"
 /**
  *  Provide simple results on computation of root value of a synthesised attribute
  *  on a tree.
+ *
+ *  Define 
+ *  1. `computeRootPath` that computes the root value from siblings and seed. 
+ *  2. `computeRootLeftRight` refines `computeRootPath` vy splitting siblings into left and right.
+ *  3. `computeRootLeftRightIsCorrectForTree` shows that `computeRootLeftRight` computes the root value of
+ *      the tree.
  */
 module GenericComputation {
  
@@ -85,6 +91,24 @@ module GenericComputation {
                 f(first(left), r)
     }
 
+    /**
+     *  Collect all the values on non-root node computed on the path p using left, right and seed.
+     */
+    function computeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T) : seq<T>
+        requires |p| == |left| == |right|
+        ensures |computeAll(p, left, right, f, seed)| == |p| + 1
+        decreases p
+    {
+        if |p| == 0 then
+            [seed] 
+        else 
+            var r := computeAll(tail(p), tail(left), tail(right), f, seed);
+            if first(p) == 0 then 
+                [ f(first(r), first(right))] + r
+            else 
+                [ f(first(left), first(r)) ] + r
+    }
+
     //  Properties of computeRootPath and computeRootLeftRight.
 
     /**
@@ -99,7 +123,7 @@ module GenericComputation {
         /** Depending on p[0], `b` projects onto `lc or `rc`. */
         ensures match r
             case Node(_, lc, rc) =>
-                forall k :: 0 <= k < |tail(b)| ==>
+                forall k :: 0 <= k < |tail(p)| ==>
                      tail(b)[k] == siblingAt(take(tail(p), k + 1), if first(p) == 0 then lc else rc).v
     {
         match r 
@@ -147,6 +171,36 @@ module GenericComputation {
                         }
                     }
                 }
+    }
+
+    /**
+     *  Extend `projectValuesOnChild` when siblings are split into leftand right.
+     */
+    lemma {:induction r} projectLeftRightValuesOnChild<T>(p : seq<bit>, r : Tree<T>, left : seq<T>, right: seq<T>)  
+        requires 1 <= |p| <= height(r) 
+        requires isCompleteTree(r)
+        requires |left| == |right| == |p|
+        requires forall k :: 0 <= k < |p| ==> 
+            siblingAt(take(p, k + 1), r).v ==  
+                if p[k] == 0 then 
+                    right[k]
+                else 
+                    left[k]
+        /** Depending on p[0], `b` projects onto `lc or `rc`. */
+        ensures match r
+            case Node(_, lc, rc) =>
+                forall k :: 0 <= k < |tail(p)| ==>
+                    siblingAt(take(tail(p), k + 1), if first(p) == 0 then lc else rc).v
+                    == 
+                    if tail(p)[k] == 0 then 
+                        tail(right)[k]
+                    else 
+                        tail(left)[k]
+    {
+        //  for b == zipCond(p, right, left) we can use the lemma `projectValuesOnChild`
+        var b := zipCond(p, right, left);
+        projectValuesOnChild(p, r, b);   
+        assert(tail(b) == zipCond(tail(p), tail(right), tail(left)));        
     }
 
     /**
@@ -207,6 +261,8 @@ module GenericComputation {
                 }
         }
     }
+
+    //  Main theorem 
 
     /**
      *  The value computed by computeRootPath is the same as the value of the root
