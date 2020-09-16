@@ -159,7 +159,7 @@ module SeqOfBits {
     /**
      *  (In)equalities between  bitListToNat(tail(p)) and bitListToNat(p).
      */
-    lemma bitListOfTailForFirstZero(p : seq<bit>)
+    lemma {:induction p} bitListOfTailForFirstZero(p : seq<bit>)
         requires |p| >= 2
         requires first(p) == 0
         ensures  first(p) == 0 ==> bitListToNat(tail(p)) == bitListToNat(p)
