@@ -64,6 +64,29 @@ module PathInCompleteTrees {
     {   //  Thanks Dafny
     }
 
+     /**
+     *  Simplify a path to a sibling at a given index.
+     */
+    lemma {:induction r} simplifyNodeAtIndexFirstBit(p : seq<bit>, r :Tree, i : nat)
+        requires 1 <= i <= |p| <= height(r) 
+        requires isCompleteTree(r)
+        // requires 1 <= i <= |p|
+        ensures match r 
+            case Node(_, lc, rc) =>
+                nodeAt(take(p, i), r) == 
+                nodeAt(take(tail(p), i - 1), if first(p) == 0 then lc else rc)
+    {
+        match r 
+        case Node(_, lc, rc) =>
+            calc == {
+                nodeAt(take(p, i), r);
+                { simplifyNodeAtFirstBit(take(p, i), r) ; }
+                nodeAt(tail(take(p, i)), if first(p) == 0 then lc else rc);
+                { seqIndexLemmas(p, i); }
+                nodeAt(take(tail(p), i - 1), if first(p) == 0 then lc else rc);
+            }
+    }
+
     /**
      *  The sibling of a node at a given path.
      *  
@@ -90,7 +113,6 @@ module PathInCompleteTrees {
     {
         siblingAt(take(p, i), r).v
     }
-
 
     /**
      *  For path of length >= 2, siblingAt can be computed 
