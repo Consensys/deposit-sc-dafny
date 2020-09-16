@@ -19,12 +19,11 @@ include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
-include "./LeftSiblingsPlus.dfy"
 
 /**
  *  Provide proofs that right siblings are constant in Merkle like trees.
  */
-module RightSiblings {
+module RSiblings {
  
     import opened DiffTree
     import opened CompleteTrees
@@ -33,7 +32,6 @@ module RightSiblings {
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees
-    import opened LeftSiblingsPlus
 
     /**
      *  Default values on each evel of a tree.
@@ -45,7 +43,6 @@ module RightSiblings {
      *
      */
     function defaultValue<T>(f: (T, T) -> T, d: T, h : nat) : T
-        // ensures |defaultValues(f, d, h)| == h + 1
         decreases h
     {
         if h == 0 then 
@@ -114,7 +111,6 @@ module RightSiblings {
 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
-        // requires height(r) >= 0
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -126,10 +122,11 @@ module RightSiblings {
         requires bitListToNat(p) == k 
 
         requires 0 <= i < |p|
-        ensures p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == defaultValue(f, d, height(r) - (i + 1))
+        ensures p[i] == 0 ==> siblingValueAt(p, r, i + 1) == defaultValue(f, d, height(r) - (i + 1))
 
         decreases r 
     {
+        reveal_siblingValueAt();
         if height(r) == 0 {
             //  Although this case is not allowed by the pre conditions as height(r) >= 1,
             //  we can prove the property for it and the inductive case extends to 
@@ -219,7 +216,6 @@ module RightSiblings {
     lemma {:induction p, r} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, zeroes: seq<T>) 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
-        // requires height(r) >= 0
 
         /**  all leaves after the k leaf are zero. */
         requires k < |leavesIn(r)|
@@ -231,14 +227,16 @@ module RightSiblings {
         requires bitListToNat(p) == k 
 
         requires |zeroes| == height(r)
-        requires forall i :: 0 <= i < |zeroes| ==> zeroes[i] == defaultValue(f, d, height(r) - (i + 1))
-        ensures forall i :: 0 <= i < |p| && p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == 
-            zeroes[i]
+        requires forall i {:trigger zeroes[i]} :: 0 <= i < |zeroes| ==> zeroes[i] == defaultValue(f, d, height(r) - (i + 1))
+
+        ensures forall i :: 0 <= i < |p| && p[i] == 0 ==> 
+            siblingValueAt(p, r, i + 1) == zeroes[i]
     {
         forall(i : nat | 0 <= i < |p|) 
-            ensures p[i] == 0 ==> siblingAt(take(p, i + 1), r).v == defaultValue(f, d, height(r) - (i + 1))
+            ensures p[i] == 0 ==> 
+                siblingValueAt(p, r, i + 1) == defaultValue(f, d, height(r) - (i + 1))
         {
-            siblingsRightOfPathAreConstant(p, r, k, f, index, d, i);
+            siblingsRightOfPathAreConstant(p, r, k, f, index, d, i);         
         }
     }
 
