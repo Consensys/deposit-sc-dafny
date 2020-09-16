@@ -266,26 +266,6 @@ module SeqOfBits {
     } 
 
     /**
-     *  @todo complete proof of this lemma.
-     *  
-     *  @note   It is not used right now.
-     */
-    // lemma {:induction p} succIsNextpath(p : seq<bit>, nextp : seq<bit>) 
-    //     /** Path has at least one element. */
-    //     requires |nextp| == |p| >= 1
-    //     /** It is not the path 1+ that has no successors. */
-    //     requires exists i :: 0 <= i < |p| && p[i] == 0
-    //     requires bitListToNat(nextp) == bitListToNat(p) + 1
-    //     ensures nextp == nextPath(p)
-    // {
-    //     if |p| == 1 {
-    //         //  Thanks Dafny
-    //     } else {
-    //         assume(nextp == nextPath(p));
-    //     }
-    // }
-
-    /**
      *  if all bits are set,  bitListToNat(p) = 2^p - 1.
      */
     lemma {:induction p} valueOfSeqOfOnes(p : seq<bit>)
