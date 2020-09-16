@@ -36,9 +36,11 @@ module NextPathInCompleteTreesLemmas {
         requires hasLeavesIndexedFrom(r, 0)
         requires 1 <= |p| == height(r)                    
         requires 0 <= k < |leavesIn(r)| - 1                     
-        requires nodeAt(p, r) == leavesIn(r)[k]                 
-        ensures exists i ::  0 <= i < |p| && p[i] == 0          //  P1
-        ensures  nodeAt(nextPath(p), r) == leavesIn(r)[k + 1]   //  P2
+        requires bitListToNat(p) == k               
+
+        ensures exists i ::  0 <= i < |p| && p[i] == 0         //  P1
+        ensures nodeAt(nextPath(p), r) == leavesIn(r)[k + 1]   //  P2
+        ensures bitListToNat(nextPath(p)) == k + 1             //  P3
     {
         //  Proof of P1
         calc ==> {
