@@ -134,7 +134,7 @@ module MerkleTrees {
     *   @param  f   A function to combine two values.
     *   @param  d   A default value for the leaves not in `l`.
     */
-    function buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : Tree<T> 
+    function {:axiom} buildMerkle<T>(l: seq<T>, h : nat, f : (T, T) -> T, d : T) : Tree<T> 
         requires h >= 0
         /** Tree has enough leaves to store `l`. */
         requires |l| <= power2(h)      
