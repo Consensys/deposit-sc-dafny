@@ -12,7 +12,6 @@
  * under the License.
  */
  
-include "../intdiffalgo/DiffTree.dfy"
 include "../trees/CompleteTrees.dfy"
 include "../helpers/Helpers.dfy"
 include "../paths/PathInCompleteTrees.dfy"
@@ -25,7 +24,6 @@ include "../trees/Trees.dfy"
  */
 module RSiblings {
  
-    import opened DiffTree
     import opened CompleteTrees
     import opened Helpers
     import opened PathInCompleteTrees
@@ -124,7 +122,7 @@ module RSiblings {
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
 
-        /**  all leaves after the k leaf are zero. */
+        /**  all leaves after index k leaf are zero. */
         requires k < |leavesIn(r)|
         requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == d
 
@@ -229,7 +227,7 @@ module RSiblings {
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
 
-        /**  all leaves after the k leaf are zero. */
+        /**  all leaves after index k leaf are zero. */
         requires k < |leavesIn(r)|
         requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == d
 
