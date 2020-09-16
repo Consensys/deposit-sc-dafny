@@ -15,13 +15,20 @@
 include "helpers/Helpers.dfy"
 include "trees/Trees.dfy"
 include "trees/CompleteTrees.dfy"
+include "paths/PathInCompleteTrees.dfy"
+include "synthattribute/RightSiblings.dfy"
+include "seqofbits/SeqOfBits.dfy"
+
 
 module MerkleTrees {
 
     import opened Helpers
     import opened Trees
     import opened CompleteTrees
- 
+    import opened PathInCompleteTrees
+    import opened RSiblings
+    import opened SeqOfBits
+
     /**
      *  
      *  @param  l       A list of elements.
@@ -53,9 +60,10 @@ module MerkleTrees {
      *          synthesied attribute `f`.
      */
     predicate isMerkle<T>(root: Tree<T>, l: seq<T>, f : (T, T) -> T, default: T) 
-        requires |l| <= |leavesIn(root)|
+        requires |l| <= |leavesIn(root)| || |l| <= power2(height(root))
     {
         isCompleteTree(root)
+        && |leavesIn(root)| == power2(height(root))
         && isDecoratedWith(f, root)
         && treeLeftmostLeavesMatchList(l, root, default)
     }
@@ -110,6 +118,7 @@ module MerkleTrees {
                 && |l[power2(height(r))/2..]| <=  |leavesIn(rc)|
                 && isMerkle2(rc, l[power2(height(r))/2..], f)
     {
+        reveal_power2();
         childrenInCompTreesHaveHalfNumberOfLeaves(r, h);
     }
 
@@ -137,4 +146,30 @@ module MerkleTrees {
         ensures treeLeftmostLeavesMatchList(l, buildMerkle(l, h, f, d), d)
         ensures hasLeavesIndexedFrom(buildMerkle(l, h, f, d), 0)
 
+
+    /**
+     *  The right siblings of the path to the last element of the list are
+     *  zeroes.  
+     *
+     *  @param  l   A list of values.
+     *  @param  r   A merkle tree for l.
+     *  @param  f   A function to combine values.
+     *  @param  d   A default value for the leaves not in `l`.
+     */
+    lemma pathToLastInMerkleTreeHasZeroRightSiblings<T>(l: seq<T>, r: Tree<T>, f : (T, T) -> T, d : T) 
+        requires hasLeavesIndexedFrom(r, 0) 
+        requires height(r) >= 1
+        /** The list has at least one element. */
+        requires 1 <= |l| < power2(height(r))
+        requires isMerkle(r, l, f, d)
+
+        ensures var p := natToBitList(|l| - 1, height(r));
+            forall i :: 0 <= i < |p| && p[i] == 0 ==> 
+                siblingValueAt(p, r, i + 1) == zeroes(f, d, height(r) - 1)[i]
+    {
+        var p := natToBitList(|l| - 1, height(r));
+        bitToNatToBitsIsIdentity(|l| - 1, height(r));
+        assert(bitListToNat(p) == |l| - 1);
+        rightSiblingsOfLastPathAreDefault(p, r, |l| - 1, f, 0, d);
+    }
 }
