@@ -506,7 +506,7 @@ module PathInCompleteTrees {
         requires isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, 0)
         requires k < |leavesIn(r)| - 1
-        requires nodeAt(p, r) == leavesIn(r)[k]
+        requires nodeAt(p, r) == leavesIn(r)[k] || bitListToNat(p) == k
         ensures exists i :: 0 <= i < |p| && p[i] == 0
         decreases p 
     {
