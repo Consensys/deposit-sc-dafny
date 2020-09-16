@@ -49,4 +49,24 @@ module Helpers {
         reveal_power2();
     }
 
+    /**
+     *  2^(n + 1) / 2 == 2^n
+     */
+    lemma {:induction n} power2Div2(n : nat)
+        requires n >= 1
+        ensures power2(n) / 2 == power2(n - 1)
+    {
+        reveal_power2();
+    }
+
+    /**
+     *  if k < 2^(n + 1) then k / 2 < 2^n
+     */
+    lemma {:induction n} power2Div2LessThan(k : nat, n : nat)
+        requires n >= 1
+        requires k < power2(n)
+        ensures k / 2 < power2(n - 1)
+    {
+        reveal_power2();
+    }
 }
