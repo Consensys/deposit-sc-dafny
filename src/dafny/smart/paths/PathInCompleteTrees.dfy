@@ -482,7 +482,7 @@ module PathInCompleteTrees {
     }
 
     /**
-     *  Same as above but with parametric index.
+     *  Same as above but with parametric index instead of zero.
      */
     lemma {:induction p, r} indexOfLeafisIntValueOfPath2(p : seq<bit>, r :  Tree, k : nat, index: nat) 
         requires isCompleteTree(r)
