@@ -52,6 +52,18 @@ module RSiblings {
             f(x, x)
     }
 
+    function zeroes<T>(f: (T, T) -> T, d: T, h : nat) : seq<T>
+        decreases h 
+        ensures |zeroes(f, d, h)| == h + 1
+        ensures forall i :: 0 <= i < |zeroes(f, d, h)| ==> zeroes(f, d, h)[i] == defaultValue(f, d, h - i) 
+    {
+        if h == 0 then 
+            [d]
+        else 
+            var xs := zeroes(f, d, h - 1);
+            [f(xs[0], xs[0])] + xs
+    }
+
     /**
      *  In a complete tree, decorated with a synthesised attribute f,
      *  and all leaves have a default value,  
@@ -213,7 +225,7 @@ module RSiblings {
      *  @param  zeroes  The default f-value for each level.
      *    
      */
-    lemma {:induction p, r} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, zeroes: seq<T>) 
+    lemma {:induction p, r} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T) 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
 
@@ -226,17 +238,27 @@ module RSiblings {
         requires 1 <= |p| == height(r)
         requires bitListToNat(p) == k 
 
-        requires |zeroes| == height(r)
-        requires forall i {:trigger zeroes[i]} :: 0 <= i < |zeroes| ==> zeroes[i] == defaultValue(f, d, height(r) - (i + 1))
-
         ensures forall i :: 0 <= i < |p| && p[i] == 0 ==> 
-            siblingValueAt(p, r, i + 1) == zeroes[i]
+            siblingValueAt(p, r, i + 1) == zeroes(f, d, height(r) - 1)[i]
     {
         forall(i : nat | 0 <= i < |p|) 
             ensures p[i] == 0 ==> 
-                siblingValueAt(p, r, i + 1) == defaultValue(f, d, height(r) - (i + 1))
+                siblingValueAt(p, r, i + 1) == zeroes(f, d, height(r) - 1)[i]
         {
-            siblingsRightOfPathAreConstant(p, r, k, f, index, d, i);         
+            siblingsRightOfPathAreConstant(p, r, k, f, index, d, i);    
+            if p[i] == 0 {
+                 calc == {
+                 siblingValueAt(p, r, i + 1);
+                 { siblingsRightOfPathAreConstant(p, r, k, f, index, d, i);  }
+                defaultValue(f, d, height(r) - (i + 1));
+                calc == {
+                    height(r) - 1 - i;
+                    height(r) - (i + 1);
+                }   
+                defaultValue(f, d, (height(r) - 1) - i);
+                zeroes(f, d, height(r) - 1)[i];
+                }
+            }  
         }
     }
 
