@@ -17,8 +17,8 @@ include "../trees/CompleteTrees.dfy"
 include "GenericComputation.dfy"
 include "../helpers/Helpers.dfy"
 include "Siblings.dfy"
-include "../MerkleTrees.dfy"
-include "../paths/NextPathInCompleteTreesLemmas.dfy"
+// include "../MerkleTrees.dfy"
+// include "../paths/NextPathInCompleteTreesLemmas.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
@@ -31,8 +31,8 @@ module ComputeRootPath {
     import opened GenericComputation
     import opened Helpers
     import opened Siblings
-    import opened MerkleTrees
-    import opened NextPathInCompleteTreesLemmas
+    // import opened MerkleTrees
+    // import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
     import opened SeqHelpers
@@ -146,6 +146,18 @@ module ComputeRootPath {
 
 
     //  Properties of previous functions.
+
+    lemma shiftComputeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T) 
+        requires |p| == |left| == |right|
+        ensures computeAllUp(p, left, right, f, seed) == tail(computeAllUp2(p, left, right, f, seed))
+    {
+        if |p| == 0 {
+            //  Thanks Dafny
+        } else {
+            var x := if last(p) == 0 then f(seed, last(right)) else f(last(left), seed);
+            shiftComputeAll(init(p), init(left), init(right), f, x);
+        }
+    } 
 
     lemma {:induction p, left, right} computeAllUpEqualsComputeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T)
         requires |p| == |left| == |right|
