@@ -85,7 +85,7 @@ module NextPathInCompleteTreesLemmas {
     } 
 
     /**
-     *  Compute the left siblings of nextPath using letf and right siblings of current path.
+     *  Compute the left siblings of nextPath using letf and right siblings of current path and seed.
      *
      *  @param  p   A path.
      *  @param  left        The values of the left siblings of nodes on path `p`.
@@ -224,6 +224,48 @@ module NextPathInCompleteTreesLemmas {
                 assert(last(p) == 1);
                 computeLeftSiblingOnNextPathBridgeV2(init(p), init(left), init(right), f, f(last(left), seed), init(valOnP)) + [last(left)]
     } 
+
+    /**
+     *  computeLeftSiblingOnNextPathFromLeftRight is correct in a tree.
+     */
+    lemma {:induction p, r, left, right} computeLeftSiblingOnNextPathFromLeftRightIsCorrectInATree<T>(
+            p: seq<bit>, r : Tree<T>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed : T, k : nat)
+    
+        requires isCompleteTree(r)
+        requires isDecoratedWith(f, r)
+        requires hasLeavesIndexedFrom(r, 0)
+        requires k < |leavesIn(r)| - 1
+        requires 1 <= |p| == height(r) 
+        requires nodeAt(p, r) == leavesIn(r)[k]
+        requires seed == nodeAt(p,r).v 
+
+        requires |p| == |left| == |right|
+
+        /** Left and right contains siblings left and right values.  */
+        requires forall i :: 0 <= i < |p| ==>
+            siblingAt(take(p, i + 1), r).v == 
+                if p[i] == 0 then 
+                    right[i]
+                else 
+                    left[i]
+
+        ensures  exists i :: 0 <= i < |p| && p[i] == 0
+        /** The values computed by computeLeftSiblingOnNextPath coincide with leftsiblings on `p`. */
+        ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
+                computeLeftSiblingOnNextPathFromLeftRight(p, left, right, f, seed)[i] == siblingAt(take(nextPath(p), i + 1),r).v
+
+    {
+        //  Prove that p has a zero
+        pathToLeafInInitHasZero(p, r, k);
+        //  Prove that computeAllUp(p, left, right, f, seed) is same as values on each node on the path
+        computeAllIsCorrectInATree(p, r, left, right, f, k, seed, 0);
+       
+        //  Use the proof that computeAllUp == tail(computeAllUp2)
+        computeAllUpEqualsComputeAll(p, left, right, f, seed);
+        shiftComputeAll(p, left, right, f, seed);
+        assert(computeAllUp(p, left, right, f, seed) == tail(computeAllUp2(p, left, right, f, seed)));
+        computeLeftSiblingOnNextPathIsCorrect(p, r, computeAllUp(p, left, right, f, seed), left);
+    }
 
     /**
      *  computeLeftSiblingOnNextPath returns values on left siblings of next path.
