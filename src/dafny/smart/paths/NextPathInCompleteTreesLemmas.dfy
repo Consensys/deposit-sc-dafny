@@ -15,21 +15,106 @@
 include "../trees/CompleteTrees.dfy"
 include "../helpers/Helpers.dfy"
 include "PathInCompleteTrees.dfy"
+include "../synthattribute/ComputeRootPath.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
 /**
  *  Provide computation of values of left siblings on next path.
+ *
+ *  1. `computeLeftSiblingOnNextPath` computes the left siblings on the next path using
+ *      the values on the path and on the left of the path.
+ *  2.  `computeLeftSiblingOnNextPathFromLeftRight` computes the left siblings on the next path using
+ *      the values on the left and right of path only.
+ *  3.  `computeLeftSiblingOnNextPathIsCorrect` proves that `computeLeftSiblingOnNextPath` is correct for a tree.
+ *  4.  As `computeLeftSiblingOnNextPathFromLeftRight` computes the same result as `computeLeftSiblingOnNextPath`
+ *      it follows that it is correct for a tree too. The proof of 4. uses intermnediate `bridge` algorithms
+ *      `computeLeftSiblingOnNextPathBridge` and `computeLeftSiblingOnNextPathBridgeV2`.
+ *  
+ *  The correctness proof of `computeLeftSiblingOnNextPathFromLeftRight` 
  */
 module NextPathInCompleteTreesLemmas {
 
     import opened CompleteTrees
     import opened Helpers
     import opened PathInCompleteTrees
+    import opened ComputeRootPath
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees 
+
+    /**
+     *  Compute the left siblings of nextPath.
+     *
+     *  @param  p       A path.
+     *  @param  v1      The values of the nodes on the path.
+     *  @param  left    The values of the nodes that are left siblings of nodes on the path.
+     *  @returns        The values of the nodes that are left siblings of nextPath(p).
+     */
+    function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, left : seq<T>) : seq<T>
+        requires 1 <= |p| 
+        requires |v1| == |left| == |p|
+        ensures |computeLeftSiblingOnNextPath(p, v1, left)| == |v1|
+
+        decreases p
+    {
+        if |p| == 1 then
+            /*  If p[0] == 0, we use the value on the path i.e v1, and otherwise p[0] == 1 we can choose
+             *  whatever we want as at this level as the sibling on the next path is on is right siblings
+             *  We choose to use left i.e. keep the same value for sibling at this level,  in order to
+             *  enable optimisations in the imperative version of the algorithm where a single array is used.
+             */
+            if first(p) == 0 then v1 else left 
+        else 
+            assert(|p| >= 2);
+            if last(p) == 0 then 
+                /*  This is where the next path flips side. The next path is of the form init(p) + [1].
+                 *  The prefix of p and of nextPath(p) share the same siblings, and the the left sibling 
+                 *  on nextPath at this level is the elft child, so we use its value [last(v1)].
+                 */
+                init(left) + [last(v1)]
+            else 
+                assert(last(p) == 1);
+                /*  The nextPath is of the form nextPath(init(p)) + [0].
+                 *  So the sibling at this level is a right sibling and the value we store in the
+                 *  result for this result is irrelevant. We choose to keep the value of the previous left
+                 *  sibling from left in order to allow optimisations in the impertive version of the algorithm.
+                 */
+                computeLeftSiblingOnNextPath(init(p), init(v1), init(left)) + [last(left)]
+    } 
+
+    /**
+     *  Compute the left siblings of nextPath using letf and right siblings of current path.
+     *
+     *  @param  p   A path.
+     *  @param  left        The values of the left siblings of nodes on path `p`.
+     *  @param  right       The values of the right siblings of nodes on path `p`.
+     *  @param  f           The binary operation to compute.
+     *  @param  seed        The value at the end of the path.
+     *  @returns            The values of the nodes that are left siblings of nextPath(p).
+     */
+    function method computeLeftSiblingOnNextPathFromLeftRight<T>(p: seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed : T) : seq<T>
+        requires 1 <= |p| 
+        requires |left| == |right| == |p|
+
+        ensures computeLeftSiblingOnNextPathFromLeftRight(p, left, right, f, seed)
+        == computeLeftSiblingOnNextPathBridgeV2(p, left, right, f, seed, computeAllUp(p, left, right, f, seed))
+
+        decreases p
+    {
+        if |p| == 1 then
+            if first(p) == 0 then [seed] else left 
+        else 
+            assert(|p| >= 2);
+            if last(p) == 0 then 
+                init(left) + [seed]
+            else 
+                assert(last(p) == 1);
+                computeLeftSiblingOnNextPathFromLeftRight(init(p), init(left), init(right), f, f(last(left), seed)) + [last(left)]
+    } 
+
+    //  Proofs and helpers functions
 
     /**
      *  Next path from a leaf must go to the next leaf
@@ -75,43 +160,72 @@ module NextPathInCompleteTreesLemmas {
      *  Compute the left siblings of nextPath.
      *
      *  @param  p   A path.
-     *  @param  v1  The values of the nodes on the path.
-     *  @param  v2  The values of the nodes that are left siblings of nodes on the path.
+     *  @param  left        The values of the left siblings of nodes on path `p`.
+     *  @param  right       The values of the right siblings of nodes on path `p`.
+     *  @param  f           The binary operation to compute.
+     *  @param  seed        The value at the end of the path.
      *  @returns    The values of the nodes that are left siblings of nextPath(p).
      */
-    function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    function method computeLeftSiblingOnNextPathBridge<T>(
+        p: seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed : T, valOnP : seq<T>) : seq<T>
         requires 1 <= |p| 
-        requires |v1| == |v2| == |p|
-        ensures |computeLeftSiblingOnNextPath(p, v1, v2)| == |v1|
+        requires |left| == |right| == |valOnP| == |p|
+        requires valOnP == computeAllUp(p, left, right, f, seed)
+
+        ensures 
+            computeLeftSiblingOnNextPathBridge(p, left, right, f, seed, valOnP) 
+            == computeLeftSiblingOnNextPath(p, valOnP, left)
 
         decreases p
     {
         if |p| == 1 then
-            /*  If p[0] == 0, we use the value on the path i.e v1, and otherwise p[0] == 1 we can choose
-             *  whatever we want as at this level as the sibling on the next path is on is right siblings
-             *  We choose to use v2 i.e. keep the same value for sibling at this level,  in order to
-             *  enable optimisations in the imperative version of the algorithm where a single array is used.
-             */
-            if first(p) == 0 then v1 else v2 
+            assert(valOnP == [seed]);
+            if first(p) == 0 then valOnP else left 
         else 
             assert(|p| >= 2);
             if last(p) == 0 then 
-                /*  This is where the next path flips side. The next path is of the form init(p) + [1].
-                 *  The prefix of p and of nextPath(p) share the same siblings, and the the left sibling 
-                 *  on nextPath at this level is the elft child, so we use its value [last(v1)].
-                 */
-                init(v2) + [last(v1)]
+                assert(last(valOnP) == seed);
+                init(left) + [last(valOnP)]
             else 
                 assert(last(p) == 1);
-                /*  The nextPath is of the form nextPath(init(p)) + [0].
-                 *  So the sibling at this level is a right sibling and the value we store in the
-                 *  result for this result is irrelevant. We choose to keep the value of the previous left
-                 *  sibling from v2 in order to allow optimisations in the impertive version of the algorithm.
-                 */
-                computeLeftSiblingOnNextPath(init(p), init(v1), init(v2)) + [last(v2)]
+                computeLeftSiblingOnNextPathBridge(init(p), init(left), init(right), f, f(last(left), seed), init(valOnP)) + [last(left)]
     } 
 
-     /**
+    /**
+     *  Same version as before but using seed instead of last(valOnP).
+     *
+     *  @param  p   A path.
+     *  @param  left        The values of the left siblings of nodes on path `p`.
+     *  @param  right       The values of the right siblings of nodes on path `p`.
+     *  @param  f           The binary operation to compute.
+     *  @param  seed        The value at the end of the path.
+     *  @returns    The values of the nodes that are left siblings of nextPath(p).
+     */
+    function method computeLeftSiblingOnNextPathBridgeV2<T>(p: seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed : T, valOnP : seq<T>) : seq<T>
+        requires 1 <= |p| 
+        requires |left| == |right| == |valOnP| == |p|
+        requires valOnP == computeAllUp(p, left, right, f, seed)
+
+        ensures 
+            computeLeftSiblingOnNextPathBridgeV2(p, left, right, f, seed, valOnP) 
+           ==  computeLeftSiblingOnNextPathBridge(p, left, right, f, seed, valOnP) 
+
+        decreases p
+    {
+        if |p| == 1 then
+            assert(valOnP == [seed]);
+            if first(p) == 0 then [seed] else left 
+        else 
+            assert(|p| >= 2);
+            if last(p) == 0 then 
+                assert(last(valOnP) == seed);
+                init(left) + [seed]
+            else 
+                assert(last(p) == 1);
+                computeLeftSiblingOnNextPathBridgeV2(init(p), init(left), init(right), f, f(last(left), seed), init(valOnP)) + [last(left)]
+    } 
+
+    /**
      *  computeLeftSiblingOnNextPath returns values on left siblings of next path.
      *
      *  @param  p   A path with at least one zero (i.e. not to the last leaf so that there is a path to next leaf.)
@@ -270,200 +384,200 @@ module NextPathInCompleteTreesLemmas {
             }
         }
     }
-    function method computeLeftSiblingOnNextPath2<T>(k: nat, h: nat, p: seq<bit>, v1 : seq<T>, v2 : seq<T>) : seq<T>
-        requires 1 <= |p| == h
-        requires k < power2(h) 
-        requires |v1| == |v2| == |p|
-        requires natToBitList2(k, h) == p
-        ensures computeLeftSiblingOnNextPath2(k, h, p, v1, v2) == computeLeftSiblingOnNextPath(p, v1, v2)
+    // function method computeLeftSiblingOnNextPath2<T>(k: nat, h: nat, p: seq<bit>, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    //     requires 1 <= |p| == h
+    //     requires k < power2(h) 
+    //     requires |v1| == |v2| == |p|
+    //     requires natToBitList2(k, h) == p
+    //     ensures computeLeftSiblingOnNextPath2(k, h, p, v1, v2) == computeLeftSiblingOnNextPath(p, v1, v2)
 
-        decreases p
-    {
-        if |p| == 1 then
-            //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
-            //  whatever we want as at this level the sibling on next path is on
-            //  the right. We choose to use v2 in order to enable optimisations
-            //  in the imperative version of the algorithm
-            if first(p) == 0 then v1 else v2 
-        else 
-            assert(|p| >= 2);
-            if last(p) == 0 then 
-            assert( k % 2 == 0);
-            assert( h == |p|);
-                //  Next path is init(p) + [1]
-                //  init(nextPath(p)_ is the same a\s init(p)  
-                //  Hence the values on left siblings are in init(v2) and [last(v1)] 
-                init(v2) + [last(v1)]
-            else 
-                assert(last(p) == 1);
-                assert( k % 2 == 1);
-                assert( h == |p|);
-                //  Nextpath is given as nextPath(init(p)) + [0]
-                //  The last element is a zero, so the sibling on the last
-                //  element is a right sibling and the value does not matter.
-                //  We use last(v2) to allow for optimisations in the imperative version.
-                computeLeftSiblingOnNextPath2(k / 2, h - 1, init(p), init(v1), init(v2)) + [last(v2)]
-    } 
+    //     decreases p
+    // {
+    //     if |p| == 1 then
+    //         //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
+    //         //  whatever we want as at this level the sibling on next path is on
+    //         //  the right. We choose to use v2 in order to enable optimisations
+    //         //  in the imperative version of the algorithm
+    //         if first(p) == 0 then v1 else v2 
+    //     else 
+    //         assert(|p| >= 2);
+    //         if last(p) == 0 then 
+    //         assert( k % 2 == 0);
+    //         assert( h == |p|);
+    //             //  Next path is init(p) + [1]
+    //             //  init(nextPath(p)_ is the same a\s init(p)  
+    //             //  Hence the values on left siblings are in init(v2) and [last(v1)] 
+    //             init(v2) + [last(v1)]
+    //         else 
+    //             assert(last(p) == 1);
+    //             assert( k % 2 == 1);
+    //             assert( h == |p|);
+    //             //  Nextpath is given as nextPath(init(p)) + [0]
+    //             //  The last element is a zero, so the sibling on the last
+    //             //  element is a right sibling and the value does not matter.
+    //             //  We use last(v2) to allow for optimisations in the imperative version.
+    //             computeLeftSiblingOnNextPath2(k / 2, h - 1, init(p), init(v1), init(v2)) + [last(v2)]
+    // } 
 
-    function method computeLeftSiblingOnNextPath3<T>(k: nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
-        requires 1 <=  h
-        requires k < power2(h) 
-        requires |v1| == |v2| == h
-        // requires natToBitList2(k, h) == p
-        ensures computeLeftSiblingOnNextPath3(k, h, v1, v2) 
-                == var p := natToBitList(k, h);
-                    computeLeftSiblingOnNextPath2(k, h, p, v1, v2)
-        decreases h
-    {
-        if h == 1 then
-            //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
-            //  whatever we want as at this level the sibling on next path is on
-            //  the right. We choose to use v2 in order to enable optimisations
-            //  in the imperative version of the algorithm
-            if k % 2 == 0 then v1 else v2 
-        else 
-            // assert(|p| >= 2);
-            if k % 2 == 0 then 
-            // assert( k % 2 == 0);
-            // assert( h == |p|);
-                //  Next path is init(p) + [1]
-                //  init(nextPath(p)_ is the same a\s init(p)  
-                //  Hence the values on left siblings are in init(v2) and [last(v1)] 
-                init(v2) + [last(v1)]
-            else 
-                power2Div2(h);
-                // assert(last(p) == 1);
-                // assert( k % 2 == 1);
-                // assert( h == |p|);
-                //  Nextpath is given as nextPath(init(p)) + [0]
-                //  The last element is a zero, so the sibling on the last
-                //  element is a right sibling and the value does not matter.
-                //  We use last(v2) to allow for optimisations in the imperative version.
-                // assert(h - 1 >= 1);
-                computeLeftSiblingOnNextPath3(k / 2, h - 1, init(v1), init(v2)) + [last(v2)]
-    } 
+    // function method computeLeftSiblingOnNextPath3<T>(k: nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    //     requires 1 <=  h
+    //     requires k < power2(h) 
+    //     requires |v1| == |v2| == h
+    //     // requires natToBitList2(k, h) == p
+    //     ensures computeLeftSiblingOnNextPath3(k, h, v1, v2) 
+    //             == var p := natToBitList(k, h);
+    //                 computeLeftSiblingOnNextPath2(k, h, p, v1, v2)
+    //     decreases h
+    // {
+    //     if h == 1 then
+    //         //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
+    //         //  whatever we want as at this level the sibling on next path is on
+    //         //  the right. We choose to use v2 in order to enable optimisations
+    //         //  in the imperative version of the algorithm
+    //         if k % 2 == 0 then v1 else v2 
+    //     else 
+    //         // assert(|p| >= 2);
+    //         if k % 2 == 0 then 
+    //         // assert( k % 2 == 0);
+    //         // assert( h == |p|);
+    //             //  Next path is init(p) + [1]
+    //             //  init(nextPath(p)_ is the same a\s init(p)  
+    //             //  Hence the values on left siblings are in init(v2) and [last(v1)] 
+    //             init(v2) + [last(v1)]
+    //         else 
+    //             power2Div2(h);
+    //             // assert(last(p) == 1);
+    //             // assert( k % 2 == 1);
+    //             // assert( h == |p|);
+    //             //  Nextpath is given as nextPath(init(p)) + [0]
+    //             //  The last element is a zero, so the sibling on the last
+    //             //  element is a right sibling and the value does not matter.
+    //             //  We use last(v2) to allow for optimisations in the imperative version.
+    //             // assert(h - 1 >= 1);
+    //             computeLeftSiblingOnNextPath3(k / 2, h - 1, init(v1), init(v2)) + [last(v2)]
+    // } 
 
-     function method computeLeftSiblingOnNextPath4<T>(k: nat, k' : nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
-        requires 1 <=  h
-        requires k + 1 == k' < power2(h) 
-        requires |v1| == |v2| == h
-        // requires natToBitList2(k, h) == p
-        ensures computeLeftSiblingOnNextPath4(k, k', h, v1, v2) 
-                == computeLeftSiblingOnNextPath3(k, h, v1, v2)
-        decreases h
-    {
-        if h == 1 then
-            //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
-            //  whatever we want as at this level the sibling on next path is on
-            //  the right. We choose to use v2 in order to enable optimisations
-            //  in the imperative version of the algorithm
-            assert(k' % 2 == 1 <==> k % 2 == 0);
-            if k % 2 == 0 then v1 else v2 
-        else 
-            assert(k' % 2 == 1 <==> k % 2 == 0);
-            // assert(|p| >= 2);
-            if k % 2 == 0 then 
-            // assert( k % 2 == 0);
-            // assert( h == |p|);
-                //  Next path is init(p) + [1]
-                //  init(nextPath(p)_ is the same a\s init(p)  
-                //  Hence the values on left siblings are in init(v2) and [last(v1)] 
-                init(v2) + [last(v1)]
-            else 
-                power2Div2LessThan(k', h);
-                // assert(last(p) == 1);
-                // assert( k % 2 == 1);
-                // assert( h == |p|);
-                //  Nextpath is given as nextPath(init(p)) + [0]
-                //  The last element is a zero, so the sibling on the last
-                //  element is a right sibling and the value does not matter.
-                //  We use last(v2) to allow for optimisations in the imperative version.
-                computeLeftSiblingOnNextPath4(k / 2, k' / 2, h - 1, init(v1), init(v2)) + [last(v2)]
-    } 
+    //  function method computeLeftSiblingOnNextPath4<T>(k: nat, k' : nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    //     requires 1 <=  h
+    //     requires k + 1 == k' < power2(h) 
+    //     requires |v1| == |v2| == h
+    //     // requires natToBitList2(k, h) == p
+    //     ensures computeLeftSiblingOnNextPath4(k, k', h, v1, v2) 
+    //             == computeLeftSiblingOnNextPath3(k, h, v1, v2)
+    //     decreases h
+    // {
+    //     if h == 1 then
+    //         //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
+    //         //  whatever we want as at this level the sibling on next path is on
+    //         //  the right. We choose to use v2 in order to enable optimisations
+    //         //  in the imperative version of the algorithm
+    //         assert(k' % 2 == 1 <==> k % 2 == 0);
+    //         if k % 2 == 0 then v1 else v2 
+    //     else 
+    //         assert(k' % 2 == 1 <==> k % 2 == 0);
+    //         // assert(|p| >= 2);
+    //         if k % 2 == 0 then 
+    //         // assert( k % 2 == 0);
+    //         // assert( h == |p|);
+    //             //  Next path is init(p) + [1]
+    //             //  init(nextPath(p)_ is the same a\s init(p)  
+    //             //  Hence the values on left siblings are in init(v2) and [last(v1)] 
+    //             init(v2) + [last(v1)]
+    //         else 
+    //             power2Div2LessThan(k', h);
+    //             // assert(last(p) == 1);
+    //             // assert( k % 2 == 1);
+    //             // assert( h == |p|);
+    //             //  Nextpath is given as nextPath(init(p)) + [0]
+    //             //  The last element is a zero, so the sibling on the last
+    //             //  element is a right sibling and the value does not matter.
+    //             //  We use last(v2) to allow for optimisations in the imperative version.
+    //             computeLeftSiblingOnNextPath4(k / 2, k' / 2, h - 1, init(v1), init(v2)) + [last(v2)]
+    // } 
 
-    function method computeLeftSiblingOnNextPath5<T>(k: nat, k' : nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
-        requires 1 <=  h
-        requires k + 1 == k' < power2(h) 
-        requires |v1| == |v2| == h
-        // requires natToBitList2(k, h) == p
-        ensures computeLeftSiblingOnNextPath5(k, k', h, v1, v2) 
-                == computeLeftSiblingOnNextPath4(k, k', h, v1, v2)
-        decreases h
-    {
-        if h == 1 then
-            //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
-            //  whatever we want as at this level the sibling on next path is on
-            //  the right. We choose to use v2 in order to enable optimisations
-            //  in the imperative version of the algorithm
-            assert(k' % 2 == 1 <==> k % 2 == 0);
-            if k' % 2 == 1 then v1 else v2 
-        else 
-            assert(k' % 2 == 1 <==> k % 2 == 0);
-            // assert(|p| >= 2);
-            if k' % 2 == 1 then 
-            // assert( k % 2 == 0);
-            // assert( h == |p|);
-                //  Next path is init(p) + [1]
-                //  init(nextPath(p)_ is the same a\s init(p)  
-                //  Hence the values on left siblings are in init(v2) and [last(v1)] 
-                init(v2) + [last(v1)]
-            else 
-                power2Div2LessThan(k', h);
-                // assert(last(p) == 1);
-                // assert( k % 2 == 1);
-                // assert( h == |p|);
-                //  Nextpath is given as nextPath(init(p)) + [0]
-                //  The last element is a zero, so the sibling on the last
-                //  element is a right sibling and the value does not matter.
-                //  We use last(v2) to allow for optimisations in the imperative version.
-                computeLeftSiblingOnNextPath5(k / 2, k' / 2, h - 1, init(v1), init(v2)) + [last(v2)]
-    } 
+    // function method computeLeftSiblingOnNextPath5<T>(k: nat, k' : nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    //     requires 1 <=  h
+    //     requires k + 1 == k' < power2(h) 
+    //     requires |v1| == |v2| == h
+    //     // requires natToBitList2(k, h) == p
+    //     ensures computeLeftSiblingOnNextPath5(k, k', h, v1, v2) 
+    //             == computeLeftSiblingOnNextPath4(k, k', h, v1, v2)
+    //     decreases h
+    // {
+    //     if h == 1 then
+    //         //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
+    //         //  whatever we want as at this level the sibling on next path is on
+    //         //  the right. We choose to use v2 in order to enable optimisations
+    //         //  in the imperative version of the algorithm
+    //         assert(k' % 2 == 1 <==> k % 2 == 0);
+    //         if k' % 2 == 1 then v1 else v2 
+    //     else 
+    //         assert(k' % 2 == 1 <==> k % 2 == 0);
+    //         // assert(|p| >= 2);
+    //         if k' % 2 == 1 then 
+    //         // assert( k % 2 == 0);
+    //         // assert( h == |p|);
+    //             //  Next path is init(p) + [1]
+    //             //  init(nextPath(p)_ is the same a\s init(p)  
+    //             //  Hence the values on left siblings are in init(v2) and [last(v1)] 
+    //             init(v2) + [last(v1)]
+    //         else 
+    //             power2Div2LessThan(k', h);
+    //             // assert(last(p) == 1);
+    //             // assert( k % 2 == 1);
+    //             // assert( h == |p|);
+    //             //  Nextpath is given as nextPath(init(p)) + [0]
+    //             //  The last element is a zero, so the sibling on the last
+    //             //  element is a right sibling and the value does not matter.
+    //             //  We use last(v2) to allow for optimisations in the imperative version.
+    //             computeLeftSiblingOnNextPath5(k / 2, k' / 2, h - 1, init(v1), init(v2)) + [last(v2)]
+    // } 
 
 
-    /** 
-     *  This is the deposit smart contract version using k + 1 (deposit_count + 1).
-     */
-    function method computeLeftSiblingOnNextPath6<T>(k: nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
-        requires 1 <=  h
-        requires 1 <= k < power2(h) 
-        requires |v1| == |v2| == h
+    // /** 
+    //  *  This is the deposit smart contract version using k + 1 (deposit_count + 1).
+    //  */
+    // function method computeLeftSiblingOnNextPath6<T>(k: nat, h: nat, v1 : seq<T>, v2 : seq<T>) : seq<T>
+    //     requires 1 <=  h
+    //     requires 1 <= k < power2(h) 
+    //     requires |v1| == |v2| == h
         
-        ensures computeLeftSiblingOnNextPath6(k, h, v1, v2) 
-            == computeLeftSiblingOnNextPath5(k - 1, k , h, v1, v2)
-            == computeLeftSiblingOnNextPath3(k - 1, h, v1, v2)
-            == var p := natToBitList(k - 1, h);
-                    computeLeftSiblingOnNextPath2(k - 1, h, p, v1, v2)
+    //     ensures computeLeftSiblingOnNextPath6(k, h, v1, v2) 
+    //         == computeLeftSiblingOnNextPath5(k - 1, k , h, v1, v2)
+    //         == computeLeftSiblingOnNextPath3(k - 1, h, v1, v2)
+    //         == var p := natToBitList(k - 1, h);
+    //                 computeLeftSiblingOnNextPath2(k - 1, h, p, v1, v2)
 
-        decreases h
-    {
-        if h == 1 then
-            //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
-            //  whatever we want as at this level the sibling on next path is on
-            //  the right. We choose to use v2 in order to enable optimisations
-            //  in the imperative version of the algorithm
-            // assert(k % 2 == 1 <==> k % 2 == 0);
-            if k % 2 == 1 then v1 else v2 
-        else 
-            // assert(k % 2 == 1 <==> k % 2 == 0);
-            // assert(|p| >= 2);
-            if k % 2 == 1 then 
-            // assert( k % 2 == 0);
-            // assert( h == |p|);
-                //  Next path is init(p) + [1]
-                //  init(nextPath(p)_ is the same a\s init(p)  
-                //  Hence the values on left siblings are in init(v2) and [last(v1)] 
-                init(v2) + [last(v1)]
-            else 
-                power2Div2LessThan(k, h);
-                // assert(last(p) == 1);
-                // assert( k % 2 == 1);
-                // assert( h == |p|);
-                //  Nextpath is given as nextPath(init(p)) + [0]
-                //  The last element is a zero, so the sibling on the last
-                //  element is a right sibling and the value does not matter.
-                //  We use last(v2) to allow for optimisations in the imperative version.
-                computeLeftSiblingOnNextPath6(k / 2, h - 1, init(v1), init(v2)) + [last(v2)]
-    } 
+    //     decreases h
+    // {
+    //     if h == 1 then
+    //         //  if p[0] == 0, we use v1, and otherwise p[0] == 1 we can choose
+    //         //  whatever we want as at this level the sibling on next path is on
+    //         //  the right. We choose to use v2 in order to enable optimisations
+    //         //  in the imperative version of the algorithm
+    //         // assert(k % 2 == 1 <==> k % 2 == 0);
+    //         if k % 2 == 1 then v1 else v2 
+    //     else 
+    //         // assert(k % 2 == 1 <==> k % 2 == 0);
+    //         // assert(|p| >= 2);
+    //         if k % 2 == 1 then 
+    //         // assert( k % 2 == 0);
+    //         // assert( h == |p|);
+    //             //  Next path is init(p) + [1]
+    //             //  init(nextPath(p)_ is the same a\s init(p)  
+    //             //  Hence the values on left siblings are in init(v2) and [last(v1)] 
+    //             init(v2) + [last(v1)]
+    //         else 
+    //             power2Div2LessThan(k, h);
+    //             // assert(last(p) == 1);
+    //             // assert( k % 2 == 1);
+    //             // assert( h == |p|);
+    //             //  Nextpath is given as nextPath(init(p)) + [0]
+    //             //  The last element is a zero, so the sibling on the last
+    //             //  element is a right sibling and the value does not matter.
+    //             //  We use last(v2) to allow for optimisations in the imperative version.
+    //             computeLeftSiblingOnNextPath6(k / 2, h - 1, init(v1), init(v2)) + [last(v2)]
+    // } 
 
     
    
