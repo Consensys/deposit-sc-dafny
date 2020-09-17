@@ -121,13 +121,13 @@ module RSiblings {
 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
+        requires hasLeavesIndexedFrom(r, index)
 
-        /**  all leaves after index k leaf are zero. */
+        /**  all leaves after index k leaf have default value. */
         requires k < |leavesIn(r)|
         requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == d
 
         /** p is the path to k leaf in r. */
-        requires hasLeavesIndexedFrom(r, index)
         requires 1 <= |p| == height(r)
         requires bitListToNat(p) == k 
 
@@ -137,11 +137,29 @@ module RSiblings {
         decreases r 
     {
         reveal_siblingValueAt();
-        if height(r) == 0 {
-            //  Although this case is not allowed by the pre conditions as height(r) >= 1,
-            //  we can prove the property for it and the inductive case extends to 
-            //  height(r) >= 1.
-            //  Thanks Dafny
+        if height(r) == 1 {
+            match r 
+                case Node(_, lc, rc) => 
+                    assert(|p| == 1);
+                    //  We have to prove the property for i == 0
+                    if (p[0] == 0) {
+                        //  i == 0, first(p) == 0, the sibling is the rc.
+                        //  and k == 0 so rc.v == d
+                        assert(k == 0);
+                        calc == {
+                            siblingAt(take(p, i + 1), r).v;
+                            siblingAt(take(p, 0 + 1), r).v;
+                            siblingAt([0], r).v;
+                            calc == {
+                                [] + [1];
+                                [1];
+                            }
+                            nodeAt([1], r).v;
+                            leavesIn(r)[1].v;
+                            d;
+                            defaultValue(f, d, height(r) - 1);
+                        }
+                    }
         } else if p[i] == 0 {
             //  |p| >= 1, induction on left and right child
             //  Prove pre-conditions hold for them
