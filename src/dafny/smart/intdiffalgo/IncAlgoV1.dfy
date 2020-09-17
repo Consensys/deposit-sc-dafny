@@ -221,45 +221,43 @@ module IncAlgoV1 {
      *  @param  valOnPAt    The values of the nodes on the path p.
      *  @param  f           The binary operation to compute.
      */
-    function computeRootPathDiffAndLeftSiblingsUpOpt(
-        p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) : (int, seq<int>)
-        requires |p| == |valOnLeftAt| == |valOnPAt|
+    function computeRootAndLeftSiblingsUpOpt<T>(
+        p : seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T, valOnP: seq<T>) : (T, seq<T>)
+        requires |p| == |left| == |right| == |valOnP|
         requires |p| >= 1
 
         /** Optimised computes same result as non-optimised. */
-        // ensures 
-        //     computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt)
-        //     == 
-        //     computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt)
+        ensures 
+            computeRootAndLeftSiblingsUp(p, left, right, f, seed, valOnP)
+            == 
+            computeRootAndLeftSiblingsUpOpt(p, left, right, f, seed, valOnP)
 
         decreases p
     {
-    //  if |p| == 1 then
-    //     var r := computeRootPathDiff(p, valOnLeftAt, seed);
-    //     (r, if first(p) == 0 then valOnPAt else valOnLeftAt) 
-    // else 
-    //     if last(p) == 0 then
-    //         //  Inline the proof that optimised computes same as non optimised
-    //         //  Compute resuklt with non-optimised
-    //         ghost var r1 := computeRootPathDiffAndLeftSiblingsUp(
-    //                 init(p), init(valOnLeftAt),  diff(seed, 0), init(valOnPAt));
+     if |p| == 1 then
+        var r := computeRootLeftRightUp(p, left, right, f, seed);
+        (r, if first(p) == 0 then valOnP else left) 
+    else 
+        if last(p) == 0 then
+            //  Inline the proof that optimised computes same as non optimised
+            //  Compute resuklt with non-optimised
+            ghost var r1 := computeRootAndLeftSiblingsUp(
+                    init(p), init(left), init(right), f,  f(seed, last(right)), init(valOnP));
             
-    //         //  This is the optimisation: we compute RootPathDiff only
-    //         var r := computeRootPathDiffUp(init(p), init(valOnLeftAt),  diff(seed, 0));
-    //         //  Prove that r1.0 == r
-    //         calc == {
-    //             r1.0;
-    //             {  computeRootAndSiblingsIsCorrect(init(p),  init(valOnLeftAt),  diff(seed, 0),
-    //                  init(valOnPAt)) ; }
-    //             computeRootPathDiffUp(init(p),  init(valOnLeftAt),  diff(seed, 0));
-    //             r;
-    //         }
-    //         (r, init(valOnLeftAt) + [last(valOnPAt)])
-    //     else      
-    //         var r :=  computeRootPathDiffAndLeftSiblingsUp(
-    //                 init(p), init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt));
-    //                 (r.0, r.1 + [last(valOnLeftAt)])
-        (0, [])
+            //  This is the optimisation: we compute RootPathDiff only
+            var r := computeRootLeftRightUp(init(p), init(left), init(right), f,  f(seed, last(right)));
+            //  Prove that r1.0 == r
+            calc == {
+                r1.0;
+                {  computeRootAndSiblingsIsCorrect(init(p),  init(left), init(right), f,  f(seed, last(right)),
+                     init(valOnP)) ; }
+                computeRootLeftRightUp(init(p),  init(left), init(right), f,  f(seed, last(right)));
+                r;
+            }
+            (r, init(left) + [last(valOnP)])
+        else      
+            var r :=  computeRootAndLeftSiblingsUpOpt(
+                    init(p), init(left), init(right), f, f(last(left), seed), init(valOnP));
+                    (r.0, r.1 + [last(left)])
     }
-
  }
