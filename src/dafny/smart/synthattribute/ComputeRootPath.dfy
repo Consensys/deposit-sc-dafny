@@ -142,6 +142,7 @@ module ComputeRootPath {
     lemma shiftComputeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T) 
         requires |p| == |left| == |right|
         ensures computeAllUp(p, left, right, f, seed) == tail(computeAllUp2(p, left, right, f, seed))
+        ensures forall i :: 0 <= i < |p| ==>  computeAllUp(p, left, right, f, seed)[i] == computeAllUp2(p, left, right, f, seed)[i + 1]
     {
         if |p| == 0 {
             //  Thanks Dafny
@@ -269,6 +270,7 @@ module ComputeRootPath {
         ensures forall i :: 0 <= i <= |p| ==> 
             nodeAt(take(p, i), r).v == computeAll(p, left, right, f, seed)[i]
     {
+        
         forall (i : nat | 0 <= i <= |p|) 
                 ensures nodeAt(take(p, i), r).v == computeAll(p, left, right, f, seed)[i]
         {
