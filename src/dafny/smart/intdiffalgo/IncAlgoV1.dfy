@@ -89,59 +89,7 @@ module IncAlgoV1 {
             (r.0, r.1 + [last(left)])
     }
 
-    /**
-     *  This version switches to computeRootPathDiffUp only as soon as 
-     *  we encounter a path p such that last(p) == 0.
-     *
-     *  @param  p           The path.
-     *  @param  left        The values of the left siblings of nodes on path `p`.
-     *  @param  right       The values of the left siblings of nodes on path `p`.
-     *  @param  seed        The value at nodeAt(p).
-     *  @param  valOnPAt    The values of the nodes on the path p.
-     *  @param  f           The binary operation to compute.
-     */
-    function computeRootPathDiffAndLeftSiblingsUpOpt(
-        p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) : (int, seq<int>)
-        requires |p| == |valOnLeftAt| == |valOnPAt|
-        requires |p| >= 1
-
-        /** Optimised computes same result as non-optimised. */
-        // ensures 
-        //     computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt)
-        //     == 
-        //     computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt)
-
-        decreases p
-    {
-    //  if |p| == 1 then
-    //     var r := computeRootPathDiff(p, valOnLeftAt, seed);
-    //     (r, if first(p) == 0 then valOnPAt else valOnLeftAt) 
-    // else 
-    //     if last(p) == 0 then
-    //         //  Inline the proof that optimised computes same as non optimised
-    //         //  Compute resuklt with non-optimised
-    //         ghost var r1 := computeRootPathDiffAndLeftSiblingsUp(
-    //                 init(p), init(valOnLeftAt),  diff(seed, 0), init(valOnPAt));
-            
-    //         //  This is the optimisation: we compute RootPathDiff only
-    //         var r := computeRootPathDiffUp(init(p), init(valOnLeftAt),  diff(seed, 0));
-    //         //  Prove that r1.0 == r
-    //         calc == {
-    //             r1.0;
-    //             {  computeRootAndSiblingsIsCorrect(init(p),  init(valOnLeftAt),  diff(seed, 0),
-    //                  init(valOnPAt)) ; }
-    //             computeRootPathDiffUp(init(p),  init(valOnLeftAt),  diff(seed, 0));
-    //             r;
-    //         }
-    //         (r, init(valOnLeftAt) + [last(valOnPAt)])
-    //     else      
-    //         var r :=  computeRootPathDiffAndLeftSiblingsUp(
-    //                 init(p), init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt));
-    //                 (r.0, r.1 + [last(valOnLeftAt)])
-        (0, [])
-    }
-
-    
+    //  Correctness proofs.
 
     /**
      *  For path of size >= 2, computeRootPathDiffAndLeftSiblingsUp and computeRootLeftRightUp
@@ -193,53 +141,125 @@ module IncAlgoV1 {
     }
 
     /** 
-     *  Add requirements on |p| and values of b and v1 in computeRootPathDiffAndLeftSiblingsUp
+     *  Correctness proof in a tree.
+     *  
+     *  @param  p           The path.
+     *  @param  r           A complete tree.
+     *  @param  left        The values of the left siblings of nodes on path `p` in `r`.
+     *  @param  right       The values of the right siblings of nodes on path `p` in `r`.
+     *  @param  valOnPAt    The values of the nodes on the path p.
+     *  @param  f           The binary operation to compute.
+     *  @param  seed        The value at nodeAt(p) (leaf).
+     *  @param  d           The default value for type `T`.
+     *  @param  k           The index of a leaf (not last) in `r`.
      */
-    lemma {:induction p} computeRootPathDiffAndLeftSiblingsUpInATree(p: seq<bit>, r :  Tree<int>, v1 : seq<int>, v2 : seq<int>, seed : int, k : nat)
+    lemma {:induction p} computeRootPathDiffAndLeftSiblingsUpInATree<T>(
+            p: seq<bit>, r :  Tree<T>, left: seq<T>, right: seq<T>, valOnP : seq<T>, f : (T, T) -> T, seed : T, d : T, k : nat)
 
         requires isCompleteTree(r)       
-        /** `r` is decorated with attribute `f`. */
-        // requires isDecoratedWith(diff, r)
+        requires isDecoratedWith(f, r)
+        requires hasLeavesIndexedFrom(r, 0)
 
         requires k < |leavesIn(r)|
-        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == d
+        requires leavesIn(r)[k].v == seed
 
         /** Path to k-th leaf. */
-        requires hasLeavesIndexedFrom(r, 0)
         requires 1 <= |p| == height(r)   
-        requires nodeAt(p, r) == leavesIn(r)[k]
-        requires seed == nodeAt(p,r).v 
+        requires bitListToNat(p) == k 
+        // nodeAt(p, r) == leavesIn(r)[k]
+        // requires seed == nodeAt(p,r).v 
 
         /** Path is not to the last leaf. */
         requires exists i :: 0 <= i < |p| && p[i] == 0
-        requires |v1| == |v2| == |p|
+        requires |left| == |right| == |valOnP| == |p|
+
+        requires forall i :: 0 <= i < |p| ==> valOnP[i] == nodeAt(take(p, i + 1),r).v 
+
+        /** Left and right contain values of left and siblings of `p` in `r`. */
         requires forall i :: 0 <= i < |p| ==>
-            v1[i] == nodeAt(take(p, i + 1),r).v 
-        requires forall i :: 0 <= i < |p| ==>
-            (p[i] == 1 && v2[i] == siblingAt(take(p, i + 1),r).v)
+            (p[i] == 1 && left[i] == siblingAt(take(p, i + 1),r).v)
             || 
-            (p[i] == 0 && v2[i] == 0)
+            (p[i] == 0 && right[i] == siblingAt(take(p, i + 1),r).v)
 
         /** Non-optimsied version is correct. */
-        // ensures computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 == r.v
-        // ensures computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).1 
-        //                                             == computeLeftSiblingOnNextPath(p, v1, v2)
+        ensures computeRootAndLeftSiblingsUp(p, left, right, f, seed, valOnP).0 == r.v
+        ensures computeRootAndLeftSiblingsUp(p, left, right, f, seed, valOnP).1 
+                                                    == computeLeftSiblingOnNextPath(p, valOnP, left)
 
         /** Optimsied is correct as they compute the same result. */
         // ensures computeRootPathDiffAndLeftSiblingsUpOpt(p, v2, seed, v1).0 == r.v
         // ensures computeRootPathDiffAndLeftSiblingsUpOpt(p, v2, seed, v1).1 
         //                                             == computeLeftSiblingOnNextPath(p, v1, v2)
     {
-        // calc == {
-        //     computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0 ;
-        //     { computeRootAndSiblingsIsCorrect(p, v2, seed, v1); }
-        //      computeRootPathDiffUp(p, v2, seed) ;
-        //     { computeUpEqualsComputeDown(p, v2, seed); }
-        //     computeRootPathDiff(p, v2, seed) ; 
-        //     computeRootPathDiff(p, v2, leavesIn(r)[k].v);
-        //     { computeOnPathYieldsRootValueDiff(p, r, v2, k) ; }
-        //     r.v;  
-        // }
+        //  Prove that seed == nodeAt(p, r).v
+        calc == {
+            nodeAt(p, r).v;
+            { leafAtPathIsIntValueOfPath(p, r, k, 0) ; }
+            leavesIn(r)[k].v;
+            seed;
+        }
+        calc == {
+            computeRootAndLeftSiblingsUp(p, left, right, f, seed, valOnP).0 ;
+            { computeRootAndSiblingsIsCorrect(p, left, right, f, seed, valOnP); }
+            computeRootLeftRightUp(p, left, right, f, seed) ;
+            { computeLeftRightUpEqualsComputeLeftRight(p, left, right, f, seed); }
+            computeRootLeftRight(p, left, right, f, seed) ; 
+            { computeRootLeftRightIsCorrectForTree(p, r, left, right, f, seed) ; }
+            r.v;  
+        }
+    }
+
+     /**
+     *  This version switches to computeRootPathDiffUp only as soon as 
+     *  we encounter a path p such that last(p) == 0.
+     *
+     *  @param  p           The path.
+     *  @param  left        The values of the left siblings of nodes on path `p`.
+     *  @param  right       The values of the left siblings of nodes on path `p`.
+     *  @param  seed        The value at nodeAt(p).
+     *  @param  valOnPAt    The values of the nodes on the path p.
+     *  @param  f           The binary operation to compute.
+     */
+    function computeRootPathDiffAndLeftSiblingsUpOpt(
+        p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>) : (int, seq<int>)
+        requires |p| == |valOnLeftAt| == |valOnPAt|
+        requires |p| >= 1
+
+        /** Optimised computes same result as non-optimised. */
+        // ensures 
+        //     computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt)
+        //     == 
+        //     computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt)
+
+        decreases p
+    {
+    //  if |p| == 1 then
+    //     var r := computeRootPathDiff(p, valOnLeftAt, seed);
+    //     (r, if first(p) == 0 then valOnPAt else valOnLeftAt) 
+    // else 
+    //     if last(p) == 0 then
+    //         //  Inline the proof that optimised computes same as non optimised
+    //         //  Compute resuklt with non-optimised
+    //         ghost var r1 := computeRootPathDiffAndLeftSiblingsUp(
+    //                 init(p), init(valOnLeftAt),  diff(seed, 0), init(valOnPAt));
+            
+    //         //  This is the optimisation: we compute RootPathDiff only
+    //         var r := computeRootPathDiffUp(init(p), init(valOnLeftAt),  diff(seed, 0));
+    //         //  Prove that r1.0 == r
+    //         calc == {
+    //             r1.0;
+    //             {  computeRootAndSiblingsIsCorrect(init(p),  init(valOnLeftAt),  diff(seed, 0),
+    //                  init(valOnPAt)) ; }
+    //             computeRootPathDiffUp(init(p),  init(valOnLeftAt),  diff(seed, 0));
+    //             r;
+    //         }
+    //         (r, init(valOnLeftAt) + [last(valOnPAt)])
+    //     else      
+    //         var r :=  computeRootPathDiffAndLeftSiblingsUp(
+    //                 init(p), init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt));
+    //                 (r.0, r.1 + [last(valOnLeftAt)])
+        (0, [])
     }
 
  }
