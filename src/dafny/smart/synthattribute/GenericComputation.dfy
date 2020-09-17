@@ -299,6 +299,6 @@ module GenericComputation {
         //  for b == zipCond(p, right, left) we can use the lemma `computeOnPathYieldsRootValue`
         var b := zipCond(p, right, left);
         computeOnPathYieldsRootValue(p, r, b, f, seed);
-    }
+    }    
 
  }
