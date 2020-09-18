@@ -12,247 +12,128 @@
  * under the License.
  */
  
-include "DiffTree.dfy"
 
-include "IncAlgoV1.dfy"
+include "MainAlgorithm.dfy"
 include "../trees/CompleteTrees.dfy"
 include "../synthattribute/ComputeRootPath.dfy"
 include "../synthattribute/GenericComputation.dfy"
 include "../helpers/Helpers.dfy"
-include "../synthattribute/LeftSiblings.dfy"
-include "../MerkleTrees.dfy"
 include "../paths/NextPathInCompleteTreesLemmas.dfy"
 include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
-module IncAlgoV2 {
+/**
+ *  Optimal algorithm to compute concurrenly root value and left siblings 
+ *  on next path.
+ */
+module OptimalAlgorithm {
  
-    import opened DiffTree
-    import opened IncAlgoV1
+    import opened MainAlgorithm
     import opened CompleteTrees
     import opened ComputeRootPath
     import opened GenericComputation
     import opened Helpers
-    import opened MerkleTrees
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees
 
+    ///////////////////////////////////////////////////////////////////////////
+    //  Main algorithm
+    ///////////////////////////////////////////////////////////////////////////
 
     /**
-     *  Compute the root value and the left siblings concurrently.
-     *  The fact that this version and the non-optimised (V1)
-     *  computeRootPathDiffAndLeftSiblingsUp computes the same result is
-     *  provided by lemma v1Equalsv2.
+     *  This version switches to computeRootPathDiffUp only as soon as 
+     *  we encounter a path p such that last(p) == 0.
+     *
+     *  @param  p           The path.
+     *  @param  left        The values of the left siblings of nodes on path `p`.
+     *  @param  right       The values of the left siblings of nodes on path `p`.
+     *  @param  seed        The value at nodeAt(p).
+     *  @param  f           The binary operation to compute.
      */
-    function computeRootPathDiffAndLeftSiblingsUpv2(
-        p : seq<bit>, valOnLeftAt : seq<int>, seed: int) : (int, seq<int>)
-        requires |p| == |valOnLeftAt| 
+    function computeRootAndLeftSiblingsUpOpt<T>(
+        p : seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T) : (T, seq<T>)
+        requires |p| == |left| == |right|
         requires |p| >= 1
-       
+
+        /** Optimised computes same result as non-optimised. */
+        ensures 
+            computeRootAndLeftSiblingsUp(p, left, right, f, seed)
+            == 
+            computeRootAndLeftSiblingsUpOpt(p, left, right, f, seed)
+
         decreases p
     {
      if |p| == 1 then
-        var r := computeRootPathDiff(p, valOnLeftAt, seed);
-        (r, if first(p) == 0 then [seed] else valOnLeftAt) 
+        var r := computeRootLeftRightUp(p, left, right, f, seed);
+        (r, if first(p) == 0 then [seed] else left) 
     else 
         if last(p) == 0 then
-            //  Optimise and compute root path only as left sibling unchanged upwards.
-            (
-                computeRootPathDiffUp( init(p), init(valOnLeftAt), diff(seed, 0)), 
-                init(valOnLeftAt) + [seed]
-            )
+            //  This is the optimisation: we switch to computing root value only and not left siblings.
+            //  From this point upwards `p` and `nextPath(p)` are the same and have same left siblings.
+            var x := computeRootLeftRightUp(init(p), init(left), init(right), f,  f(seed, last(right)));
+            (x, init(left) + [seed])
         else      
-            var r :=  computeRootPathDiffAndLeftSiblingsUpv2(
-                    init(p), 
-                    init(valOnLeftAt),  
-                    diff(last(valOnLeftAt), seed));
-            (r.0, r.1 + [last(valOnLeftAt)])
+            var r :=  computeRootAndLeftSiblingsUpOpt(
+                    init(p), init(left), init(right), f, f(last(left), seed));
+                    (r.0, r.1 + [last(left)])
     }
 
-    /**
-     *  Proof that version 2 is correct i.e computes correct value on root and
-     *  collect values of left siblings of next path.
-     */
-    lemma {:induction p, b, seed} computeRootAndSiblingsv2IsCorrect(p : seq<bit>, b : seq<int>, seed: int) 
-        requires |p| == |b| 
-        requires |p| >= 1
-        /** We prove the following property first: */
-        ensures computeRootPathDiffAndLeftSiblingsUpv2(p, b, seed).0 == computeRootPathDiffUp(p, b, seed) 
-        /** And with the post condition of computeRootPathDiffAndLeftSiblingsUpv2
-         *  it gives the following general result: if the returned value is (r, xs)
-         *  1. then r is the same as computeRootPathDiffUp
-         *  2. xs is the the same as the computeLeftSiblingOnNextPath(p)
-         */
-        ensures  computeRootPathDiffAndLeftSiblingsUpv2(p, b, seed) == 
-            (computeRootPathDiffUp(p, b, seed),
-            computeLeftSiblingOnNextPath(p, computeAllPathDiffUp(p, b, seed), b)
-            )
-        decreases p
-    {
-        //  pre-compute the values on each node of the path.
-        var nodeAt := computeAllPathDiffUp(p, b, seed);
-
-        //  use computeRootPathDiffAndLeftSiblingsUp is correct 
-        computeRootAndSiblingsIsCorrect(p, b, seed, nodeAt);
-
-        //  Use v1equalsv2
-        //  possible because nodeAt satisfies pre-condition
-        computeAllDiffUpPrefixes(p, b, seed);
-        v1Equalsv2(p, b, seed, nodeAt);
-    }
-
-    /**
-     *  Proof that computeRootPathDiffAndLeftSiblingsUpv2 is correct in a tree.
-     */
-    lemma {:induction p, r, v2, seed} computeRootPathDiffAndLeftSiblingsUpv2InATree(p: seq<bit>, r :  Tree<int>, v2 : seq<int>, seed : int, k : nat)
-
-        requires isCompleteTree(r)       
-        /** `r` is decorated with attribute `f`. */
-        requires isDecoratedWith(diff, r)
-
-        requires k < |leavesIn(r)|
-        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == 0
-
-        /** Path to k-th leaf. */
-        requires hasLeavesIndexedFrom(r, 0)
-        requires 1 <= |p| == height(r)    
-        requires nodeAt(p, r) == leavesIn(r)[k]
-        requires seed == nodeAt(p,r).v 
-
-        /** Path is not to the last leaf. */
-        requires exists i :: 0 <= i < |p| && p[i] == 0
-        requires |v2| == |p|
-
-        requires forall i :: 0 <= i < |p| ==>
-            (p[i] == 1 && v2[i] == siblingAt(take(p, i + 1),r).v)
-            || 
-            (p[i] == 0 && v2[i] == 0)
-
-        ensures computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).0 == r.v
-        ensures computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1 == 
-                                             computeLeftSiblingOnNextPath(p, computeAllPathDiffUp(p, v2, seed), v2)
-
-        ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
-                computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1[i] 
-                                        == siblingAt(take(nextPath(p), i + 1),r).v
-    {
-        var v1 := computeAllPathDiffUp(p, v2, seed);
-        //  Fisrt, establish pre-condition that computeAllPathDiffUp(p, v2, seed) == v1
-        //  is the same as the values of the nodes in the tree.
-        computeAllPathDiffUpInATree(p, r, v2, k, seed, 0);
-
-        //  Proof that .0 is r.v
-        calc == {
-            computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).0;
-            { v1Equalsv2subLemma(p, v2, seed, v1); }
-            computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).0;
-            { computeRootPathDiffAndLeftSiblingsUpInATree(p, r, v1, v2, seed, k); }
-            r.v;
-        }
-    
-        //  Proof of .1 is computeLeftSiblingOnNextPath(p, v1, v2)
-        computeAllDiffUpPrefixes(p, v2, seed);
-        calc == {
-            computeRootPathDiffAndLeftSiblingsUpv2(p, v2, seed).1;
-            { v1Equalsv2(p, v2, seed, v1); }
-            computeRootPathDiffAndLeftSiblingsUp(p, v2, seed, v1).1;
-            { computeRootPathDiffAndLeftSiblingsUpInATree(p, r, v1, v2, seed, k); }
-            computeLeftSiblingOnNextPath(p, v1, v2);
-        }
-
-        computeLeftSiblingOnNextPathIsCorrect(p, r, v1, v2);
-    }
+    ///////////////////////////////////////////////////////////////////////////
+    //  Main correctness proof.
+    ///////////////////////////////////////////////////////////////////////////   
 
     /** 
-     *  The values of the nodes on path p can be computed on-the-fly using V2 of the
-     *  algorithm (that does not need a pre-computation of the values of the nodes
-     *  on the path.)
+     *  Correctness proof in a tree.
+     *  
+     *  @param  p           The path.
+     *  @param  r           A complete tree.
+     *  @param  left        The values of the left siblings of nodes on path `p` in `r`.
+     *  @param  right       The values of the right siblings of nodes on path `p` in `r`.
+     *  @param  f           The binary operation to compute.
+     *  @param  seed        The value at nodeAt(p) (leaf).
+     *  @param  d           The default value for type `T`.
+     *  @param  k           The index of a leaf (not last) in `r`.
      */
-    lemma {:induction p} v1Equalsv2(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
-        requires |p| == |valOnLeftAt| ==  |valOnPAt|
-        requires |p| >= 1
-        requires forall i :: 0 <= i < |valOnPAt| ==> 
-            valOnPAt[i] == computeRootPathDiffUp(drop(p, i + 1), drop(valOnLeftAt, i + 1), seed) 
+    lemma {:induction p} computeRootPathDiffAndLeftSiblingsUpInATree<T>(
+            p: seq<bit>, r :  Tree<T>, left: seq<T>, right: seq<T>, f : (T, T) -> T, seed : T, d : T, k : nat)
 
-        ensures computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1 ==
-            computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt).1
+        requires isCompleteTree(r)       
+        requires isDecoratedWith(f, r)
+        requires hasLeavesIndexedFrom(r, 0)
 
-        decreases p
+        requires k < |leavesIn(r)| - 1
+        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == d
+        requires leavesIn(r)[k].v == seed
+
+        /** Path to k-th leaf. */
+        requires 1 <= |p| == height(r)   
+        requires bitListToNat(p) == k 
+
+        requires |left| == |right| == |p|
+
+         /** Left and right contains siblings left and right values.  */
+        requires forall i :: 0 <= i < |p| ==>
+            siblingAt(take(p, i + 1), r).v == 
+                if p[i] == 0 then 
+                    right[i]
+                else 
+                    left[i]
+
+        /** Path is not to the last leaf. */
+        ensures exists i :: 0 <= i < |p| && p[i] == 0
+
+        /** Non-optimsied version is correct. */
+        ensures computeRootAndLeftSiblingsUpOpt(p, left, right, f, seed).0 == r.v
+        ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
+                (computeRootAndLeftSiblingsUpOpt(p, left, right, f, seed).1)[i] == siblingAt(take(nextPath(p), i + 1),r).v
     {
-        if |p| == 1 {
-            //  Thanks Dafny.
-        } else {
-            if last(p) == 0 {
-                var a := computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed);
-                var b := computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt);
-
-                calc == {
-                    a.1;
-                    init(valOnLeftAt) + [seed];
-                    calc == {
-                        last(valOnPAt);
-                        computeRootPathDiffUp(drop(p, |p| + 1 - 1), drop(valOnLeftAt, |p| + 1 - 1), seed);
-                        computeRootPathDiffUp([], [], seed);
-                        seed;
-                    }
-                    b.1;
-                }
-            } else {
-                //  
-                var a := computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed);
-                var b := computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt);
-
-                //  Def of computeRootPathDiffAndLeftSiblingsUpv2 for p[|p| - 1] == 1
-                var a1 := computeRootPathDiffAndLeftSiblingsUpv2(
-                    init(p), 
-                    init(valOnLeftAt),  
-                    diff(last(valOnLeftAt), seed));
-                //  def of computeRootPathDiffAndLeftSiblingsUp for p[|p| - 1] == 1
-                var b1 := computeRootPathDiffAndLeftSiblingsUp(
-                    p[.. |p| - 1], init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt));
-                calc == {
-                    computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).1;
-                    a1.1 + [last(valOnLeftAt)];
-                }
-                calc == {
-                    computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).1;
-                    b1.1 + [last(valOnLeftAt)];
-                }
-                calc == {
-                    valOnPAt[|p| - 1];
-                    computeRootPathDiffUp(drop(p, |p| + 1 - 1), drop(valOnLeftAt, |p| + 1 - 1), seed);
-                    computeRootPathDiffUp([], [], seed);
-                    seed;
-                }
-                //  Establish pre-condition for use of inductive hypothesis on init(p)
-                prefixOfComputation(p, valOnLeftAt, seed, valOnPAt);
-                calc == {
-                    a1.1;
-                    { v1Equalsv2(init(p), init(valOnLeftAt), diff(last(valOnLeftAt), seed), init(valOnPAt)); } 
-                    b1.1;
-                }
-            }
-        }
+        //  follows from post conditions of computeRootAndLeftSiblingsUpOpt and correctness proof of computeRootAndLeftSiblingsUp
+        computeRootAndLeftSiblingsUpCorrectInATree(p, r, left, right, f, seed, d, k);
     }
-
-    /**
-     *  Sublemma used in v1equalsv2.
-     */
-    lemma v1Equalsv2subLemma(p : seq<bit>, valOnLeftAt : seq<int>, seed: int, valOnPAt: seq<int>)
-        requires |p| == |valOnLeftAt| ==  |valOnPAt|
-        requires |p| >= 1
-
-        /** v2 computes same resukt as optimised, ans optimised is same as non-optimised. */
-        ensures computeRootPathDiffAndLeftSiblingsUpOpt(p, valOnLeftAt, seed, valOnPAt).0 ==
-            computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).0
-        ensures computeRootPathDiffAndLeftSiblingsUp(p, valOnLeftAt, seed, valOnPAt).0 ==
-            computeRootPathDiffAndLeftSiblingsUpv2(p, valOnLeftAt, seed).0
-    {   //  Thanks Dafny.
-    }
-
+    
  }
