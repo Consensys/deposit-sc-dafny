@@ -42,7 +42,7 @@ module MainAlgorithm {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     *  Compute diff root and collect siblings of next path.
+     *  Compute root value and collect siblings of next path.
      *  
      *  @param  p           The path.
      *  @param  left        The values of the left siblings of nodes on path `p`.
