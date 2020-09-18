@@ -37,6 +37,10 @@ module IncAlgoV1 {
     import opened SeqHelpers
     import opened Trees
 
+    ///////////////////////////////////////////////////////////////////////////
+    //  Main algorithm
+    ///////////////////////////////////////////////////////////////////////////
+
     /**
      *  Compute diff root and collect siblings of next path.
      *  
@@ -84,8 +88,10 @@ module IncAlgoV1 {
             (r.0, r.1 + [last(left)])
     }
 
-    //  Correctness proofs.
-   
+    ///////////////////////////////////////////////////////////////////////////
+    //  Main correctness proof.
+    ///////////////////////////////////////////////////////////////////////////   
+    
     /** 
      *  Correctness proof in a tree.
      *  
@@ -147,61 +153,10 @@ module IncAlgoV1 {
             nodeAt(p, r);
             { leafAtPathIsIntValueOfPath(p, r, k, 0) ; }
             leavesIn(r)[k];
-            // seed;
         }
         computeRootLeftRightIsCorrectForTree(p, r, left, right, f, seed);
         
         computeLeftSiblingOnNextPathFromLeftRightIsCorrectInATree(p, r, left, right, f, seed, k);
     }
-
-     /**
-     *  This version switches to computeRootPathDiffUp only as soon as 
-     *  we encounter a path p such that last(p) == 0.
-     *
-     *  @param  p           The path.
-     *  @param  left        The values of the left siblings of nodes on path `p`.
-     *  @param  right       The values of the left siblings of nodes on path `p`.
-     *  @param  seed        The value at nodeAt(p).
-     *  @param  valOnPAt    The values of the nodes on the path p.
-     *  @param  f           The binary operation to compute.
-     */
-    // function computeRootAndLeftSiblingsUpOpt<T>(
-    //     p : seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T, valOnP: seq<T>) : (T, seq<T>)
-    //     requires |p| == |left| == |right| == |valOnP|
-    //     requires |p| >= 1
-
-    //     /** Optimised computes same result as non-optimised. */
-    //     ensures 
-    //         computeRootAndLeftSiblingsUp(p, left, right, f, seed, valOnP)
-    //         == 
-    //         computeRootAndLeftSiblingsUpOpt(p, left, right, f, seed, valOnP)
-
-    //     decreases p
-    // {
-    //  if |p| == 1 then
-    //     var r := computeRootLeftRightUp(p, left, right, f, seed);
-    //     (r, if first(p) == 0 then valOnP else left) 
-    // else 
-    //     if last(p) == 0 then
-    //         //  Inline the proof that optimised computes same as non optimised
-    //         //  Compute resuklt with non-optimised
-    //         ghost var r1 := computeRootAndLeftSiblingsUp(
-    //                 init(p), init(left), init(right), f,  f(seed, last(right)), init(valOnP));
-            
-    //         //  This is the optimisation: we compute RootPathDiff only
-    //         var r := computeRootLeftRightUp(init(p), init(left), init(right), f,  f(seed, last(right)));
-    //         //  Prove that r1.0 == r
-    //         calc == {
-    //             r1.0;
-    //             {  computeRootAndSiblingsIsCorrect(init(p),  init(left), init(right), f,  f(seed, last(right)),
-    //                  init(valOnP)) ; }
-    //             computeRootLeftRightUp(init(p),  init(left), init(right), f,  f(seed, last(right)));
-    //             r;
-    //         }
-    //         (r, init(left) + [last(valOnP)])
-    //     else      
-    //         var r :=  computeRootAndLeftSiblingsUpOpt(
-    //                 init(p), init(left), init(right), f, f(last(left), seed), init(valOnP));
-    //                 (r.0, r.1 + [last(left)])
-    // }
+ 
  }
