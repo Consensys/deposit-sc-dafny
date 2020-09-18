@@ -23,7 +23,7 @@ include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
 /**
- *  Provide an algorithm to compute root value and left siblings on next path concurrently.
+ *  Algorithm to compute root value and left siblings on next path concurrently.
  */
 module MainAlgorithm {
  
