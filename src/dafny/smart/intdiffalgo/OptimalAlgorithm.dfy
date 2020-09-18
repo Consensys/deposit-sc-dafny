@@ -15,8 +15,6 @@
 include "MainAlgorithm.dfy"
 include "../trees/CompleteTrees.dfy"
 include "../synthattribute/ComputeRootPath.dfy"
-include "../helpers/Helpers.dfy"
-include "../paths/PathInCompleteTrees.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
@@ -30,8 +28,6 @@ module OptimalAlgorithm {
     import opened MainAlgorithm
     import opened CompleteTrees
     import opened ComputeRootPath
-    import opened Helpers
-    import opened PathInCompleteTrees
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees
