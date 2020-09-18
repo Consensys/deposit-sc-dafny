@@ -22,6 +22,14 @@ include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
 
+/**
+ *  Provide algorithms to compute the value of the root of a tree.
+ *
+ *  1. `computeRootLeftRightUp` computes the value of root bottom up using seed, left and right.
+ *  2. `computeRootLeftRightUpIsCorrectForTree` shows that if left and right 
+ *      are values of siblings on path of a f-decorated tree, and seed the value at the leaf, then
+ *      `computeRootLeftRightUp` computes the value of the root of the tree.
+ */
 module ComputeRootPath {
  
     import opened DiffTree
@@ -33,6 +41,10 @@ module ComputeRootPath {
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees
+
+    ///////////////////////////////////////////////////////////////////////////
+    //  Main algorithm
+    ///////////////////////////////////////////////////////////////////////////
 
     /**  
      *  Compute the root value on a path bottom up.
@@ -57,6 +69,81 @@ module ComputeRootPath {
             )
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    //  Main correctness proof.
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     *  The value computed by computeRootLeftRightUp is the same as the value of the root
+     *  of the tree.
+     *
+     *  @param  p       A path.
+     *  @param  r       A tree.
+     *  @param  left    The value of `f` on siblings on path `p`.
+     *  @param  right   The value of `f` on siblings on path `p`.
+     *  @param  f       A binary operation.
+     *  @param  seed    A value.
+     */
+    lemma {:induction p, r} computeRootLeftRightUpIsCorrectForTree<T>(p : seq<bit>, r : Tree<T>, left : seq<T>, right: seq<T>, f : (T,T) -> T, seed: T) 
+
+        requires |p| == height(r) 
+        requires isCompleteTree(r)
+        requires isDecoratedWith(f, r)
+
+        requires seed == nodeAt(p, r).v
+        requires |right| == |left| == |p|
+
+        /** Left and right contains siblings left and right values.  */
+        requires forall i :: 0 <= i < |p| ==>
+            siblingAt(take(p, i + 1), r).v == 
+                if p[i] == 0 then 
+                    right[i]
+                else 
+                    left[i]
+          
+        ensures r.v == computeRootLeftRightUp(p, left, right, f, seed)
+
+    {
+        calc == {
+            computeRootLeftRightUp(p, left, right, f, seed);
+            { computeLeftRightUpEqualsComputeLeftRight(p, left, right, f, seed); }
+            computeRootLeftRight(p, left, right, f, seed);
+            { computeRootLeftRightIsCorrectForTree(p, r, left, right, f, seed); }
+            r.v;
+        }
+    }    
+
+    ///////////////////////////////////////////////////////////////////////////
+    //  Helper functions.
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     *  Collect all the values of attribute `f` computed on the path p using left, right and seed.
+     *
+     *  @param  p       A path.
+     *  @param  left    The value of `f` on each left sibling.
+     *  @param  right   The value of `f` on each right sibling.
+     *  @param  f       The binary operation to compute.
+     *  @param  seed    The value at the end of the path.
+     *  @returns        The values of `f` synthesised on each node of `p`.
+     *  @note           computeAll[0] is the value at the root equal to computeRootLeftRight
+     */
+    function computeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T) : seq<T>
+        requires |p| == |left| == |right|
+        ensures |computeAll(p, left, right, f, seed)| == |p| + 1
+        ensures computeAll(p, left, right, f, seed)[0] == computeRootLeftRight(p, left, right, f, seed)
+        decreases p
+    {
+        if |p| == 0 then
+            [seed] 
+        else 
+            var r := computeAll(tail(p), tail(left), tail(right), f, seed);
+            if first(p) == 0 then 
+                [ f(first(r), first(right))] + r
+            else 
+                [ f(first(left), first(r)) ] + r
+    }   
+
     /**
      *  Collect all the values on non-root node computed on the path p using left, right and seed.
      *
@@ -79,6 +166,10 @@ module ComputeRootPath {
             ) 
             + [seed]
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //  Helper lemmas.
+    ///////////////////////////////////////////////////////////////////////////
 
     /**
      *  Sub-lemma to split up computation of root on left/right sibings.
@@ -137,12 +228,22 @@ module ComputeRootPath {
     }
 
 
-    //  Properties of previous functions.
 
+    /**
+     *  Relation between computeAll, computeAllUp and computeAllUp1..
+     * 
+     *  @param  p       A path.
+     *  @param  left    The value of `f` on each left sibling.
+     *  @param  right   The value of `f` on each right sibling.
+     *  @param  f       The binary operation to compute.
+     *  @param  seed    The value at the end of the path.
+     */
     lemma shiftComputeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T) 
         requires |p| == |left| == |right|
         ensures computeAllUp(p, left, right, f, seed) == tail(computeAllUp2(p, left, right, f, seed))
         ensures forall i :: 0 <= i < |p| ==>  computeAllUp(p, left, right, f, seed)[i] == computeAllUp2(p, left, right, f, seed)[i + 1]
+    
+        decreases p 
     {
         if |p| == 0 {
             //  Thanks Dafny
@@ -152,9 +253,20 @@ module ComputeRootPath {
         }
     } 
 
+    /**
+     *  computeAll == computeAllUp2
+     * 
+     *  @param  p       A path.
+     *  @param  left    The value of `f` on each left sibling.
+     *  @param  right   The value of `f` on each right sibling.
+     *  @param  f       The binary operation to compute.
+     *  @param  seed    The value at the end of the path.
+     */
     lemma {:induction p, left, right} computeAllUpEqualsComputeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T)
         requires |p| == |left| == |right|
         ensures computeAllUp2(p, left, right, f, seed) == computeAll(p, left, right, f, seed)
+
+        decreases p 
     {
         if |p| == 0 {
             //  Thanks Dafny
@@ -185,6 +297,12 @@ module ComputeRootPath {
    
     /**
      *  Computing up or down yields same result.
+     *
+     *  @param  p       A path.
+     *  @param  left    The value of `f` on each left sibling.
+     *  @param  right   The value of `f` on each right sibling.
+     *  @param  f       The binary operation to compute.
+     *  @param  seed    The value at the end of the path.
      */
     lemma {:induction p, left, right, f} computeLeftRightUpEqualsComputeLeftRight<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f : (T, T) -> T, seed: T)
         requires |p| == |left| == |right|
@@ -222,6 +340,11 @@ module ComputeRootPath {
 
     /**
      *  Sub-lemma to split up computation of root on left/right sibings.
+     *  @param  p       A path.
+     *  @param  left    The value of `f` on each left sibling.
+     *  @param  right   The value of `f` on each right sibling.
+     *  @param  f       The binary operation to compute.
+     *  @param  seed    The value at the end of the path.
      */
     lemma {:induction p, left, right} simplifyComputeRootLeftRight<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f : (T, T) -> T, seed: T) 
         requires 1 <= |p| == |left| == |right|
@@ -247,6 +370,16 @@ module ComputeRootPath {
         }
     }
 
+    /**
+     *  The values computed by computeAll are the values on the nodes of the path.
+     *
+     *  @param  p       A path.
+     *  @param  r       A tree.
+     *  @param  left    The value of `f` on siblings on path `p`.
+     *  @param  right   The value of `f` on siblings on path `p`.
+     *  @param  f       A binary operation.
+     *  @param  seed    A value.
+     */
     lemma {:induction p, r, left, right} computeAllIsCorrectInATree<T>(p : seq<bit>, r : Tree<T>, left : seq<T>, right: seq<T>, f : (T, T) -> T, k : nat, seed: T, index : nat) 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
