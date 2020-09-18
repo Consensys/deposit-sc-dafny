@@ -55,7 +55,8 @@ module OptimalAlgorithm {
         requires |p| == |left| == |right|
         requires |p| >= 1
 
-        /** Optimised computes same result as non-optimised. */
+        /** Optimised computes same result as non-optimised and hence is correct by 
+            lemma `computeRootAndLeftSiblingsUpCorrectInATree`. */
         ensures 
             computeRootAndLeftSiblingsUp(p, left, right, f, seed)
             == 
@@ -78,57 +79,4 @@ module OptimalAlgorithm {
                     (r.0, r.1 + [last(left)])
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    //  Main correctness proof.
-    ///////////////////////////////////////////////////////////////////////////   
-
-    /** 
-     *  Correctness proof in a tree.
-     *  
-     *  @param  p           The path.
-     *  @param  r           A complete tree.
-     *  @param  left        The values of the left siblings of nodes on path `p` in `r`.
-     *  @param  right       The values of the right siblings of nodes on path `p` in `r`.
-     *  @param  f           The binary operation to compute.
-     *  @param  seed        The value at nodeAt(p) (leaf).
-     *  @param  d           The default value for type `T`.
-     *  @param  k           The index of a leaf (not last) in `r`.
-     */
-    lemma {:induction p} computeRootPathDiffAndLeftSiblingsUpInATree<T>(
-            p: seq<bit>, r :  Tree<T>, left: seq<T>, right: seq<T>, f : (T, T) -> T, seed : T, d : T, k : nat)
-
-        requires isCompleteTree(r)       
-        requires isDecoratedWith(f, r)
-        requires hasLeavesIndexedFrom(r, 0)
-
-        requires k < |leavesIn(r)| - 1
-        requires forall i :: k < i < |leavesIn(r)| ==> leavesIn(r)[i].v == d
-        requires leavesIn(r)[k].v == seed
-
-        /** Path to k-th leaf. */
-        requires 1 <= |p| == height(r)   
-        requires bitListToNat(p) == k 
-
-        requires |left| == |right| == |p|
-
-         /** Left and right contains siblings left and right values.  */
-        requires forall i :: 0 <= i < |p| ==>
-            siblingAt(take(p, i + 1), r).v == 
-                if p[i] == 0 then 
-                    right[i]
-                else 
-                    left[i]
-
-        /** Path is not to the last leaf. */
-        ensures exists i :: 0 <= i < |p| && p[i] == 0
-
-        /** Non-optimsied version is correct. */
-        ensures computeRootAndLeftSiblingsUpOpt(p, left, right, f, seed).0 == r.v
-        ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
-                (computeRootAndLeftSiblingsUpOpt(p, left, right, f, seed).1)[i] == siblingAt(take(nextPath(p), i + 1),r).v
-    {
-        //  follows from post conditions of computeRootAndLeftSiblingsUpOpt and correctness proof of computeRootAndLeftSiblingsUp
-        computeRootAndLeftSiblingsUpCorrectInATree(p, r, left, right, f, seed, d, k);
-    }
-    
  }
