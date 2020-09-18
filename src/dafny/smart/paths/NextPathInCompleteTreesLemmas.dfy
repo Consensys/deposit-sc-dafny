@@ -103,7 +103,7 @@ module NextPathInCompleteTreesLemmas {
         requires |left| == |right| == |p|
 
         ensures computeLeftSiblingOnNextPathFromLeftRight(p, left, right, f, seed)
-        == computeLeftSiblingOnNextPathBridgeV2(p, left, right, f, seed, computeAllUp(p, left, right, f, seed))
+            == computeLeftSiblingOnNextPath(p, computeAllUp(p, left, right, f, seed), left)
 
         decreases p
     {
@@ -213,77 +213,6 @@ module NextPathInCompleteTreesLemmas {
         //  and apply indexOfLeafisIntValueOfPath
         indexOfLeafisIntValueOfPath(nextPath(p), r, k + 1);
     }
-
-    /**
-     *  Compute the left siblings of nextPath.
-     *
-     *  @param  p   A path.
-     *  @param  left        The values of the left siblings of nodes on path `p`.
-     *  @param  right       The values of the right siblings of nodes on path `p`.
-     *  @param  f           The binary operation to compute.
-     *  @param  seed        The value at the end of the path.
-     *  @returns    The values of the nodes that are left siblings of nextPath(p).
-     */
-    function method computeLeftSiblingOnNextPathBridge<T>(
-        p: seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed : T, valOnP : seq<T>) : seq<T>
-        requires 1 <= |p| 
-        requires |left| == |right| == |valOnP| == |p|
-        requires valOnP == computeAllUp(p, left, right, f, seed)
-
-        ensures 
-            computeLeftSiblingOnNextPathBridge(p, left, right, f, seed, valOnP) 
-            == computeLeftSiblingOnNextPath(p, valOnP, left)
-
-        decreases p
-    {
-        if |p| == 1 then
-            assert(valOnP == [seed]);
-            if first(p) == 0 then valOnP else left 
-        else 
-            assert(|p| >= 2);
-            if last(p) == 0 then 
-                assert(last(valOnP) == seed);
-                init(left) + [last(valOnP)]
-            else 
-                assert(last(p) == 1);
-                computeLeftSiblingOnNextPathBridge(init(p), init(left), init(right), f, f(last(left), seed), init(valOnP)) + [last(left)]
-    } 
-
-    /**
-     *  Same version as before but using seed instead of last(valOnP).
-     *
-     *  @param  p   A path.
-     *  @param  left        The values of the left siblings of nodes on path `p`.
-     *  @param  right       The values of the right siblings of nodes on path `p`.
-     *  @param  f           The binary operation to compute.
-     *  @param  seed        The value at the end of the path.
-     *  @returns    The values of the nodes that are left siblings of nextPath(p).
-     */
-    function method computeLeftSiblingOnNextPathBridgeV2<T>(p: seq<bit>, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed : T, valOnP : seq<T>) : seq<T>
-        requires 1 <= |p| 
-        requires |left| == |right| == |valOnP| == |p|
-        requires valOnP == computeAllUp(p, left, right, f, seed)
-
-        ensures 
-            computeLeftSiblingOnNextPathBridgeV2(p, left, right, f, seed, valOnP) 
-           ==  computeLeftSiblingOnNextPathBridge(p, left, right, f, seed, valOnP) 
-
-        decreases p
-    {
-        if |p| == 1 then
-            assert(valOnP == [seed]);
-            if first(p) == 0 then [seed] else left 
-        else 
-            assert(|p| >= 2);
-            if last(p) == 0 then 
-                assert(last(valOnP) == seed);
-                init(left) + [seed]
-            else 
-                assert(last(p) == 1);
-                computeLeftSiblingOnNextPathBridgeV2(init(p), init(left), init(right), f, f(last(left), seed), init(valOnP)) + [last(left)]
-    } 
-
-   
 
     /**
      *  computeLeftSiblingOnNextPath returns values on left siblings of next path.
