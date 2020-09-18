@@ -25,7 +25,7 @@ include "../trees/Trees.dfy"
 /**
  *  Provide an algorithm to compute root value and left siblings on next path concurrently.
  */
-module IncAlgoV1 {
+module MainAlgorithm {
  
     import opened CompleteTrees
     import opened ComputeRootPath
@@ -104,7 +104,7 @@ module IncAlgoV1 {
      *  @param  d           The default value for type `T`.
      *  @param  k           The index of a leaf (not last) in `r`.
      */
-    lemma {:induction p} computeRootPathDiffAndLeftSiblingsUpInATree<T>(
+    lemma {:induction p} computeRootAndLeftSiblingsUpCorrectInATree<T>(
             p: seq<bit>, r :  Tree<T>, left: seq<T>, right: seq<T>, f : (T, T) -> T, seed : T, d : T, k : nat)
 
         requires isCompleteTree(r)       
