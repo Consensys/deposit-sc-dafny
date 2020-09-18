@@ -76,7 +76,7 @@ module OptimalAlgorithm {
         else      
             var r :=  computeRootAndLeftSiblingsUpOpt(
                     init(p), init(left), init(right), f, f(last(left), seed));
-                    (r.0, r.1 + [last(left)])
+            (r.0, r.1 + [last(left)])
     }
 
  }

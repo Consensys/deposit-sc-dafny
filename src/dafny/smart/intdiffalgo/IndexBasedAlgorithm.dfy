@@ -59,7 +59,6 @@ module IndexBasedAlgorithm {
 
         decreases h 
     {
-
         if h == 0 then
             (seed, []) 
         else 
@@ -165,7 +164,6 @@ module IndexBasedAlgorithm {
     //  Helper functions.
     ///////////////////////////////////////////////////////////////////////////
 
-
     /**
      *  This version switches to `computeRootLeftRightUpWithIndex` only as soon as 
      *  we encounter a path p such that last(p) == 0.
@@ -211,7 +209,5 @@ module IndexBasedAlgorithm {
                     h - 1, k / 2, init(left), init(right), f, f(last(left), seed));
                 (r.0, r.1 + [last(left)])
     }
-
-   
 
  }

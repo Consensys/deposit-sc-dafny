@@ -148,7 +148,7 @@ module MainAlgorithm {
         //   we have computeRootAndLeftSiblingsUp(p, left, right, f, seed).0 == computeRootLeftRightUp(p, left, right, f, seed)
         computeLeftRightUpEqualsComputeLeftRight(p, left, right, f, seed);
 
-       //  Prove that seed == nodeAt(p, r).v, ncessary to apply lemma computeRootLeftRightIsCorrectForTree
+        //  Prove that seed == nodeAt(p, r).v, ncessary to apply lemma computeRootLeftRightIsCorrectForTree
         calc == {
             nodeAt(p, r);
             { leafAtPathIsIntValueOfPath(p, r, k, 0) ; }
