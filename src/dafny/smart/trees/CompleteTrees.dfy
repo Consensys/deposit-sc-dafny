@@ -123,8 +123,6 @@ module CompleteTrees {
     {   //  Thanks Dafny
     }
 
-    
-
     /**
      *  Children of a node r in a complete tree of height >-= 2
      *  evenly partition leavesIn(r).
