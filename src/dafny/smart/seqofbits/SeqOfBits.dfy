@@ -205,6 +205,8 @@ module SeqOfBits {
     /**
      *  The number represented by nextPath(p) is the successor of the
      *  number represented by `p`.
+     *
+     *  @param  p   A path.
      */
     lemma {:induction p} nextPathIsSucc(p : seq<bit>)
         /** Path has at least one element. */
@@ -264,6 +266,216 @@ module SeqOfBits {
             }
         }
     } 
+
+    /**
+     *  If two paths denote the same the number, they are identical.
+     *  
+     *  @param  p    A path.
+     *  @param  p'   A path.
+     */
+    lemma sameNatSameBitList(p : seq<bit>, p' : seq<bit>)
+        requires 1 <= |p| == |p'| 
+        requires bitListToNat(p') == bitListToNat(p)
+        ensures p' == p
+    {
+        if |p| == 1 {
+            //  Thanks Dafny
+        } else {
+            //  Show that last(p) == last(p') 
+            calc == {
+                    bitListToNat(p); 
+                    { seqLemmas(p); }
+                    bitListToNat(init(p) + [last(p)]);
+                    { simplifyPrefixBitListToNat(init(p), last(p)); }
+                    2 *  bitListToNat(init(p)) + last(p) as nat;
+                }
+            assert(bitListToNat(p) % 2 == last(p) as nat % 2  );
+            calc == {
+                bitListToNat(p'); 
+                { seqLemmas(p'); }
+                bitListToNat(init(p') + [last(p')]);
+                { simplifyPrefixBitListToNat(init(p'), last(p')); }
+                2 *  bitListToNat(init(p')) + last(p') as nat;
+                }
+            assert(bitListToNat(p) % 2 == last(p') as nat % 2  );
+            assert(last(p') as nat % 2 == last(p) as nat % 2);
+            assert(last(p) == last(p'));
+
+            //  Now we can also prove that bitListToNat(init(p')) == bitListToNat(init(p))
+            assert(bitListToNat(init(p')) == bitListToNat(init(p)));
+
+            //  And apply sameNatSameBitList
+            calc == {
+                p;
+                { seqLemmas(p); }
+                init(p) + [last(p)];
+                { sameNatSameBitList(init(p), init(p')); }
+                init(p') + [last(p')];
+                { seqLemmas(p'); }
+                p';
+            }
+        }
+    }
+
+    /**
+     *  If two paths denote successive numbers, one is the succ of the other.
+     *  
+     *  @param  p    A path.
+     *  @param  p'   A path.
+     */
+    lemma succIsNextPath(p : seq<bit>, p' : seq<bit>)
+        /** Path has at least one element. */
+        requires 1 <= |p| == |p'| 
+        /** It is not a path that has no successors and must have a zero. */
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        requires bitListToNat(p') == bitListToNat(p) + 1
+        ensures p' == nextPath(p)
+        decreases p
+    {
+        if |p| == 1 {
+            //  Thanks Dafny
+        } else {
+            if last(p) == 0 {
+                // init(p) + [1]
+                // bitListToNat(p + [a]) == 2 * bitListToNat(p) + a as nat
+                calc == {
+                    nextPath(p);
+                    init(p) + [1];
+                }
+                //  Show that last(p) == 1
+                //  First bitListToNat(p) + 1 is odd.
+                calc == {
+                    bitListToNat(p) + 1; 
+                    { seqLemmas(p); }
+                    bitListToNat(init(p) + [last(p)]) + 1;
+                    // {} 
+                    bitListToNat(init(p) + [0]) + 1;
+                    { simplifyPrefixBitListToNat(init(p), 0); }
+                    2 *  bitListToNat(init(p)) + 0 as nat + 1;
+                    2 *  bitListToNat(init(p)) + 1;
+                }
+                assert( (bitListToNat(p) + 1) % 2 == 1);
+                //  Assume 
+                if last(p') == 0 {
+                    //  In this case we show that bitListToNat(p') is even
+                    calc == {
+                        bitListToNat(p') ;
+                        { seqLemmas(p'); }
+                        bitListToNat(init(p') + [last(p')]);
+                        { simplifyPrefixBitListToNat(init(p'), 0); }
+                        2 * bitListToNat(init(p')) + 0;
+                    }
+                    assert(bitListToNat(p') % 2 == 0);
+                    //  because bitListToNat(p') == bitListToNat(p) + 1
+                    //  it cannot be odd and even
+                    assert(false);
+                }
+                assert(last(p') == 1);
+                //  Now we need to show that init(p) == init(p')
+                //  First show that bitListToNat(init(p')) == bitListToNat(init(p))
+                calc == {
+                    bitListToNat(p) + 1;
+                    2 *  bitListToNat(init(p)) + 1;
+                }
+                calc == {
+                    2 *  bitListToNat(init(p)) + 1;
+                    bitListToNat(p) + 1;
+                    bitListToNat(p') ;
+                    { seqLemmas(p'); }
+                    bitListToNat(init(p') + [last(p')]);
+                    { simplifyPrefixBitListToNat(init(p'), 1); }
+                    2 * bitListToNat(init(p')) + 1;
+                }
+                assert(bitListToNat(init(p')) == bitListToNat(init(p)));
+                //  Then use sameNatSameBitList to conclude that init(p) == init(p')
+                calc == {
+                    nextPath(p);
+                    init(p) + [1];
+                    { sameNatSameBitList(init(p), init(p')) ; }
+                    init(p') + [1] ;
+                    init(p') + [last(p')];
+                    { seqLemmas(p'); }
+                    p';
+                }
+            } else {
+                assert(last(p) == 1);
+                //  last(p) is not zero, so there is a zero in prefix
+                pushExistsToInitPrefixIfNotLast(p);
+                assert(exists i :: 0 <= i < |init(p)|  && init(p)[i] == 0);
+
+                //  Show that last(p') == 0
+                //  First bitListToNat(p) + 1 is even.
+                calc == {
+                    bitListToNat(p) + 1; 
+                    { seqLemmas(p); }
+                    bitListToNat(init(p) + [last(p)]) + 1;
+                    // {} 
+                    bitListToNat(init(p) + [1]) + 1;
+                    { simplifyPrefixBitListToNat(init(p), 1); }
+                    2 *  bitListToNat(init(p)) + 1 as nat + 1;
+                    2* (bitListToNat(init(p)) + 1);
+                }
+                assert( (bitListToNat(p) + 1) % 2 == 0 );
+                //  Assume 
+                if last(p') == 1 {
+                    //  In this case we show that bitListToNat(p') is odd
+                    calc == {
+                        bitListToNat(p') ;
+                        { seqLemmas(p'); }
+                        bitListToNat(init(p') + [last(p')]);
+                        { simplifyPrefixBitListToNat(init(p'), 1); }
+                        2 * bitListToNat(init(p')) + 1;
+                    }
+                    assert(bitListToNat(p') % 2 == 1);
+                    //  because bitListToNat(p') == bitListToNat(p) + 1
+                    //  it cannot be odd and even
+                    assert(false);
+                }
+                assert(last(p') == 0);
+                //  Show that bitListToNat(init(p')) == bitListToNat(init(p)) + 1
+                calc == {
+                    2* (bitListToNat(init(p)) + 1);
+                    2 *  bitListToNat(init(p)) + 1 as nat + 1;
+                    bitListToNat(p) + 1;
+                    bitListToNat(p');
+                    { seqLemmas(p'); }
+                    bitListToNat(init(p') + [last(p')]);
+                    { simplifyPrefixBitListToNat(init(p'), 0); }
+                    2 * bitListToNat(init(p'));
+                }
+                //  Dividing by two implies: 
+                assert(bitListToNat(init(p')) == bitListToNat(init(p)) + 1);
+                calc == {
+                    nextPath(p);
+                    nextPath(init(p)) + [0];
+                    //  Induction on init(p), init(p') : init(p') == nextPath(init(p))
+                    { succIsNextPath(init(p), init(p')); }
+                    init(p') + [0];
+                    init(p') + [last(p')];
+                    p';
+                }
+            }
+        }
+    }
+
+     /**
+     *  A path is the next path of another iff they denote successive numbers.
+     *  
+     *  @param  p    A path.
+     *  @param  p'   A path.
+     */
+    lemma nextPathIffSucc(p : seq<bit>, p' : seq<bit>) 
+        requires 1 <= |p| == |p'|
+        requires exists i :: 0 <= i < |p| && p[i] == 0
+        ensures p' == nextPath(p) <==> bitListToNat(p') == bitListToNat(p) + 1
+    {
+        if p' == nextPath(p) {
+            nextPathIsSucc(p);
+        } else if bitListToNat(p') == bitListToNat(p) + 1 {
+            succIsNextPath(p, p');
+        }
+    } 
+
 
     /**
      *  if all bits are set,  bitListToNat(p) = 2^p - 1.
