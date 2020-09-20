@@ -78,6 +78,7 @@ module MerkleTrees {
         ensures height(buildMerkle(l, h, f, d)) == h
         ensures |leavesIn(buildMerkle(l, h, f, d))| == power2(h)  
         ensures isMerkle(buildMerkle(l, h, f, d), l, f, d)
+        ensures hasLeavesIndexedFrom(buildMerkle(l, h, f, d), 0)
 
     /**
      *  The |l| leftmost leaves of root are equal to l.
