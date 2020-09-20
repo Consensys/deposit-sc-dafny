@@ -88,7 +88,7 @@ module IndexBasedAlgorithm {
      *                  hint needed is that the pre-condition for the recursive call is satisfied.
      * 
      */
-    function computeRootLeftRightUpWithIndex<T>(h : nat, k : nat, left : seq<T>, right: seq<T>, f : (T, T) -> T, seed: T) : T
+    function method computeRootLeftRightUpWithIndex<T>(h : nat, k : nat, left : seq<T>, right: seq<T>, f : (T, T) -> T, seed: T) : T
         requires |left| == |right| == h
         requires k < power2(h)
 
