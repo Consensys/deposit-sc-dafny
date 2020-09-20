@@ -50,7 +50,7 @@ module RSiblings {
             f(x, x)
     }
 
-    function zeroes<T>(f: (T, T) -> T, d: T, h : nat) : seq<T>
+    function method zeroes<T>(f: (T, T) -> T, d: T, h : nat) : seq<T>
         decreases h 
         ensures |zeroes(f, d, h)| == h + 1
         ensures forall i :: 0 <= i < |zeroes(f, d, h)| ==> zeroes(f, d, h)[i] == defaultValue(f, d, h - i) 
