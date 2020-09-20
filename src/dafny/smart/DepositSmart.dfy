@@ -15,6 +15,8 @@
 include "./trees/CompleteTrees.dfy"
 include "./synthattribute/ComputeRootPath.dfy"
 include "./synthattribute/RightSiblings.dfy"
+include "./synthattribute/Siblings.dfy"
+include "./synthattribute/GenericComputation.dfy"
 include "./helpers/Helpers.dfy"
 include "./paths/PathInCompleteTrees.dfy"
 include "./paths/NextPathInCompleteTreesLemmas.dfy"
@@ -23,11 +25,14 @@ include "./helpers/SeqHelpers.dfy"
 include "./trees/Trees.dfy"
 include "./MerkleTrees.dfy"
 
+include "./intdiffalgo/IndexBasedAlgorithm.dfy"
+
 module DepositSmart {
 
     import opened CompleteTrees
     import opened ComputeRootPath
-    import opened RightSiblings
+    import opened RSiblings
+    import opened Siblings
     import opened Helpers
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
@@ -35,129 +40,21 @@ module DepositSmart {
     import opened SeqHelpers
     import opened Trees 
     import opened MerkleTrees
+    import opened GenericComputation
 
-    /**
-     *  
-     *  @param  p       A path.
-     *  @param  b       Values of nodes on left of p.
-     *  @param  seed    The new value for the leaf at p.
-     */
-    // lemma {:induction p, b, seed} computeRootAndUpdateStateCommutes(p: seq<bit>, b : seq<int>, seed : int)
-    //     requires 1 <= |p| == |b|
-    //     ensures 
-    //         var v1 := computeAllPathDiffUp(p, b, seed);
-    //         var b' := computeLeftSiblingOnNextPathDep(p, b, seed);
-    //             computeRootPathDiffUp(p, b', seed)
-    //             == computeRootPathDiffUp(p, b, seed)
-    // {   //  Thanks Dafny
-    // }
-
-    /**
-     *  Compute the left siblings of nextPath from current values on left sibling.
-     *
-     *  @param  p       A path.
-     *  @param  v2      The values of the nodes that are left siblings of nodes on the path.
-     *  @param  seed    The value added to the leaf of the current path.
-     *  @returns        The values of the nodes that are left siblings of nextPath(p).
-     */
-    // function method computeLeftSiblingOnNextPathDep(p: seq<bit>, v2 : seq<int>, seed: int) : seq<int>
-    //     requires 1 <= |p| 
-    //     requires |v2| == |p|
-    //     ensures computeLeftSiblingOnNextPathDep(p, v2, seed) ==
-    //         var v1 := computeAllPathDiffUp(p, v2, seed);
-    //         computeLeftSiblingOnNextPath(p, v1, v2)
-
-    //     decreases p
-    // {
-    //     if |p| == 1 then
-    //         if first(p) == 0 then [seed] else v2 
-    //     else 
-    //         assert(|p| >= 2);
-    //         if last(p) == 0 then 
-    //             init(v2) + [diff(seed, 0)]
-    //         else 
-    //             assert(last(p) == 1);
-    //             computeLeftSiblingOnNextPathDep(init(p), init(v2), diff(last(v2), seed)) + [last(v2)]
-    // } 
-
-    /**
-     *  Compute the left siblings of nextPath from current values on left sibling.
-     *  Same version as before but mixing in k anf h.
-     *
-     *  @param  p       A path.
-     *  @param  v2      The values of the nodes that are left siblings of nodes on the path.
-     *  @param  seed    The value added to the leaf of the current path.
-     *  @param  h       Size of p.
-     *  @param  k       The number represented by p on h bits.
-     *  @returns        The values of the nodes that are left siblings of nextPath(p).
-     */
-    // function method computeLeftSiblingOnNextPathBridge(h : nat, k : nat, p: seq<bit>, v2 : seq<int>, seed: int) : seq<int>
-    //     requires 1 <= |v2| == |p| == h
-
-    //     requires k < power2(h)
-    //     requires p == natToBitList2(k, h)
-
-    //     ensures computeLeftSiblingOnNextPathBridge(h, k, p, v2, seed) ==
-    //         var v1 := computeAllPathDiffUp(p, v2, seed);
-    //         computeLeftSiblingOnNextPath(p, v1, v2)
-
-    //     decreases p
-    // {
-    //     if |p| == 1 then
-    //         if first(p) == 0 then [seed] else v2 
-    //     else 
-    //         assert(|p| >= 2);
-    //         assert(|p| == h);
-    //         if last(p) == 0 then 
-    //             assert(k % 2 == 0);
-    //             init(v2) + [diff(seed, 0)]
-    //         else 
-    //             assert(last(p) == 1);
-    //             assert(k % 2 == 1);
-    //             computeLeftSiblingOnNextPathBridge(h - 1, k / 2, init(p), init(v2), diff(last(v2), seed)) + [last(v2)]
-    // } 
-
-    //  Algorithms using k and h instead of the path p.
-
-    /**
-     *  Same version as before but without p.
-     */
-    // function method computeLeftSiblingOnNextPathFinal(h : nat, k : nat, v2 : seq<int>, seed: int) : seq<int>
-    //     requires 1 <= |v2| == h
-
-    //     requires k < power2(h)
-
-    //     ensures 
-    //         var p := natToBitList2(k, h );
-    //         var v1 := computeAllPathDiffUp(p, v2, seed);
-    //             computeLeftSiblingOnNextPathBridge(h, k, p, v2, seed) 
-    //             ==
-    //             computeLeftSiblingOnNextPathFinal(h, k, v2, seed)
-    //             ==
-    //             computeLeftSiblingOnNextPath(p, v1, v2)
-
-    //     decreases h
-    // {
-    //     if h == 1 then
-    //         if k % 2 == 0 then [seed] else v2 
-    //     else 
-    //         if k % 2 == 0 then 
-    //             init(v2) + [diff(seed, 0)]
-    //         else 
-    //             computeLeftSiblingOnNextPathFinal(h - 1, k / 2, init(v2), diff(last(v2), seed)) + [last(v2)]
-    // } 
+    import opened IndexBasedAlgorithm
     
     /**
      *  The functional version of the deposit smart contract.
      */
     class Deposit<T> {
 
+        //  State Variables.
+
         /** The default value for the leaves. */
         const d : T 
 
-        /**
-         *  The attribute function to synthesise.
-         */
+        /** The attribute function to synthesise. */
         const f : (T, T) -> T
 
         /** The height of the tree. */
@@ -167,10 +64,9 @@ module DepositSmart {
         var branch : seq<T>
 
         /** The value sof the right siblings of path to leaf at index k. */
-        const zeroes : seq<T>
+        const zero_h : seq<T>
 
-        /** The number of values added to the list. Also the index of the next available leaf.
-         */
+        /** The number of values added to the list. Also the index of the next available leaf. */
         var count : nat 
 
         //  Ghost variables used for the correctness proof.
@@ -187,132 +83,151 @@ module DepositSmart {
         /** Path to current to the leaf of index count. */
         ghost var p : seq<bit>
 
-        /** The array branch as a sequence. */
-        // ghost var left : seq<int>
-
-        //  Properties to maintain
-
-        /** The list of values after count is default. */
-        predicate listIsValid() 
-            requires TREE_HEIGHT >= 1
-            requires |values| == power2(TREE_HEIGHT)
-            reads this
-        {
-            && forall k :: count <= k < |values| ==> values[k] == d
-        }
-
-        /** The tree t is the (Merkle) tree that corresponds to the list in values. */
-        predicate treeIsMerkle()
-            requires height(t) == TREE_HEIGHT
-            requires |values| == |leavesIn(t)|
-            reads this
-        {
-            isCompleteTree(t)
-            && isDecoratedWith(f, t)
-            && forall i :: 0 <= i < |values| ==> values[i] == leavesIn(t)[i].v    
-            && hasLeavesIndexedFrom(t, 0)
-        }
+        /** The values on the left siblings of current path. */
+        ghost var left : seq<T>
 
         /** Property to maintain. */
         predicate Valid()
             reads this
         {
-            //  Height
-            1 <= TREE_HEIGHT ==  height(t) == |branch| == |zeroes| == |p|
+            //  Height and sequences sizes
+            1 <= TREE_HEIGHT ==  height(t) == |branch| == |zero_h| == |left| == |p|
             //  tree is not full
             && count < power2(TREE_HEIGHT)
 
-            && |values| == power2(TREE_HEIGHT) == |leavesIn(t)|
+            && |values| <= power2(TREE_HEIGHT) == |leavesIn(t)|
 
-            //  zeroes is constant (@todo may remove this as declared const)
-            && (forall i :: 0 <= i < |zeroes| ==> zeroes[i] ==  defaultValue(f, d, TREE_HEIGHT - (i + 1)))
-            
-            //  all leaves beyond count are default values
-            && listIsValid()
-            //  t is the Merkle tree that corresponds to values
-            && treeIsMerkle()
+            //  t is the Merkle tree for the valuea added so far. 
+            && isMerkle(t, values, f, d)
+            //  The right siblings of the current path are all zeroes
+            && (forall i :: 0 <= i < |zero_h| && p[i] == 0 ==> 
+                    siblingValueAt(p, t, i + 1) == zero_h[i])
 
-            // && (r == t.v)
+            && (r == t.v)
+            //  Path is to current next free leaf.
             && bitListToNat(p) == count
-            && (forall i :: 0 <= i < |zeroes| && p[i] == 0 ==> 
-                    siblingAt(take(p, i + 1), t).v == zeroes[i])
+
+            //  Branch has values of left siblings of current path
+            && (forall i :: 0 <= i < |branch| && p[i] == 1 ==> 
+                    siblingValueAt(p, t, i + 1) == branch[i])
+
+            && (forall i :: 0 <= i < |left| && p[i] == 1 ==> 
+                    siblingValueAt(p, t, i + 1) == left[i])
         }
 
         /**
          *  Initialise the system, tree of size >= 1.
          */
-        constructor(h: nat, l : seq<T>, l' : seq<T>, tt: Tree<T>, default : T, fun : (T, T) -> T, z : seq<T>) 
+        constructor(h: nat, l : seq<T>, default : T, fun : (T, T) -> T) 
             requires h >= 1
-            requires |l| == power2(h) && forall i :: 0 <= i < |l| ==> l[i] == default
-            requires |l'| == h && forall i :: 0 <= i < |l'| ==> l'[i] == default
-            requires tt == buildMerkle(l, h, fun, default);
-            requires |z| == h && forall i :: 0 <= i < |z| ==> z[i] == defaultValue(fun, default, h - (i + 1))
+            requires |l| == h && forall i :: 0 <= i < |l| ==> l[i] == default
             ensures Valid()
         {
-            TREE_HEIGHT := h;
-            count := 0;
-            d := default;
-            f := fun;
-            //  Initialise array with zeros
-            // branch := new int[h](  (x: int) => 0 );
-            //  
-            branch := l';
+            //  State variables
 
-            zeroes := z; 
-            //  Initialise ghost variables
-            values := l;
+            TREE_HEIGHT, count, d, f := h, 0, default, fun;
+            branch, zero_h := l, zeroes(fun, default, h - 1);
 
+            //  Ghost variables
+
+            //  The initial tree is the Merkle tree for brancn (or l).
+            t := buildMerkle([], h, fun, default);
+            //  The values that have been added is initially empty.
+            values := [];
             //  possibly left could be left uninitialised
-            // left := l';
-            t := tt;
+            left := l;
+            //  Path to the first available leaf at index 0.
             p := natToBitList2(0, h);
             bitToNatToBitsIsIdentity(0, h);
+            valueIsZeroImpliesAllZeroes(natToBitList2(0, h));
 
-            //  Initially r == default()
+            rightSiblingsOfLastPathAreDefault(natToBitList2(0, h), buildMerkle([], h, fun, default), 0, fun, 0, default);
+            //  Initially r is value of f for all leaves equal to default.
             r := defaultValue(fun, default, h);
             //  Use lemma to prove that r == t.v
-            // allLeavesZeroImplyAllNodesZero(tt);
-            allLeavesDefaultImplyRootNodeDefault(tt, fun, default);
-            rightSiblingsOfLastPathAreDefault( natToBitList2(0, h), tt, 0, fun, 0, default, z);
-
+            allLeavesDefaultImplyRootNodeDefault(buildMerkle([], h, fun, default), fun, default);
         }
 
+        method get_deposit_root() returns (h_root: T) 
+            requires Valid();
+            ensures h_root == t.v 
+        {
+            h_root := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
+        }
         /**
          *  Deposit a value i.e update the state.
          */
-        method deposit(value : T) 
-            requires Valid()
-            requires count < power2(TREE_HEIGHT) - 1
+        // method deposit(value : T) 
+        //     requires Valid()
+        //     requires count < power2(TREE_HEIGHT) - 1
 
-            ensures Valid()
+        //     requires (forall i :: 0 <= i < |zeroes| && p[i] == 1 ==> 
+        //             siblingAt(take(p, i + 1), t).v == branch[i])
+
+        //     ensures Valid()
             
-            modifies this
+        //     modifies this
 
-        {
-            //   Update values
-            values := values[count := value];
-            //  Update tree
-            t := buildMerkle(values, TREE_HEIGHT, f, d);
-
-            //   update path 
-            //   as p is to non last leaf it must have a zero and nextPath 
-            //   can be computed
-            bitToNatToBitsIsIdentity(count, TREE_HEIGHT);
-            assert(bitListToNat(p) == count < power2(TREE_HEIGHT) - 1);
-            pathToNoLasthasZero(p);
-            nextPathIsSucc(p);
-            assert(bitListToNat(nextPath(p)) == bitListToNat(p) + 1 == count + 1);
-            p := nextPath(p);
-            count := count + 1;
-
-            //  p is still the path to leaf at index count
-            bitToNatToBitsIsIdentity(count, TREE_HEIGHT);
-            assert(bitListToNat(p) == count);
-
-            //  Prove that right siblings of new path are still zeroes
-            rightSiblingsOfLastPathAreDefault(p, t, count, f, 0, d, zeroes);
+        // {
+        //     //   Update values
+        //     values := values[count := value];
+        //     //  Update tree
+        //     t := buildMerkle(values, TREE_HEIGHT, f, d);
+        //     //  The trees old(t) and t have same leaves except possibly at count
+        //     assert(take(leavesIn(old(t)), count) == take(leavesIn(t), count));
+        //     assert(drop(leavesIn(old(t)), count + 1) == drop(leavesIn(t), count + 1));
             
-        }
+           
+
+        //     bitToNatToBitsIsIdentity(count, TREE_HEIGHT);
+        //     assert(bitListToNat(p) == count < power2(TREE_HEIGHT) - 1);
+
+        //     //  the trees old(t) and t have same left siblings
+        //     //  they have similar values upto count.
+        // // requires drop(leavesIn(r), k + 1) == drop(leavesIn(r'), k + 1)
+        // assert(isCompleteTree(t));
+        // assert(isCompleteTree(old(t)));
+        // assert(isDecoratedWith(f, t));
+        // assert(isDecoratedWith(f, old(t)));
+        // assert(height(t) == height(old(t)) >= 1);
+        // assert(hasLeavesIndexedFrom(t, 0));
+        // assert(hasLeavesIndexedFrom(old(t), 0));
+        // assert(1 <= |p| <= height(t));
+        // assert(count < |leavesIn(t)| == |leavesIn(old(t))| );
+        // leftSiblingsInEquivTrees2(p, old(t), t, count, f, 0);
+
+        // //  Show that value is nodeAt(p, t).v
+        // leafAtPathIsIntValueOfPath(p, t, count, 0);
+        // assert(nodeAt(p, t).v == leavesIn(t)[count].v == value);
+        // //  This proves that t has same siblings as old(t) for path p.
+        // computeRootLeftRightIsCorrectForTree(p, t, branch, zeroes, f, value);
+
+        //   //  compute root value
+        //     r := computeRootLeftRight(p, branch, zeroes, f, value);
+
+        // assert(t.v == r);
+
+        //     //   update path 
+        //     //   as p is to non last leaf it must have a zero and nextPath 
+        //     //   can be computed
+            
+        //     pathToNoLasthasZero(p);
+        //     nextPathIsSucc(p);
+        //     assert(bitListToNat(nextPath(p)) == bitListToNat(p) + 1 == count + 1);
+        //     p := nextPath(p);
+        //     count := count + 1;
+
+        //     //  p is still the path to leaf at index count
+        //     bitToNatToBitsIsIdentity(count, TREE_HEIGHT);
+        //     assert(bitListToNat(p) == count);
+
+        //     //  Prove that right siblings of new path are still zeroes
+        //     rightSiblingsOfLastPathAreDefault(p, t, count, f, 0, d, zeroes);
+
+        //     assert(t.v == r);
+
+            
+        // }
 
     }
 
