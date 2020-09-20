@@ -478,12 +478,22 @@ module SeqOfBits {
 
 
     /**
-     *  if all bits are set,  bitListToNat(p) = 2^p - 1.
+     *  If all bits are set,  bitListToNat(p) = 2^p - 1.
      */
     lemma {:induction p} valueOfSeqOfOnes(p : seq<bit>)
         requires |p| >= 1
         requires forall i :: 0 <= i < |p| ==> p[i] == 1
         ensures bitListToNat(p) == power2(|p|) - 1
+    {   //  Thanks Dafny
+    }
+
+    /**
+     *  If bitListToNat(p) == 0 then p has only zeroes.
+     */
+    lemma {:induction p} valueIsZeroImpliesAllZeroes(p : seq<bit>)
+        requires |p| >= 1
+        requires bitListToNat(p) == 0
+        ensures forall i :: 0 <= i < |p| ==> p[i] == 0
     {   //  Thanks Dafny
     }
 
