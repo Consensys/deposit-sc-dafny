@@ -129,7 +129,7 @@ module DepositSmart {
          *  
          *  @param  v   The new deposit amount.
          */
-        method deposit(v : int) 
+        method deposit_f(v : int) 
             requires Valid()
             requires count < power2(TREE_HEIGHT) - 1         
             ensures Valid()
@@ -191,6 +191,41 @@ module DepositSmart {
             );
         }   
 
+        method deposit(v : int) 
+            requires Valid()
+            requires count < power2(TREE_HEIGHT) - 1         
+            // ensures Valid()
+            modifies this 
+        {
+            var value := v;
+            var size : nat := count;
+            var i : nat := 0;
+            
+            //  bring in p that must have a zero and
+            //  this enables us to prove tht i < TREE_HEIGHT
+            while size % 2 == 1 
+                 //  no out of range in seqs:
+                // invariant i < TREE_HEIGHT
+                invariant 0 <= TREE_HEIGHT - i - 1 < TREE_HEIGHT == |branch|
+                invariant 0 <= size < power2(TREE_HEIGHT - i) - 1
+                invariant TREE_HEIGHT - i <= |p|
+                invariant size < power2(|take(p, TREE_HEIGHT - i)|)
+                invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, TREE_HEIGHT - i) 
+
+                decreases size 
+            {
+                //  Some help to verify the last invariant:
+                div2IsInit(size, take(p, TREE_HEIGHT - i));
+                assert(init(take(p, TREE_HEIGHT - i)) == take(p, TREE_HEIGHT - i - 1));
+
+                value := f(branch[TREE_HEIGHT - i - 1], value);
+                size := size / 2;
+                i := i + 1;
+            }
+            //  This is the important hidden property: TREE_HEIGHT - i - 1 is NEVER out of range. 
+            branch := branch[TREE_HEIGHT - i - 1 := value];
+        }
+
         /**
          *  The get_deposit_root() function.
          *
@@ -221,10 +256,7 @@ module DepositSmart {
             /** The result of get_deposit_root_() is the root value of the tree.  */
             ensures r == t.v
         {
-            //  Start with default value for r.
-            r := d;
-            var h := 0;
-            var size := count;
+           
                         
             //  Some help to prove that the main invariant holds on entry:
             assert(take(branch, TREE_HEIGHT) == branch);
@@ -232,6 +264,11 @@ module DepositSmart {
 
             //  Store the expected result in a ghost variable.
             ghost var e := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
+
+            //  Start with default value for r.
+            r := d;
+            var h := 0;
+            var size := count;
 
             while h < TREE_HEIGHT
                 //  no out of range in seqs:
