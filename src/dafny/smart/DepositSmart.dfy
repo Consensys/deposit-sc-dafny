@@ -90,11 +90,13 @@ module DepositSmart {
             //  zero_h is constant and equal to default values for each level of t.
             && zero_h == zeroes(f, d, TREE_HEIGHT - 1)
             //  Left and right siblings of `p` are given by branch and zero_h.
+            //  p[i] == b means the sibling is at 1 - b, i.e. if p[i] == 0 (resp. 1), 
+            //  sibling is at level i is the right (resp. left) child. 
             && (forall i :: 0 <= i < |p| ==> 
                 siblingValueAt(p, t, i + 1) == 
                     if p[i] == 0 then zero_h[i] else branch[i]
             )
-            //  `p` is the path to the next available slot at index `count`.
+            //  `p` is the path to the next available slot in the tree at index `count`.
             && p == natToBitList(count, TREE_HEIGHT)
         }
 
@@ -201,17 +203,19 @@ module DepositSmart {
             var size : nat := count;
             var i : nat := 0;
             
-            //  bring in p that must have a zero and
-            //  this enables us to prove tht i < TREE_HEIGHT
             while size % 2 == 1 
-                 //  no out of range in seqs:
-                // invariant i < TREE_HEIGHT
-                invariant 0 <= TREE_HEIGHT - i - 1 < TREE_HEIGHT == |branch|
+                invariant 0 <= TREE_HEIGHT - i - 1 
+                //  The next one is the important invariant that ensures
+                //  that the update of branch after the loop does not
+                //  result in a out of bounds error.
+                invariant TREE_HEIGHT - i - 1 < TREE_HEIGHT == |branch|
+                //  The sequel are helper invariants
                 invariant 0 <= size < power2(TREE_HEIGHT - i) - 1
                 invariant TREE_HEIGHT - i <= |p|
                 invariant size < power2(|take(p, TREE_HEIGHT - i)|)
                 invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, TREE_HEIGHT - i) 
 
+                //  Termination is easy as size decreases and must be zero.
                 decreases size 
             {
                 //  Some help to verify the last invariant:
@@ -222,7 +226,8 @@ module DepositSmart {
                 size := size / 2;
                 i := i + 1;
             }
-            //  This is the important hidden property: TREE_HEIGHT - i - 1 is NEVER out of range. 
+            //  This is the important hidden property: TREE_HEIGHT - i - 1 is NEVER 
+            //  out of range. 
             branch := branch[TREE_HEIGHT - i - 1 := value];
         }
 
