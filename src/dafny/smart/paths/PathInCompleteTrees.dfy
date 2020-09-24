@@ -441,7 +441,8 @@ module PathInCompleteTrees {
     {
         if (bitListToNat(p) == k) {
             leafAtPathIsIntValueOfPath(p, r, k, 0);
-        } else if ( nodeAt(p, r) == leavesIn(r)[k]) {
+        } 
+        if ( nodeAt(p, r) == leavesIn(r)[k]) {
             pathToIndexIsBinaryOfIndex(p, r, k, 0);
         }
     }
@@ -449,7 +450,7 @@ module PathInCompleteTrees {
     /**
      *  Same as above but with parametric index instead of zero.
      */
-    lemma {:induction p, r} indexOfLeafisIntValueOfPath2(p : seq<bit>, r :  Tree, k : nat, index: nat) 
+    lemma indexOfLeafisIntValueOfPath2(p : seq<bit>, r :  Tree, k : nat, index: nat) 
         requires isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, index)
         requires 1 <= |p| == height(r) 
@@ -458,7 +459,8 @@ module PathInCompleteTrees {
     {
         if (bitListToNat(p) == k) {
             leafAtPathIsIntValueOfPath(p, r, k, index);
-        } else if ( nodeAt(p, r) == leavesIn(r)[k]) {
+        } 
+        if ( nodeAt(p, r) == leavesIn(r)[k]) {
             pathToIndexIsBinaryOfIndex(p, r, k, index);
         }
     }
@@ -466,7 +468,7 @@ module PathInCompleteTrees {
     /**
      *  A path to a leaf of index < |leavesin{r)| -1 has a zero in it.
      */
-    lemma {:induction p, r} pathToLeafInInitHasZero(p: seq<bit>, r :  Tree, k : nat)
+    lemma  pathToLeafInInitHasZero(p: seq<bit>, r :  Tree, k : nat)
         requires |p| == height(r) 
         requires isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, 0)

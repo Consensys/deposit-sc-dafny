@@ -17,6 +17,7 @@ include "../trees/CompleteTrees.dfy"
 include "../synthattribute/ComputeRootPath.dfy"
 include "../helpers/Helpers.dfy"
 include "../paths/PathInCompleteTrees.dfy"
+include "../paths/NextPathInCompleteTreesLemmas.dfy"
 include "../seqofbits/SeqOfBits.dfy"
 include "../helpers/SeqHelpers.dfy"
 include "../trees/Trees.dfy"
@@ -32,6 +33,7 @@ module IndexBasedAlgorithm {
     import opened ComputeRootPath
     import opened Helpers
     import opened PathInCompleteTrees
+    import opened NextPathInCompleteTreesLemmas
     import opened SeqOfBits
     import opened SeqHelpers
     import opened Trees
@@ -208,6 +210,47 @@ module IndexBasedAlgorithm {
                 var r :=  computeRootAndLeftSiblingsWithIndex1(
                     h - 1, k / 2, init(left), init(right), f, f(last(left), seed));
                 (r.0, r.1 + [last(left)])
+    }
+
+     /**
+     *  Compute the left siblings on next path using index and base cas eis h == 0.
+     *
+     *  @param  h           Height of the tree.
+     *  @param  k           Index of leaf in the tree.
+     *  @param  left        The values of the left siblings of nodes on path `p`.
+     *  @param  right       The values of the left siblings of nodes on path `p`.
+     *  @param  seed        The value at nodeAt(p).
+     *  @param  f           The binary operation to compute.
+     *  @returns            The values of the left siblings on the next path.
+     *
+     */
+    function method computeLeftSiblingsOnNextpathWithIndex<T>(
+        h : nat, k : nat, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T) : seq<T>
+        requires |left| == |right| == h
+        requires k < power2(h) 
+
+        ensures h >= 1 ==>
+            computeLeftSiblingsOnNextpathWithIndex(h, k, left, right, f, seed)
+            == 
+            computeRootAndLeftSiblingsWithIndex(h, k, left, right, f, seed).1
+            == 
+            computeLeftSiblingOnNextPathFromLeftRight(natToBitList(k, h), left, right, f, seed)
+
+        decreases h 
+    {
+        if h == 0 then
+            []
+        else 
+            computeWithIndexFromZeroIsCorrect(h, k, left, right, f, seed);
+            // Hint for the correctness proof: pre-condition for recursive call is satisfied.
+            power2Div2LessThan(k, h);
+            assert(k / 2 < power2(h - 1));
+            if k % 2 == 0 then
+                init(left) + [seed]
+            else      
+                var r :=  computeLeftSiblingsOnNextpathWithIndex(
+                    h - 1, k / 2, init(left), init(right), f, f(last(left), seed));
+                r + [last(left)]
     }
 
  }

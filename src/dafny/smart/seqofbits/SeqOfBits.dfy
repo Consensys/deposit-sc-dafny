@@ -127,7 +127,7 @@ module SeqOfBits {
         if last(p) == 0 then 
             init(p) + [1]
         else 
-           nextPath(init(p)) + [0]
+            nextPath(init(p)) + [0]
     }
 
     /**
@@ -156,6 +156,22 @@ module SeqOfBits {
         }
     }
 
+    /**
+     *  If p is the path that represents n (over length bits), 
+     *  then nextPath(p) is the path that represents n + 1.
+     */
+    lemma {:induction p, n, length} pathToSucc(p : seq<bit>, n : nat, length: nat)
+        requires length >= 1
+        requires n < power2(length) - 1
+        requires p == natToBitList(n, length)
+        ensures exists i :: 0 <= i < |p| && p[i] == 0  
+        ensures nextPath(p) == natToBitList(n + 1, length)
+    {
+        bitToNatToBitsIsIdentity(n, length);
+        assert(bitListToNat(p) == n < power2(length) - 1 == power2(|p|) - 1);
+        pathToNoLasthasZero(p);
+    }
+        
     /**
      *  (In)equalities between  bitListToNat(tail(p)) and bitListToNat(p).
      */
@@ -323,7 +339,7 @@ module SeqOfBits {
      *  @param  p    A path.
      *  @param  p'   A path.
      */
-    lemma succIsNextPath(p : seq<bit>, p' : seq<bit>)
+    lemma {:induction p, p'} succIsNextPath(p : seq<bit>, p' : seq<bit>)
         /** Path has at least one element. */
         requires 1 <= |p| == |p'| 
         /** It is not a path that has no successors and must have a zero. */
@@ -464,7 +480,7 @@ module SeqOfBits {
      *  @param  p    A path.
      *  @param  p'   A path.
      */
-    lemma nextPathIffSucc(p : seq<bit>, p' : seq<bit>) 
+    lemma {:induction p, p'} nextPathIffSucc(p : seq<bit>, p' : seq<bit>) 
         requires 1 <= |p| == |p'|
         requires exists i :: 0 <= i < |p| && p[i] == 0
         ensures p' == nextPath(p) <==> bitListToNat(p') == bitListToNat(p) + 1

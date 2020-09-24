@@ -63,6 +63,15 @@ module RSiblings {
     }
 
     /**
+     *  Prefix of zeroes if zeroes of f(d,d).
+     */
+    lemma {:induction h} shiftZeroesPrefix<T>(h : nat, f  : (T, T) -> T, d: T)
+        requires 1 <= h 
+        ensures init(zeroes(f, d, h)) == zeroes(f, f(d, d), h - 1)
+    {   //  Thanks Dafny
+    }
+
+    /**
      *  In a complete tree, decorated with a synthesised attribute f,
      *  and all leaves have a default value,  
      *  the root is decorated with default applied height(r) times.

@@ -15,22 +15,30 @@
 include "helpers/Helpers.dfy"
 include "trees/Trees.dfy"
 include "trees/CompleteTrees.dfy"
+include "synthattribute/ComputeRootPath.dfy"
 include "paths/PathInCompleteTrees.dfy"
+include "paths/NextPathInCompleteTreesLemmas.dfy"
 include "synthattribute/Siblings.dfy"
 include "synthattribute/RightSiblings.dfy"
 include "seqofbits/SeqOfBits.dfy"
 include "helpers/SeqHelpers.dfy"
+
+include "intdiffalgo/CommuteProof.dfy"
 
 module MerkleTrees {
 
     import opened Helpers
     import opened Trees
     import opened CompleteTrees
+    import opened ComputeRootPath
     import opened PathInCompleteTrees
     import opened Siblings
     import opened RSiblings
     import opened SeqOfBits
     import opened SeqHelpers
+    import opened NextPathInCompleteTreesLemmas
+    import opened CommuteProof
+
 
     ///////////////////////////////////////////////////////////////////////////
     //  Main predicates and functiona.
@@ -105,6 +113,74 @@ module MerkleTrees {
     //  Main properties.
     ///////////////////////////////////////////////////////////////////////////
 
+    lemma {:induction p, r, left, right} computeRootUsingDefaultIsCorrectInAMerkleTree<T>(p : seq<bit>, l: seq<T>, r: Tree<T>, left : seq<T>, right : seq<T>, f : (T, T) -> T, d : T) 
+        requires hasLeavesIndexedFrom(r, 0) 
+        requires height(r) >= 1
+        /** The list has at least one element. */
+        requires |l| < power2(height(r)) 
+        requires isMerkle(r, l, f, d)
+
+        requires 1 <= |left| == |right| == |p| == height(r)
+        requires forall i :: 0 <= i < |p| ==>
+            siblingValueAt(p, r, i + 1) ==
+                if p[i] == 0 then 
+                    right[i]
+                else 
+                    left[i]
+
+        /** p is the path to the next available leaf. and nodeAt(p, r).v == d. */
+        requires p == natToBitList(|l|, height(r))
+
+        ensures computeRootLeftRightUp(p, left, right, f, d) == r.v 
+        
+    {
+        bitToNatToBitsIsIdentity(|l|, height(r));
+        assert(bitListToNat(p) == |l|);
+        completeTreeNumberLemmas(r);
+        leafAtPathIsIntValueOfPath(p, r, |l|, 0);
+        assert(nodeAt(p, r).v == leavesIn(r)[|l|].v);
+        assert(leavesIn(r)[|l|].v == d);
+        reveal_siblingValueAt();
+        computeRootLeftRightUpIsCorrectForTree(p, r, left, right, f, d);
+    }
+
+
+    lemma {:induction p, r, left, right} computeLeftSiblingOnNextPathFromLeftRightIsCorrectInAMerkleTree<T>(p : seq<bit>, l: seq<T>, a : T, r: Tree<T>, left : seq<T>, right : seq<T>, f : (T, T) -> T, d : T) 
+        requires hasLeavesIndexedFrom(r, 0) 
+        requires height(r) >= 1
+        /** The list has at least one element. */
+        // requires 1 <= |l| < power2(height(r))
+        requires |l| < power2(height(r)) - 1
+        requires isMerkle(r, l + [a], f, d)
+
+        requires |left| == |right| == |p|
+
+        requires p == natToBitList(|l|, height(r))
+
+        requires forall i :: 0 <= i < |p| ==>
+            // siblingAt(take(p, i + 1), r).v == 
+            siblingValueAt(p, r, i + 1) == 
+                if p[i] == 0 then 
+                    right[i]
+                else 
+                    left[i]
+
+        ensures  exists i :: 0 <= i < |p| && p[i] == 0
+        /** The values computed by computeLeftSiblingOnNextPath coincide with leftsiblings on `p`. */
+        ensures forall i :: 0 <= i < |p| && nextPath(p)[i] == 1 ==> 
+                computeLeftSiblingOnNextPathFromLeftRight(p, left, right, f, a)[i] == siblingAt(take(nextPath(p), i + 1),r).v
+                == siblingValueAt(nextPath(p), r, i + 1)
+
+    {
+        bitToNatToBitsIsIdentity(|l|, height(r));
+        pathToNoLasthasZero(p);
+        completeTreeNumberLemmas(r);
+        indexOfLeafisIntValueOfPath(p, r, |l|);
+        assert(nodeAt(p, r).v == leavesIn(r)[|l|].v == a);
+        reveal_siblingValueAt();
+        computeLeftSiblingOnNextPathFromLeftRightIsCorrectInATree(p, r, left, right, f, a, |l|);
+    }
+
     /**
      *  The right siblings of the path to the last element of the list are
      *  zeroes.  
@@ -114,23 +190,27 @@ module MerkleTrees {
      *  @param  f   A function to combine values.
      *  @param  d   A default value for the leaves not in `l`.
      */
-    lemma pathToLastInMerkleTreeHasZeroRightSiblings<T>(l: seq<T>, r: Tree<T>, f : (T, T) -> T, d : T) 
+    lemma pathToLastInMerkleTreeHasZeroRightSiblings<T>(p : seq<bit>, l: seq<T>, r: Tree<T>, f : (T, T) -> T, d : T) 
         requires hasLeavesIndexedFrom(r, 0) 
         requires height(r) >= 1
         /** The list has at least one element. */
-        requires 1 <= |l| < power2(height(r))
+        // requires 1 <= |l| < power2(height(r))
+        requires |l| < power2(height(r))
         requires isMerkle(r, l, f, d)
 
-        ensures var p := natToBitList(|l| - 1, height(r));
-            forall i :: 0 <= i < |p| && p[i] == 0 ==> 
+        // requires p == natToBitList(|l| - 1, height(r))
+        requires p == natToBitList(|l|, height(r))
+        // ensures var p := natToBitList(|l| - 1, height(r));
+        ensures forall i :: 0 <= i < |p| && p[i] == 0 ==> 
                 siblingValueAt(p, r, i + 1) == zeroes(f, d, height(r) - 1)[i]
     {
-        var p := natToBitList(|l| - 1, height(r));
-        bitToNatToBitsIsIdentity(|l| - 1, height(r));
-        assert(bitListToNat(p) == |l| - 1);
+        // var p := natToBitList(|l| - 1, height(r));
+        
+        bitToNatToBitsIsIdentity(|l|, height(r));
+        assert(bitListToNat(p) == |l|);
         completeTreeNumberLemmas(r);
         assert(|l| <= |leavesIn(r)|);        
-        rightSiblingsOfLastPathAreDefault(p, r, |l| - 1, f, 0, d);
+        rightSiblingsOfLastPathAreDefault(p, r, |l|, f, 0, d);
     }
 
     /**
@@ -145,11 +225,9 @@ module MerkleTrees {
      *  @param  r'  A merkle tree for l + [a].
      *  @param  f   The synthesised attribute to compute.
      *  @param  d   The default value for type T.
-     *  @param  p   The path to the the |l|-th leaf.
-     *  @param  p'  The path to the the (|l| + 1)-th leaf.
+     *  @param  p   The path to the the (|l| + 1)-th leaf (at index |l|).
      */
-
-    lemma {:induction l} nextPathSameSiblingsInNextList<T>(h : nat, l: seq<T>, a : T, r : Tree<T>, r' : Tree<T>, f : (T, T) -> T, d : T, p : seq<bit>, p' : seq<bit>) 
+    lemma nextPathSameSiblingsInNextList<T>(h : nat, l: seq<T>, a : T, r : Tree<T>, r' : Tree<T>, f : (T, T) -> T, d : T, p : seq<bit>) 
         /** The list does not fill up the leaves of the tree.  */
         requires 0 <= |l| < power2(h) - 1
 
@@ -159,79 +237,41 @@ module MerkleTrees {
         requires hasLeavesIndexedFrom(r, 0) && hasLeavesIndexedFrom(r', 0)
         requires isMerkle(r, l, f, d) && isMerkle(r', l + [a], f, d);
 
-        /** Path `p` is to the (|l| -1)-th leaf indexed |l| - 1, p` to the |l|-th leaf i.e indexed |l|. */
-        requires |l| >= 1 ==> p  == natToBitList(|l| - 1, h);
-        requires p' == natToBitList(|l|, h);
+        /** p is the path to the (|l| = 1)-th leaf with value 0 in r and a in r'. */
+        requires p == natToBitList(|l|, h);
         
-        /** if |l| >= 1 then `p` has a zero. */
-        /** And hence we can compute nextpath(p), which is p'. */
-        ensures |l| >= 1 ==> exists i :: 0 <= i < |p| && p[i] == 0
-        ensures |l| >= 1 ==> p' == nextPath(p)
-
-        /**  */
-        ensures 
-            (|l| >= 1 && forall i :: 0 <= i < |p'|  ==>
-                siblingValueAt(p', r', i + 1) == siblingValueAt(nextPath(p), r, i + 1)
-            )
-            ||
-            (|l| == 0 ==>  forall i :: 0 <= i < |p'| ==> p'[i] == 0)
+        ensures forall i :: 0 <= i < |p|  ==>
+                siblingValueAt(p, r', i + 1) == siblingValueAt(p, r, i + 1)
 
     {
-        if |l| == 0 {
-            //  In this case, p' is a path to first leaf indexed 0 and  p' = [0,0,0 ...0]
-            //  So the premise  p'[i] == 1 is always false
-            calc == {
-                bitListToNat(p');
-                bitListToNat(natToBitList(|l|, h));
-                { bitToNatToBitsIsIdentity(|l|, h); }
-                |l|;
-                0;
-            }
-            valueIsZeroImpliesAllZeroes(p');
-            assert(forall i :: 0 <= i < |p'| ==> 
-                p'[i] == 0
-            );
-        } else {
-            bitToNatToBitsIsIdentity(|l| - 1, h);
-            assert(bitListToNat(p) == |l| - 1);
-            bitToNatToBitsIsIdentity(|l|, h);
-            assert(bitListToNat(p') == |l|);
+        var k := |l|;
+        //  k < |leavesIn(r)| == |leavesIn(r')| 
+        completeTreeNumberLemmas(r);
+        completeTreeNumberLemmas(r');
+        assert(k == |l| < |leavesIn(r)| == |leavesIn(r')| );
 
-            //  Show that p has a zero.
-            pathToNoLasthasZero(p);
-        
-            //  Show that p' is actually nextPath(p)
-            succIsNextPath(p, p');
+        //  takeLeavesIn(r, k) == takeLeavesIn(r', k)
+        //  dropLeavesIn(r, k + 1) == dropLeavesIn(r', k + 1)
+        equivTreesSameLeaves(h, l, a, r, r', f, d);
+        assert(takeLeavesIn(r, k) == takeLeavesIn(r', k));
+        assert(dropLeavesIn(r, k + 1) == dropLeavesIn(r', k + 1));
 
-            //  Siblings values in nextPath(p) in r and p' in r' are related.
-            //  Prove pre-conditions for applying lemma siblingsInEquivTrees
-            var k := |l|;
-            //  k < |leavesIn(r)| == |leavesIn(r')| 
-            completeTreeNumberLemmas(r);
-            completeTreeNumberLemmas(r');
-            assert(k < |leavesIn(r)| == |leavesIn(r')| );
-
-            //  takeLeavesIn(r, k) == takeLeavesIn(r', k)
-            //  dropLeavesIn(r, k + 1) == dropLeavesIn(r', k + 1)
-            equivTreesSameLeaves(h, l, a, r, r', f, d);
-            assert(takeLeavesIn(r, k) == takeLeavesIn(r', k));
-            assert(dropLeavesIn(r, k + 1) == dropLeavesIn(r', k + 1));
-
-            //  bitListToNat(p') == k 
-            calc == {
-                bitListToNat(p');
-                bitListToNat(natToBitList(|l|, h));
-                { bitToNatToBitsIsIdentity(|l|, h); }
-                |l|;
-            }
-
-            //  Apply lemma siblingsInEquivTrees
-            assert(bitListToNat(p') == k);
-
-            reveal_siblingValueAt();
-            siblingsInEquivTrees(p', r, r', k, f, 0);
-            assert(forall i :: 0 <= i < |p'| ==> siblingValueAt(p', r, i + 1) == siblingValueAt(p', r', i + 1));
+        //  bitListToNat(p) == k 
+        calc == {
+            bitListToNat(p);
+            bitListToNat(natToBitList(|l|, h));
+            { bitToNatToBitsIsIdentity(|l|, h); }
+            |l|;
         }
+
+        //  Apply lemma siblingsInEquivTrees
+        assert(bitListToNat(p) == k);
+        assert(isDecoratedWith(f, r) && isDecoratedWith(f, r'));
+        assert (|p| == height(r));
+
+        siblingsInEquivTrees(p, r, r', k, f, 0);
+        reveal_siblingValueAt();
+        assert(forall i :: 0 <= i < |p| ==> siblingValueAt(p, r, i + 1) == siblingValueAt(p, r', i + 1));
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -250,7 +290,6 @@ module MerkleTrees {
      *  @param  f   The synthesised attribute to compute.
      *  @param  d   The default value for type T.
      */
-
     lemma equivTreesSameLeaves<T>(h : nat, l: seq<T>, a : T, r : Tree<T>, r' : Tree<T>, f : (T, T) -> T, d : T) 
         /** The list does not fill up the leaves of the tree.  */
         requires 0 <= |l| < power2(h) - 1
@@ -264,6 +303,7 @@ module MerkleTrees {
         ensures |l| + 1 < |leavesIn(r)| == |leavesIn(r')|
         ensures  takeLeavesIn(r, |l|) == takeLeavesIn(r', |l|)
         ensures dropLeavesIn(r, |l| + 1) == dropLeavesIn(r', |l| + 1)
+
     {
         completeTreeNumberLemmas(r);
         completeTreeNumberLemmas(r');
@@ -289,7 +329,8 @@ module MerkleTrees {
                     l[i];
                     leavesIn(r')[i].v;
                 }
-            } else if i > |l| {
+            } 
+            if i > |l| {
                  calc == {
                     leavesIn(r)[i].v;
                     d;

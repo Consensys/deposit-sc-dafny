@@ -12,7 +12,7 @@
  * under the License.
  */
  
-include "../intdiffalgo/DiffTree.dfy"
+// include "../intdiffalgo/DiffTree.dfy"
 include "../trees/CompleteTrees.dfy"
 include "GenericComputation.dfy"
 include "../helpers/Helpers.dfy"
@@ -32,7 +32,7 @@ include "../trees/Trees.dfy"
  */
 module ComputeRootPath {
  
-    import opened DiffTree
+    // import opened DiffTree
     import opened CompleteTrees
     import opened GenericComputation
     import opened Helpers
@@ -95,6 +95,7 @@ module ComputeRootPath {
 
         /** Left and right contains siblings left and right values.  */
         requires forall i :: 0 <= i < |p| ==>
+            siblingValueAt(p, r, i + 1) ==
             siblingAt(take(p, i + 1), r).v == 
                 if p[i] == 0 then 
                     right[i]

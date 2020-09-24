@@ -122,6 +122,7 @@ module NextPathInCompleteTreesLemmas {
     //  Main correctness proof.
     ///////////////////////////////////////////////////////////////////////////
 
+
     /**
      *  computeLeftSiblingOnNextPathFromLeftRight is correct in a tree.
      *
