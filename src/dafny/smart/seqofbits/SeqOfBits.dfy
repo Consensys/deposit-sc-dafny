@@ -157,6 +157,17 @@ module SeqOfBits {
     }
 
     /**
+     *  The prefix of p encodes n / 2.
+     */
+    lemma {:induction n, p} div2IsInit(n : nat,  p : seq<bit>)
+        requires |p| >= 1
+        requires n < power2(|p|)
+        requires p == natToBitList2(n, |p|)
+        ensures init(p) == natToBitList2(n / 2, |p| - 1)
+    {   //  Thanks Dafny        
+    }
+
+    /**
      *  If p is the path that represents n (over length bits), 
      *  then nextPath(p) is the path that represents n + 1.
      */
