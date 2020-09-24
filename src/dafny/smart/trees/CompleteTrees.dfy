@@ -114,7 +114,7 @@ module CompleteTrees {
     }
 
     /**
-     *  Height of children in complete trees.
+     *  Height of children in complete tees.
      */
      lemma {:induction r} childrenInCompTreesHaveHeightMinusOne(r : Tree) 
         requires height(r) >= 1

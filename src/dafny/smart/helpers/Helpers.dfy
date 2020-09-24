@@ -25,8 +25,10 @@ module Helpers {
             y
     }
 
+    //  Power of two stuff
+
     /** Define 2^n. */
-    function power2(n : nat): nat 
+    function {:opaque} power2(n : nat): nat 
         ensures power2(n) >= 1
         ensures n >= 1 ==> power2(n) >= 2 
 
@@ -36,11 +38,35 @@ module Helpers {
     }
 
     /** 
-     *  A simple lemma: (2^n) * (2^n) == 2 ^(n + 1)
+     *  Useful lemmas: 
+     *      (2^n) * (2^n) == 2 ^(n + 1)
+     *      2 * 2^n == 2^n * 2 == 2^(n + 1)
      */
-    lemma {:induction n} twoTimesPower2(n: nat) 
-        ensures power2(n) + power2(n) <= power2(n + 1)
-    {
+    lemma {:induction n} {:opaque} power2Lemmas(n : nat) 
+        ensures power2(n) + power2(n) == power2(n + 1)
+        ensures 2 * power2(n) == power2(n) * 2 == power2(n + 1)
+    {   //  Thanks Dafny
+        reveal_power2();
+    }
 
+    /**
+     *  2^(n + 1) / 2 == 2^n
+     */
+    lemma {:induction n} power2Div2(n : nat)
+        requires n >= 1
+        ensures power2(n) / 2 == power2(n - 1)
+    {
+        reveal_power2();
+    }
+
+    /**
+     *  if k < 2^(n + 1) then k / 2 < 2^n
+     */
+    lemma {:induction n} power2Div2LessThan(k : nat, n : nat)
+        requires n >= 1
+        requires k < power2(n)
+        ensures k / 2 < power2(n - 1)
+    {
+        reveal_power2();
     }
 }
