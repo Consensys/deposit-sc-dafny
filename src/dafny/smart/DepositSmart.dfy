@@ -12,43 +12,33 @@
  * under the License.
  */
 
-include "./trees/CompleteTrees.dfy"
 include "./synthattribute/ComputeRootPath.dfy"
 include "./synthattribute/RightSiblings.dfy"
-include "./synthattribute/Siblings.dfy"
-include "./synthattribute/GenericComputation.dfy"
 include "./helpers/Helpers.dfy"
 include "./paths/PathInCompleteTrees.dfy"
 include "./paths/NextPathInCompleteTreesLemmas.dfy"
 include "./seqofbits/SeqOfBits.dfy"
-include "./helpers/SeqHelpers.dfy"
 include "./trees/Trees.dfy"
 include "./MerkleTrees.dfy"
-
 include "./intdiffalgo/IndexBasedAlgorithm.dfy"
-include "./intdiffalgo/CommuteProof.dfy"
 
-
+/**
+ *  A proof of correctness for the Deposit Smart Contract Algorith.
+ */
 module DepositSmart {
 
-    import opened CompleteTrees
     import opened ComputeRootPath
     import opened RSiblings
-    import opened Siblings
     import opened Helpers
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
-    import opened SeqHelpers
     import opened Trees 
     import opened MerkleTrees
-    import opened GenericComputation
-
     import opened IndexBasedAlgorithm
-    import opened CommuteProof
 
     /**
-     *  The functional version of the deposit smart contract.
+     *  Provide deposit smart contract algorithms.
      */
     class Deposit {
 
@@ -83,7 +73,7 @@ module DepositSmart {
         /** Path to index of next available leaf at index |values|. */
         ghost var p : seq<bit>
 
-        /** Property to maintain. */
+        /** Property to maintain to ensure correctness. */
         predicate Valid()
             reads this
         {
@@ -107,7 +97,7 @@ module DepositSmart {
         }
 
         /**
-         *  Initialise the system, tree of size >= 1.
+         *  Initialisation.
          */
         constructor(h: nat, l : seq<int>, f1 : (int, int) -> int, default : int) 
             requires h >= 1
@@ -129,7 +119,11 @@ module DepositSmart {
         }
 
         /**
-         *  Deposit.
+         *  The deposit() function.
+         *
+         *  This method should update the left siblings (branch) in order
+         *  to maintain the correspondence with the Merkle tree for values.
+         *  This is captured by the Valid() predicate.
          *  
          *  @param  v   The new deposit amount.
          */
@@ -139,12 +133,12 @@ module DepositSmart {
             ensures Valid()
             modifies this 
         {
-            ghost var tt :=  buildMerkle(values + [v], TREE_HEIGHT, f, d);
+            ghost var nextTree :=  buildMerkle(values + [v], TREE_HEIGHT, f, d);
             assert(p == natToBitList(|values|, TREE_HEIGHT));
 
             //  Siblings of p in t are same as siblings on p in old(t)
             forall (i : nat | 0 <= i < |p|)
-                ensures siblingValueAt(p, tt, i + 1) == 
+                ensures siblingValueAt(p, nextTree, i + 1) == 
                      siblingValueAt(p, old(t), i + 1) ==
                         if p[i] == 0 then
                              zero_h[i]
@@ -154,7 +148,7 @@ module DepositSmart {
                  reveal_siblingValueAt();
                  nextPathSameSiblingsInNextList(
                     TREE_HEIGHT, values, v, old(t), 
-                    tt, 
+                    nextTree, 
                     f, d, p);
             }
             
@@ -165,10 +159,10 @@ module DepositSmart {
              forall ( i : nat | 0 <= i < |nextPath(p)| && nextPath(p)[i] == 1)
                 ensures computeLeftSiblingOnNextPathFromLeftRight(p, branch, zero_h, f, v)[i]
                     ==
-                    siblingValueAt(nextPath(p), tt, i + 1) 
+                    siblingValueAt(nextPath(p), nextTree, i + 1) 
             {
                 computeLeftSiblingOnNextPathFromLeftRightIsCorrectInAMerkleTree(
-                    p, values, v, tt, branch, zero_h, f, d
+                    p, values, v, nextTree, branch, zero_h, f, d
                 );
             }
 
@@ -196,6 +190,8 @@ module DepositSmart {
         }   
 
         /**
+         *  The get_deposit_root() function.
+         *
          *  This method should always return the root value of the tree.
          *
          *  @returns    The root value of the Merkle Tree for values.
