@@ -15,6 +15,7 @@
 include "./synthattribute/ComputeRootPath.dfy"
 include "./synthattribute/RightSiblings.dfy"
 include "./helpers/Helpers.dfy"
+include "./helpers/SeqHelpers.dfy"
 include "./paths/PathInCompleteTrees.dfy"
 include "./paths/NextPathInCompleteTreesLemmas.dfy"
 include "./seqofbits/SeqOfBits.dfy"
@@ -30,6 +31,7 @@ module DepositSmart {
     import opened ComputeRootPath
     import opened RSiblings
     import opened Helpers
+    import opened SeqHelpers
     import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
@@ -196,7 +198,7 @@ module DepositSmart {
          *
          *  @returns    The root value of the Merkle Tree for values.
          */
-        method get_deposit_root() returns ( r : int) 
+        method get_deposit_root_f() returns (r : int) 
             requires Valid()
             ensures Valid()
             /** The result is the root value of the tree.  */
@@ -205,6 +207,64 @@ module DepositSmart {
             r := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
 
             //  The proof of post condition follows easily from:
+            computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
+        }
+
+        /**
+         *  Show that this method computes the same thing as get_deposit_root_f.
+         *
+         *  @returns    The value of the root of the Merkle tree for `values`.
+         */
+         method get_deposit_root_() returns (r : int) 
+            requires Valid()
+            ensures Valid()
+            /** The result of get_deposit_root_() is the root value of the tree.  */
+            ensures r == t.v
+        {
+            //  Start with default value for r.
+            r := d;
+            var h := 0;
+            var size := count;
+                        
+            //  Some help to prove that the main invariant holds on entry:
+            assert(take(branch, TREE_HEIGHT) == branch);
+            assert(take(zero_h, TREE_HEIGHT) == zero_h);
+
+            //  Store the expected result in a ghost variable.
+            ghost var e := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
+
+            while h < TREE_HEIGHT
+                //  no out of range in seqs:
+                invariant 0 <= h <= TREE_HEIGHT
+                invariant 0 <= size < power2(TREE_HEIGHT - h)
+                //  Main invariant:
+                invariant e == 
+                    computeRootLeftRightUpWithIndex(
+                        TREE_HEIGHT - h, size, 
+                        take(branch, TREE_HEIGHT - h), take(zero_h, TREE_HEIGHT - h), f, r)
+
+                decreases TREE_HEIGHT - h 
+            {
+                //  A little help for Dafny to check the proof:
+                assert(last(take(branch, TREE_HEIGHT - h)) == branch[TREE_HEIGHT - h - 1]);
+                assert(last(take(zero_h, TREE_HEIGHT - h)) == zero_h[TREE_HEIGHT - h - 1]);
+                assert(init(take(branch, TREE_HEIGHT - h)) == take(branch, TREE_HEIGHT - h - 1));
+                assert(init(take(zero_h, TREE_HEIGHT - h)) == take(zero_h, TREE_HEIGHT - h - 1));
+
+                if size % 2 == 1 {
+                    r := f(branch[TREE_HEIGHT - h - 1], r);
+                } else {
+                    r := f(r, zero_h[TREE_HEIGHT - h - 1]);
+                }
+                size := size / 2;
+                h := h + 1;
+            }
+
+            //  The correstness proof:
+            //  By invariant at the end of the loop and definition of computeRootLeftRightUpWithIndex
+            assert(e == computeRootLeftRightUpWithIndex(0, 0, [], [], f, r) == r);
+            //  The proof of post condition follows easily from the correctness
+            //  of computeRootLeftRightUpWithIndex
             computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
         }
     }
