@@ -25,6 +25,7 @@ include "./intdiffalgo/IndexBasedAlgorithm.dfy"
 
 /**
  *  A proof of correctness for the Deposit Smart Contract Algorith.
+ *  Version using FP algorithm.
  */
 module DepositSmart {
 
@@ -199,87 +200,6 @@ module DepositSmart {
             );
         }   
 
-        method deposit(v : int) 
-            requires Valid()
-            requires count < power2(TREE_HEIGHT) - 1         
-            // ensures Valid()
-            ensures zero_h == old(zero_h)
-            ensures t == old(t)
-            // ensures p == old(p)
-            // ensures count == old(count)
-            // ensures values == old(values)
-
-            modifies this 
-        {
-            ///////////////////////////////////////////////////////////////////
-            var value := v;
-            var size : nat := count;
-            var i : nat := 0;
-            
-            ghost var e := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, size, branch, zero_h, f, v);
-            assert(branch == take(branch, TREE_HEIGHT - i));
-            assert(zero_h == take(zero_h, TREE_HEIGHT - i));
-            assert(|e| == TREE_HEIGHT);
-
-            while size % 2 == 1 
-                invariant zero_h == old(zero_h) && t == old(t) && p == old(p) && count == old(count) && values == old(values)
-                invariant 0 <= TREE_HEIGHT - i - 1 
-                //  The next one is the important invariant that ensures
-                //  that the update of branch after the loop does not
-                //  result in a out of bounds error.
-                invariant TREE_HEIGHT - i - 1 < TREE_HEIGHT == |branch| == |e| == |zero_h|
-                //  The sequel are helper invariants
-                invariant 0 <= size < power2(TREE_HEIGHT - i) - 1
-                invariant TREE_HEIGHT - i <= |p|
-                invariant size < power2(|take(p, TREE_HEIGHT - i)|)
-
-                // invariant 
-                invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, TREE_HEIGHT - i)  // I1
-
-                invariant e == 
-                    computeLeftSiblingsOnNextpathWithIndex(
-                        TREE_HEIGHT - i, size, 
-                        take(branch, TREE_HEIGHT - i), 
-                        take(zero_h, TREE_HEIGHT - i), f, value) 
-                    + drop(branch, TREE_HEIGHT - i);
-
-                //  Termination is easy as size decreases and must be zero.
-                decreases size 
-            {
-                //  Some help to verify I1:
-                div2IsInit(size, take(p, TREE_HEIGHT - i));
-                assert(init(take(p, TREE_HEIGHT - i)) == take(p, TREE_HEIGHT - i - 1));
-
-                //  Some help to verify I2:
-                assert(init(take(branch, TREE_HEIGHT - i)) == take(branch, TREE_HEIGHT - i - 1));
-                assert(init(take(zero_h, TREE_HEIGHT - i)) == take(zero_h, TREE_HEIGHT - i - 1));
-                assert(last(take(branch, TREE_HEIGHT - i)) == branch[TREE_HEIGHT - i - 1]);
-
-                value := f(branch[TREE_HEIGHT - i - 1], value);
-                size := size / 2;
-                i := i + 1;
-            }
-            assert(count == old(count));
-            assert(e == computeLeftSiblingsOnNextpathWithIndex(
-                        TREE_HEIGHT - i, size, 
-                        take(branch, TREE_HEIGHT - i), 
-                        take(zero_h, TREE_HEIGHT - i), f, value) 
-                    + drop(branch, TREE_HEIGHT - i));
-            assert(size % 2 == 0);
-            assert( e == init(take(branch, TREE_HEIGHT - i)) + [value] + drop(branch, TREE_HEIGHT - i));
-            //  This is the important hidden property: TREE_HEIGHT - i - 1 is NEVER 
-            //  out of range. 
-            branch := branch[TREE_HEIGHT - i - 1 := value];
-            assert(count == old(count));
-            // assert(branch == e);
-
-            assert(zero_h == old(zero_h));
-            assert(t == old(t));
-            assert(count == old(count));
-            // count := count + 1;
-
-        }
-
         /**
          *  The get_deposit_root() function.
          *
@@ -296,64 +216,6 @@ module DepositSmart {
             r := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
 
             //  The proof of post condition follows easily from:
-            computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
-        }
-
-        /**
-         *  Show that this method computes the same thing as get_deposit_root_f.
-         *
-         *  @returns    The value of the root of the Merkle tree for `values`.
-         */
-         method get_deposit_root_() returns (r : int) 
-            requires Valid()
-            ensures Valid()
-            /** The result of get_deposit_root_() is the root value of the tree.  */
-            ensures r == t.v
-        {
-            //  Some help to prove that the main invariant holds on entry:
-            assert(take(branch, TREE_HEIGHT) == branch);
-            assert(take(zero_h, TREE_HEIGHT) == zero_h);
-
-            //  Store the expected result in a ghost variable.
-            ghost var e := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
-
-            //  Start with default value for r.
-            r := d;
-            var h := 0;
-            var size := count;
-
-            while h < TREE_HEIGHT
-                //  no out of range in seqs:
-                invariant 0 <= h <= TREE_HEIGHT
-                invariant 0 <= size < power2(TREE_HEIGHT - h)
-                //  Main invariant:
-                invariant e == 
-                    computeRootLeftRightUpWithIndex(
-                        TREE_HEIGHT - h, size, 
-                        take(branch, TREE_HEIGHT - h), take(zero_h, TREE_HEIGHT - h), f, r)
-
-                decreases TREE_HEIGHT - h 
-            {
-                //  A little help for Dafny to check the proof:
-                assert(last(take(branch, TREE_HEIGHT - h)) == branch[TREE_HEIGHT - h - 1]);
-                assert(last(take(zero_h, TREE_HEIGHT - h)) == zero_h[TREE_HEIGHT - h - 1]);
-                assert(init(take(branch, TREE_HEIGHT - h)) == take(branch, TREE_HEIGHT - h - 1));
-                assert(init(take(zero_h, TREE_HEIGHT - h)) == take(zero_h, TREE_HEIGHT - h - 1));
-
-                if size % 2 == 1 {
-                    r := f(branch[TREE_HEIGHT - h - 1], r);
-                } else {
-                    r := f(r, zero_h[TREE_HEIGHT - h - 1]);
-                }
-                size := size / 2;
-                h := h + 1;
-            }
-
-            //  The correstness proof:
-            //  By invariant at the end of the loop and definition of computeRootLeftRightUpWithIndex
-            assert(e == computeRootLeftRightUpWithIndex(0, 0, [], [], f, r) == r);
-            //  The proof of post condition follows easily from the correctness
-            //  of computeRootLeftRightUpWithIndex
             computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
         }
     }
