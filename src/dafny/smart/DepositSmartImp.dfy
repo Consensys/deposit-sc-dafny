@@ -27,7 +27,7 @@ include "./intdiffalgo/IndexBasedAlgorithm.dfy"
  *  A proof of correctness for the Deposit Smart Contract Algorithm, 
  *  This version usues while loops instead of the FP style version..
  */
-module DepositSmartImo {
+module S {
 
     import opened ComputeRootPath
     import opened RSiblings
@@ -43,7 +43,7 @@ module DepositSmartImo {
     /**
      *  Provide deposit smart contract algorithms.
      */
-    class Deposit {
+    class D {
 
         //  State Variables.
 

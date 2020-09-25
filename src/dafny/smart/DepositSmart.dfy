@@ -190,14 +190,12 @@ module DepositSmart {
             t := buildMerkle(values, TREE_HEIGHT, f, d);
             
             pathToLastInMerkleTreeHasZeroRightSiblings(p, values, t, f, d);
-            assert(
-                forall i :: 0 <= i < |p| && p[i] == 0 ==> 
-                    siblingValueAt(p, t, i + 1) == zero_h[i]
-            );
-            assert(
-                forall i :: 0 <= i < |p| && p[i] == 1 ==> 
-                    siblingValueAt(p, t, i + 1) == branch[i]
-            );
+            forall (i : nat | 0 <= i < |p| && p[i] == 0 )
+                ensures siblingValueAt(p, t, i + 1) == zero_h[i]
+            {}
+            forall (i :nat | 0 <= i < |p| && p[i] == 1)
+                    ensures siblingValueAt(p, t, i + 1) == branch[i]
+            {}
         }   
 
         /**
