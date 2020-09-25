@@ -123,11 +123,13 @@ module DepositSmart {
         }
 
         /**
-         *  The deposit() function.
+         *  The (almost) function version deposit() function.
          *
-         *  This method should update the left siblings (branch) in order
+         *  This method updates the left siblings (branch) in order
          *  to maintain the correspondence with the Merkle tree for values.
          *  This is captured by the Valid() predicate.
+         *  In this version we use the functions operating on sequences
+         *  in a functional style.
          *  
          *  @param  v   The new deposit amount.
          */
@@ -149,8 +151,8 @@ module DepositSmart {
                         else 
                             branch[i]
             {
-                 reveal_siblingValueAt();
-                 nextPathSameSiblingsInNextList(
+                reveal_siblingValueAt();
+                nextPathSameSiblingsInNextList(
                     TREE_HEIGHT, values, v, old(t), 
                     nextTree, 
                     f, d, p);
@@ -160,7 +162,7 @@ module DepositSmart {
             pathToNoLasthasZero(p);
             assert(exists i :: 0 <= i < |p| && p[i] == 0);
 
-             forall ( i : nat | 0 <= i < |nextPath(p)| && nextPath(p)[i] == 1)
+            forall ( i : nat | 0 <= i < |nextPath(p)| && nextPath(p)[i] == 1)
                 ensures computeLeftSiblingOnNextPathFromLeftRight(p, branch, zero_h, f, v)[i]
                     ==
                     siblingValueAt(nextPath(p), nextTree, i + 1) 
@@ -173,9 +175,13 @@ module DepositSmart {
             pathToSucc(old(p), old(count), TREE_HEIGHT);
             assert(nextPath(p) == natToBitList(old(count) + 1, TREE_HEIGHT));
 
-            //  Compute new branch (this is the algorithm).
+            ///////////////////////////////////////////////////////////////////
+            //  Compute new branch and increment count.
+            //  This is the actual algorithm.
+            ///////////////////////////////////////////////////////////////////
             branch := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, count, branch, zero_h, f, v);
             count := count + 1;
+            ///////////////////////////////////////////////////////////////////
 
             //  Update ghost vars
             values := values + [v];
