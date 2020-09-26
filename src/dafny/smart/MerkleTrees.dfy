@@ -24,6 +24,7 @@ include "seqofbits/SeqOfBits.dfy"
 include "helpers/SeqHelpers.dfy"
 
 include "intdiffalgo/CommuteProof.dfy"
+include "intdiffalgo/IndexBasedAlgorithm.dfy"
 
 module MerkleTrees {
 
@@ -38,7 +39,7 @@ module MerkleTrees {
     import opened SeqHelpers
     import opened NextPathInCompleteTreesLemmas
     import opened CommuteProof
-
+    import opened IndexBasedAlgorithm
 
     ///////////////////////////////////////////////////////////////////////////
     //  Main predicates and functiona.
@@ -68,7 +69,7 @@ module MerkleTrees {
     }
 
    /** 
-    *  Defines the Tree associated with a given sequence.
+    *  Defines the Merkle Tree associated with a given sequence.
     *  
     *  @note   T   his function does not compute the tree but rather
     *              defines its properties: correctly stores the attribute
@@ -144,6 +145,7 @@ module MerkleTrees {
         computeRootLeftRightUpIsCorrectForTree(p, r, left, right, f, d);
     }
 
+    
 
     lemma {:induction p, r, left, right} computeLeftSiblingOnNextPathFromLeftRightIsCorrectInAMerkleTree<T>(p : seq<bit>, l: seq<T>, a : T, r: Tree<T>, left : seq<T>, right : seq<T>, f : (T, T) -> T, d : T) 
         requires hasLeavesIndexedFrom(r, 0) 
@@ -180,6 +182,160 @@ module MerkleTrees {
         reveal_siblingValueAt();
         computeLeftSiblingOnNextPathFromLeftRightIsCorrectInATree(p, r, left, right, f, a, |l|);
     }
+
+    /**
+     *  Left and right contains siblings of path to k-th leaf in r.
+     */
+    predicate areSiblingsValueForLeafAtIndex<T>(k : nat, r : Tree<T>, left : seq<T>, right : seq<T>)
+        requires hasLeavesIndexedFrom(r, 0) 
+        requires isCompleteTree(r)
+        requires height(r) >= 1
+        requires k < power2(height(r)) 
+        requires |left| == |right| == height(r)
+    {
+        var p := natToBitList(k, height(r));
+        forall i :: 0 <= i < |p| ==>
+            siblingValueAt(p, r, i + 1) == 
+                if p[i] == 0 then 
+                    right[i]
+                else 
+                    left[i]
+    }
+
+    // lemma foo123<T>(r : Tree<T>, l : seq<T>, h : nat, f : (T, T) -> T, d : T)
+    //     requires isCompleteTree(r)
+    //     requires |l| < power2(height(r)) 
+    //     requires 1 <= height(r) == h 
+    //     requires hasLeavesIndexedFrom(r, 0) && isMerkle(r, l, f, d) 
+    //     ensures r == buildMerkle(l, h, f, d)
+    // {
+    //     if h == 1 {
+    //         //  
+    //     } else {
+
+    //     }
+    // }
+
+
+
+    lemma {:induction false} nextTree<T>(
+            // p : seq<bit>, 
+            l: seq<T>, a : T, r: Tree<T>, left : seq<T>, right : seq<T>, f : (T, T) -> T, d : T) 
+        requires hasLeavesIndexedFrom(r, 0) 
+        requires height(r) >= 1
+        requires |l| < power2(height(r)) - 1
+        requires isMerkle(r, l + [a], f, d)
+
+        requires |left| == |right| 
+
+        requires right == zeroes(f, d, height(r) - 1)
+        requires areSiblingsValueForLeafAtIndex(|l|, r, left, right)
+
+        ensures areSiblingsValueForLeafAtIndex(
+            |l| + 1, r, 
+            computeLeftSiblingsOnNextpathWithIndex(height(r), |l|, left, right, f, a),
+            right
+        )
+
+    {
+        var p := natToBitList(|l|, height(r));
+        bitToNatToBitsIsIdentity(|l|, height(r));
+        pathToNoLasthasZero(p);
+        //  compute next left siblings
+        forall ( i : nat | 0 <= i < |nextPath(p)| && nextPath(p)[i] == 1)
+                ensures computeLeftSiblingOnNextPathFromLeftRight(p, left, right, f, a)[i]
+                    ==
+                    siblingValueAt(nextPath(p), r, i + 1) 
+            {
+                computeLeftSiblingOnNextPathFromLeftRightIsCorrectInAMerkleTree(
+                    p, l, a, r, left, right, f, d
+                );
+            }
+        pathToSucc(p, |l|, height(r));
+        assert(nextPath(p) == natToBitList(|l| + 1, height(r)));
+
+        var b' := computeLeftSiblingsOnNextpathWithIndex(height(r), |l|, left, right, f, a);
+
+        pathToLastInMerkleTreeHasZeroRightSiblings(nextPath(p), l + [a], r, f, d);
+        forall (i : nat | 0 <= i < |nextPath(p)| && nextPath(p)[i] == 0 )
+            ensures siblingValueAt(nextPath(p), r, i + 1) == right[i]
+        {}
+        forall (i :nat | 0 <= i < |nextPath(p)| && nextPath(p)[i] == 1)
+                ensures siblingValueAt(nextPath(p), r, i + 1) == b'[i]
+        {}
+    }
+
+     lemma {:induction false} nextTree2<T>(
+            l: seq<T>, a : T, 
+            h : nat,
+            left : seq<T>, right : seq<T>, f : (T, T) -> T, d : T) 
+        requires 1 <= h 
+        requires |l| < power2(h) - 1
+        requires |left| == |right| == h 
+        requires right == zeroes(f, d, h - 1)
+        requires areSiblingsValueForLeafAtIndex(|l|, buildMerkle(l, h, f, d), left, right)
+
+        ensures areSiblingsValueForLeafAtIndex(
+            |l| + 1, buildMerkle(l + [a], h, f, d), 
+            computeLeftSiblingsOnNextpathWithIndex(h, |l|, left, right, f, a),
+            right
+        )
+
+    {
+        //  Get path to |l|-th element as seq<bit>
+        var p := natToBitList(|l|, h);
+        bitToNatToBitsIsIdentity(|l|, h);
+        pathToNoLasthasZero(p);
+
+        //  Siblings of p in buildMerkle(l + [a], h, f, d) are 
+        //  same as siblings on p in buildMerkle(l, h, f, d)
+        reveal_siblingValueAt();
+        nextPathSameSiblingsInNextList(
+                    h, l, a, buildMerkle(l, h, f, d), 
+                    buildMerkle(l + [a], h, f, d), 
+                    f, d, p);
+
+        //  compute next left siblings in buildMerkle(l + [a], h, f, d)
+        computeLeftSiblingOnNextPathFromLeftRightIsCorrectInAMerkleTree(
+                p, l, a, buildMerkle(l + [a], h, f, d), left, right, f, d
+            );
+
+        //  NextPath(p) as nat is |l| + 1
+        pathToSucc(p, |l|, h);
+        assert(nextPath(p) == natToBitList(|l| + 1, h));
+
+        var b' := computeLeftSiblingsOnNextpathWithIndex(h, |l|, left, right, f, a);
+
+        //  Right siblings are zeroes
+        pathToLastInMerkleTreeHasZeroRightSiblings(nextPath(p), l + [a], buildMerkle(l + [a], h, f, d), f, d);
+    }
+
+    lemma {:induction false} computeRootUsingDefaultIsCorrectInAMerkleTree2<T>(
+            l: seq<T>,
+            h : nat,
+            left : seq<T>, right : seq<T>, f : (T, T) -> T, d : T) 
+        requires 1 <= h 
+        requires |l| < power2(h) 
+        requires |left| == |right| == h 
+        requires right == zeroes(f, d, h - 1)
+        requires areSiblingsValueForLeafAtIndex(|l|, buildMerkle(l, h, f, d), left, right)
+
+        ensures computeRootLeftRightUpWithIndex(h, |l|, left, right, f, d) == buildMerkle(l, h, f, d).v 
+        
+    {
+        var p := natToBitList(|l|, h);
+        bitToNatToBitsIsIdentity(|l|, h);
+        assert(bitListToNat(p) == |l|);
+        
+        var r := buildMerkle(l, h, f, d);
+        completeTreeNumberLemmas(r);
+        leafAtPathIsIntValueOfPath(p, r, |l|, 0);
+        assert(nodeAt(p, r).v == leavesIn(r)[|l|].v);
+        assert(leavesIn(r)[|l|].v == d);
+        reveal_siblingValueAt();
+        computeRootLeftRightUpIsCorrectForTree(p, r, left, right, f, d);
+    }
+
 
     /**
      *  The right siblings of the path to the last element of the list are

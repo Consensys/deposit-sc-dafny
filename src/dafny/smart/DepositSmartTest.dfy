@@ -24,8 +24,8 @@ include "./MerkleTrees.dfy"
 include "./intdiffalgo/IndexBasedAlgorithm.dfy"
 
 /**
- *  A proof of correctness for the Deposit Smart Contract Algorithm, 
- *  This version usues while loops instead of the FP style version..
+ *  A proof of correctness for the Deposit Smart Contract Algorith.
+ *  Version using FP algorithm.
  */
 module DepositSmart {
 
@@ -43,7 +43,7 @@ module DepositSmart {
     /**
      *  Provide deposit smart contract algorithms.
      */
-    class Contract {
+    class Deposit {
 
         //  State Variables.
 
@@ -71,34 +71,26 @@ module DepositSmart {
         ghost var values : seq<int> 
 
         /** The (Merkle) tree that corresponds to the list of values added so far. */
-        ghost var t : Tree<int>
+        // ghost var t : Tree<int>
 
         /** Path to index of next available leaf at index |values|. */
-        ghost var p : seq<bit>
+        // ghost var p : seq<bit>
 
         /** Property to maintain to ensure correctness. */
         predicate Valid()
             reads this
         {
             //  Height and sequences sizes.
-            1 <= TREE_HEIGHT ==  height(t) == |branch| == |zero_h| == |p|
+            1 <= TREE_HEIGHT == |branch| == |zero_h| 
             //  Maximum number of values stored in the tree bounded.
-            && count < power2(TREE_HEIGHT) == |leavesIn(t)|
+            && count < power2(TREE_HEIGHT) 
             //  count is the number of values added so far.
             && |values| == count
-            //  t is the Merkle tree for values. 
-            && isMerkle(t, values, f, d) && hasLeavesIndexedFrom(t, 0)
             //  zero_h is constant and equal to default values for each level of t.
             && zero_h == zeroes(f, d, TREE_HEIGHT - 1)
-            //  Left and right siblings of `p` are given by branch and zero_h.
-            //  p[i] == b means the sibling is at 1 - b, i.e. if p[i] == 0 (resp. 1), 
-            //  sibling is at level i is the right (resp. left) child. 
-            && (forall i :: 0 <= i < |p| ==> 
-                siblingValueAt(p, t, i + 1) == 
-                    if p[i] == 0 then zero_h[i] else branch[i]
-            )
-            //  `p` is the path to the next available slot in the tree at index `count`.
-            && p == natToBitList(count, TREE_HEIGHT)
+            //  branch and zero_h are the left and right siblings of path to 
+            //  |values|-th leaf in buildMerkle(values, TREE_HEIGHT, f, d)
+            && areSiblingsValueForLeafAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h)
         }
 
         /**
@@ -106,79 +98,72 @@ module DepositSmart {
          */
         constructor(h: nat, l : seq<int>, f1 : (int, int) -> int, default : int) 
             requires h >= 1
-            requires |l| == h && forall i :: 0 <= i < |l| ==> l[i] == 0
+            requires |l| == h 
             ensures Valid()
         {
             //  State variables
             TREE_HEIGHT, count, f, d := h, 0, f1, default;
-            branch, zero_h := l, zeroes(f1, default, h - 1);
+            zero_h, branch := zeroes(f1, default, h - 1), l ;
 
             //  Ghost variables
-            t, values, p := buildMerkle([], h, f1, default), [],  natToBitList(0, h);
+            values := [];
             
-            //  Proof that right siblings of p are zero_h.
+            //  Proof that right siblings of path atToBitList2(0, h) are zero_h.
             bitToNatToBitsIsIdentity(0, h);
             valueIsZeroImpliesAllZeroes(natToBitList2(0, h));
             leafAtPathIsIntValueOfPath(natToBitList2(0, h), buildMerkle([], h, f1, default), 0, 0);
             rightSiblingsOfLastPathAreDefault(natToBitList2(0, h), buildMerkle([], h, f1, default), 0, f1, 0, default);
         }
 
-        /** 
-         *  This method updates the left siblings (branch) in order
-         *  to maintain the correspondence with the Merkle tree for values.
-         *  This is captured by the Valid() predicate.
-         *  In this version we use the functions operating on sequences
-         *  in a functional style.
-         *  
-         *  @param  v   The new deposit amount.
+        // method deposit_ff(v : int) 
+        //     requires Valid()
+        //     requires count < power2(TREE_HEIGHT) - 1         
+        //     ensures Valid()
+        //     modifies this 
+        // {
+            
+        //     nextTree2(values, v, TREE_HEIGHT, branch, zero_h, f, d);
+        //     values := values + [v];
+
+        //     //  Algorithm
+        //     branch := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, count, branch, zero_h, f, v);
+        //     count := count + 1;
+
+        // }   
+
+        /**
+         *  The get_deposit_root() function.
+         *
+         *  This method should always return the root value of the tree.
+         *
+         *  @returns    The root value of the Merkle Tree for values.
          */
+        method get_deposit_root_f() returns (r : int) 
+            requires Valid()
+            ensures Valid()
+            /** The result is the root value of the tree that corresponds to `values`. */
+            ensures r == buildMerkle(values, TREE_HEIGHT, f, d).v 
+        {
+            r := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
+
+            //  The proof of post condition follows easily from:
+            computeRootUsingDefaultIsCorrectInAMerkleTree2(values, TREE_HEIGHT, branch, zero_h, f, d);
+        }
+
         method deposit(v : int) 
             requires Valid()
             requires count < power2(TREE_HEIGHT) - 1         
             ensures Valid()
             modifies this 
         {
-            ghost var nextTree :=  buildMerkle(values + [v], TREE_HEIGHT, f, d);
-            assert(p == natToBitList(|values|, TREE_HEIGHT));
-
-            //  Siblings of p in t are same as siblings on p in old(t)
-            forall (i : nat | 0 <= i < |p|)
-                ensures siblingValueAt(p, nextTree, i + 1) == 
-                     siblingValueAt(p, old(t), i + 1) ==
-                        if p[i] == 0 then
-                             zero_h[i]
-                        else 
-                            branch[i]
-            {
-                reveal_siblingValueAt();
-                nextPathSameSiblingsInNextList(
-                    TREE_HEIGHT, values, v, old(t), 
-                    nextTree, 
-                    f, d, p);
-            }
             
-            bitToNatToBitsIsIdentity(count, TREE_HEIGHT);
-            pathToNoLasthasZero(p);
-            assert(exists i :: 0 <= i < |p| && p[i] == 0);
-
-            forall ( i : nat | 0 <= i < |nextPath(p)| && nextPath(p)[i] == 1)
-                ensures computeLeftSiblingOnNextPathFromLeftRight(p, branch, zero_h, f, v)[i]
-                    ==
-                    siblingValueAt(nextPath(p), nextTree, i + 1) 
-            {
-                computeLeftSiblingOnNextPathFromLeftRightIsCorrectInAMerkleTree(
-                    p, values, v, nextTree, branch, zero_h, f, d
-                );
-            }
-
-            pathToSucc(old(p), old(count), TREE_HEIGHT);
-            assert(nextPath(p) == natToBitList(old(count) + 1, TREE_HEIGHT));
-
             var value := v;
             var size : nat := count;
             var i : nat := 0;
             
             ghost var e := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, size, branch, zero_h, f, v);
+            ghost var p := natToBitList(|values|, TREE_HEIGHT);
+
             assert(branch == take(branch, TREE_HEIGHT - i));
             assert(zero_h == take(zero_h, TREE_HEIGHT - i));
             assert(|e| == TREE_HEIGHT);
@@ -189,7 +174,7 @@ module DepositSmart {
             ///////////////////////////////////////////////////////////////////
             
             while size % 2 == 1 
-                invariant zero_h == old(zero_h) && t == old(t) && p == old(p) && count == old(count) && values == old(values) && branch == old(branch)
+                invariant zero_h == old(zero_h)  && p == old(p) && count == old(count) && values == old(values) && branch == old(branch)
                 invariant 0 <= TREE_HEIGHT - i - 1 
                 //  The next one is the important invariant that ensures
                 //  that the update of branch after the loop does not
@@ -212,7 +197,8 @@ module DepositSmart {
                         TREE_HEIGHT - i, size, 
                         take(branch, TREE_HEIGHT - i), 
                         take(zero_h, TREE_HEIGHT - i), f, value) 
-                    + drop(branch, TREE_HEIGHT - i);
+                    + drop(branch, TREE_HEIGHT - i);    //  proving the + may
+                    //  need sone help
 
                 //  Termination is easy as size decreases and must be zero.
                 decreases size 
@@ -221,7 +207,7 @@ module DepositSmart {
                 div2IsInit(size, take(p, TREE_HEIGHT - i));
                 assert(size / 2 < power2(|take(p, TREE_HEIGHT - i - 1)|));
                 power2LessThanDiv2(size, TREE_HEIGHT - i);
-                assert(size / 2 < power2(TREE_HEIGHT - i - 1) - 1);
+                // assert(size / 2 < power2(TREE_HEIGHT - i - 1) - 1);
                 assert(init(take(p, TREE_HEIGHT - i)) == take(p, TREE_HEIGHT - i - 1));
 
                 //  Some help to verify I2:
@@ -239,39 +225,30 @@ module DepositSmart {
                         take(branch, TREE_HEIGHT - i), 
                         take(zero_h, TREE_HEIGHT - i), f, value) 
                     + drop(branch, TREE_HEIGHT - i));
-            assert(size % 2 == 0);
-            assert( e == init(take(branch, TREE_HEIGHT - i)) + [value] + drop(branch, TREE_HEIGHT - i));
-            seqIndexLemmas(branch, TREE_HEIGHT - i);
+            calc == {
+                e;
+                computeLeftSiblingsOnNextpathWithIndex(
+                        TREE_HEIGHT - i, size, 
+                        take(branch, TREE_HEIGHT - i), 
+                        take(zero_h, TREE_HEIGHT - i), f, value) 
+                    + drop(branch, TREE_HEIGHT - i);
+                { assert(size % 2 == 0); }
+                init(take(branch, TREE_HEIGHT - i)) + [value] + drop(branch, TREE_HEIGHT - i);
+                old(branch)[TREE_HEIGHT - i - 1 := value];
+            }
+            
             //  This is the important hidden property: TREE_HEIGHT - i - 1 is NEVER 
             //  out of range. 
             branch := branch[TREE_HEIGHT - i - 1 := value];
-            count := count + 1;
-
+            assert(branch == old(branch)[TREE_HEIGHT - i - 1 := value]);
             assert(branch == e);
 
-            assert(zero_h == old(zero_h));
-            assert(t == old(t));
-            // assert(count == old(count));
+            count := count + 1;
 
-            //  Update ghost vars
-            assert(p == natToBitList(old(count), TREE_HEIGHT));
-            bitToNatToBitsIsIdentity(old(count), TREE_HEIGHT);
-            pathToNoLasthasZero(p);
-            assert(exists i :: 0 <= i < |p| && p[i] == 0);
-
+            //  Update ghost vars and prove correctness with new tree
+            nextTree2(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
             values := values + [v];
-            p := nextPath(p);
-            t := buildMerkle(values, TREE_HEIGHT, f, d);
-            
-            pathToLastInMerkleTreeHasZeroRightSiblings(p, values, t, f, d);
-            assert(
-                forall i :: 0 <= i < |p| && p[i] == 0 ==> 
-                    siblingValueAt(p, t, i + 1) == zero_h[i]
-            );
-            assert(
-                forall i :: 0 <= i < |p| && p[i] == 1 ==> 
-                    siblingValueAt(p, t, i + 1) == branch[i]
-            );
+
         }
 
         /**
@@ -285,7 +262,7 @@ module DepositSmart {
             requires Valid()
             ensures Valid()
             /** The result of get_deposit_root_() is the root value of the tree.  */
-            ensures r == t.v
+            ensures r == buildMerkle(values, TREE_HEIGHT, f, d).v 
         {
             //  Some help to prove that the main invariant holds on entry:
             assert(take(branch, TREE_HEIGHT) == branch);
@@ -331,7 +308,11 @@ module DepositSmart {
             assert(e == computeRootLeftRightUpWithIndex(0, 0, [], [], f, r) == r);
             //  The proof of post condition follows easily from the correctness
             //  of computeRootLeftRightUpWithIndex
-            computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
+            // computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
+             //  The proof of post condition follows easily from:
+            computeRootUsingDefaultIsCorrectInAMerkleTree2(values, TREE_HEIGHT, branch, zero_h, f, d);
         }
     }
+
+    
 }

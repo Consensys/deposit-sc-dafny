@@ -131,6 +131,8 @@ module SeqHelpers {
         ensures k < |p| ==> init(drop(p, k)) == drop(init(p), k)
         ensures k < |p| ==> last(drop(p, k)) == last(p)
         ensures 1 <= k <= |p| ==> last(take(p, k)) == p[k - 1]
+        ensures 1 <= k <= |p| ==> init(take(p, k)) == take(p, k - 1)
+        // ensures 1 <= k <= |p| ==> init(drop(p, k)) == take(p, k - 1)
         
     {   
         //  Thanks Dafny

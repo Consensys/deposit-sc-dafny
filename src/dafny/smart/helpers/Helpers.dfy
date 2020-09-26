@@ -69,4 +69,17 @@ module Helpers {
     {
         reveal_power2();
     }
+
+    /**
+     *  If k < 2^{n} - 1 and the last bit of binary of k is 1, then
+     *  k / 2 < 2^{n - 1} - 1
+     */
+    lemma power2LessThanDiv2(k : nat, n : nat) 
+        requires n >= 1
+        requires k < power2(n) - 1
+        requires k % 2 == 1
+        ensures k / 2 < power2(n - 1) - 1
+    {
+        reveal_power2();   
+    }
 }
