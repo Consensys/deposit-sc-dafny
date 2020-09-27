@@ -183,7 +183,7 @@ module DepositSmart {
          *  
          *  @param  v   The new deposit amount.
          */
-        method deposit(v : int) 
+        method {:timeLimitMultiplier 5} deposit(v : int) 
             requires Valid()
             requires count < power2(TREE_HEIGHT) - 1         
             ensures Valid()
@@ -201,10 +201,10 @@ module DepositSmart {
             assert(|e| == TREE_HEIGHT);
             
             //  In our version branch and zero_h store the vectors in reverse order, so we
-            //  use TREE_HEIGHT - i - 1  instead of index i in the original algorith.
+            //  use TREE_HEIGHT - i - 1  instead of index i < TREE_HEIGHT in the original algorith.
             //  @todo   Add a copy of branch in reverse order to use index i.
-            //  Algorithm. Note that the test TREE_HEIGHT - i - 1 < TREE_HEIGHT in the original
-            //  version of the algorithm alwaus evaluates to true and is reducndant.
+            //  Note that the test i < TREE_HEIGHT in the original
+            //  version of the algorithm always evaluates to true and is redundant.
             while size % 2 == 1 
                 invariant zero_h == old(zero_h)  && p == old(p) && count == old(count) && values == old(values) && branch == old(branch)
                 invariant 0 <= TREE_HEIGHT - i - 1 
@@ -270,8 +270,8 @@ module DepositSmart {
                 old(branch)[TREE_HEIGHT - i - 1 := value];
             }
             
-            //  This is the important hidden property: TREE_HEIGHT - i - 1 is NEVER 
-            //  out of range, and always in [0, TREE_HEIGHT[
+            //  This is the important hidden property: TREE_HEIGHT - i - 1 ( i < TREE_HEIGHT)
+            //  in original version) is NEVER out of range, and always in [0, TREE_HEIGHT[
             branch := branch[TREE_HEIGHT - i - 1 := value];
             //  Correctness is: value of updated branch is the same as e.
             assert(branch == old(branch)[TREE_HEIGHT - i - 1 := value]);
