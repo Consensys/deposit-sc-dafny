@@ -110,8 +110,12 @@ module DepositSmart {
             rightSiblingsOfLastPathAreDefault(natToBitList2(0, h), buildMerkle([], h, f1, default), 0, f1, 0, default);
         }
 
-/**
-         *  The (almost) function version deposit() function.
+        ///////////////////////////////////////////////////////////////////////////
+        //  Functional versions of algorithms.
+        ///////////////////////////////////////////////////////////////////////////
+
+        /**
+         *  The (almost) functional version deposit() function.
          *
          *  This method updates the left siblings (branch) in order
          *  to maintain the correspondence with the Merkle tree for values.
@@ -154,6 +158,10 @@ module DepositSmart {
             computeRootIsCorrect(values, TREE_HEIGHT, branch, zero_h, f, d);
         }
 
+        ///////////////////////////////////////////////////////////////////////////
+        //  Imperative versions of algorithms.
+        ///////////////////////////////////////////////////////////////////////////
+               
         /** 
          *  This method updates the left siblings (branch) in order
          *  to maintain the correspondence with the Merkle tree for values.
