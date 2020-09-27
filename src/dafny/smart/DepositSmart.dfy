@@ -163,7 +163,7 @@ module DepositSmart {
         method get_deposit_root_f() returns (r : int) 
             requires Valid()
             ensures Valid()
-            /** The result is the root value of the tree that corresponds to `values`. */
+            /** The result of get_deposit_root_() is the root value of the Merkle tree for values.  */
             ensures r == buildMerkle(values, TREE_HEIGHT, f, d).v 
         {
             r := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
@@ -296,7 +296,7 @@ module DepositSmart {
          method get_deposit_root() returns (r : int) 
             requires Valid()
             ensures Valid()
-            /** The result of get_deposit_root_() is the root value of the tree.  */
+            /** The result of get_deposit_root_() is the root value of the Merkle tree for values.  */
             ensures r == buildMerkle(values, TREE_HEIGHT, f, d).v 
         {
             //  Some help to prove that the main invariant holds on entry:
