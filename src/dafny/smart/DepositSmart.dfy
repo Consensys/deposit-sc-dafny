@@ -103,7 +103,7 @@ module DepositSmart {
          *
          *  @note           The initial value of `branch` is unconstrained (apart the length
          *                  that should be the same as `h`). This means that the algorithms
-                            are correct given any initial values for `branch`.
+         *                  are correct given any initial values for `branch`.
          */
         constructor(h: nat, l : seq<int>, f1 : (int, int) -> int, default : int) 
             requires h >= 1
