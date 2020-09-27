@@ -300,10 +300,11 @@ module SeqOfBits {
      *  @param  p    A path.
      *  @param  p'   A path.
      */
-    lemma sameNatSameBitList(p : seq<bit>, p' : seq<bit>)
+    lemma {:induction p, p'} sameNatSameBitList(p : seq<bit>, p' : seq<bit>)
         requires 1 <= |p| == |p'| 
         requires bitListToNat(p') == bitListToNat(p)
         ensures p' == p
+        decreases p 
     {
         if |p| == 1 {
             //  Thanks Dafny

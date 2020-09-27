@@ -198,7 +198,7 @@ module SiblingsPlus {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma {:induction } siblingsInEquivTreesNonBaseCaseFirstLeft<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
+    lemma {:induction false } siblingsInEquivTreesNonBaseCaseFirstLeft<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
@@ -365,7 +365,7 @@ module SiblingsPlus {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma {:induction } siblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
+    lemma {:induction p} siblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)

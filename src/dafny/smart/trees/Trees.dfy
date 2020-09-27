@@ -40,7 +40,7 @@ module Trees {
      *  @returns        The height of the tree.
      */
     function height(root : Tree) : nat 
-        ensures height(root) >= 0
+        ensures height(root) >= 0   //  not needed as result is of type nat.
         decreases root
     {
         match root 

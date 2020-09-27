@@ -74,7 +74,7 @@ module Helpers {
      *  If k < 2^{n} - 1 and the last bit of binary of k is 1, then
      *  k / 2 < 2^{n - 1} - 1
      */
-    lemma power2LessThanDiv2(k : nat, n : nat) 
+    lemma {:induction n} power2LessThanDiv2(k : nat, n : nat) 
         requires n >= 1
         requires k < power2(n) - 1
         requires k % 2 == 1

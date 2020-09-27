@@ -450,7 +450,7 @@ module PathInCompleteTrees {
     /**
      *  Same as above but with parametric index instead of zero.
      */
-    lemma indexOfLeafisIntValueOfPath2(p : seq<bit>, r :  Tree, k : nat, index: nat) 
+    lemma {:induction false} indexOfLeafisIntValueOfPath2(p : seq<bit>, r :  Tree, k : nat, index: nat) 
         requires isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, index)
         requires 1 <= |p| == height(r) 
@@ -468,7 +468,7 @@ module PathInCompleteTrees {
     /**
      *  A path to a leaf of index < |leavesin{r)| -1 has a zero in it.
      */
-    lemma  pathToLeafInInitHasZero(p: seq<bit>, r :  Tree, k : nat)
+    lemma {:induction false} pathToLeafInInitHasZero(p: seq<bit>, r :  Tree, k : nat)
         requires |p| == height(r) 
         requires isCompleteTree(r)
         requires hasLeavesIndexedFrom(r, 0)

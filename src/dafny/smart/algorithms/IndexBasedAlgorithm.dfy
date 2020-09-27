@@ -131,6 +131,7 @@ module IndexBasedAlgorithm {
         requires k < power2(h) 
         ensures computeRootAndLeftSiblingsWithIndex(h, k, left, right, f, seed) == 
             computeRootAndLeftSiblingsWithIndex1(h, k, left, right, f, seed)
+        decreases h 
     {
         if h == 1 {
             reveal_power2();
