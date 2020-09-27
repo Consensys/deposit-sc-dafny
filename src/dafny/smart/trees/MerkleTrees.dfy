@@ -12,17 +12,17 @@
  * under the License.
  */
 
-include "helpers/Helpers.dfy"
-include "trees/Trees.dfy"
-include "trees/CompleteTrees.dfy"
-include "synthattribute/ComputeRootPath.dfy"
-include "paths/PathInCompleteTrees.dfy"
-include "paths/NextPathInCompleteTreesLemmas.dfy"
-include "synthattribute/Siblings.dfy"
-include "synthattribute/RightSiblings.dfy"
-include "seqofbits/SeqOfBits.dfy"
-include "helpers/SeqHelpers.dfy"
-include "intdiffalgo/IndexBasedAlgorithm.dfy"
+include "../helpers/Helpers.dfy"
+include "../trees/Trees.dfy"
+include "../trees/CompleteTrees.dfy"
+include "../synthattribute/ComputeRootPath.dfy"
+include "../paths/PathInCompleteTrees.dfy"
+include "../paths/NextPathInCompleteTreesLemmas.dfy"
+include "../synthattribute/Siblings.dfy"
+include "../synthattribute/RightSiblings.dfy"
+include "../seqofbits/SeqOfBits.dfy"
+include "../helpers/SeqHelpers.dfy"
+include "../algorithms/IndexBasedAlgorithm.dfy"
 
 /**
  *  Provide Merkle trees which are trees decorated with a synthesised attribute.
