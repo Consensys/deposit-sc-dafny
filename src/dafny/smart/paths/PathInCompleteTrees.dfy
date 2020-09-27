@@ -67,10 +67,9 @@ module PathInCompleteTrees {
      /**
      *  Simplify a path to a sibling at a given index.
      */
-    lemma {:induction r} simplifyNodeAtIndexFirstBit(p : seq<bit>, r :Tree, i : nat)
+    lemma {:induction false} simplifyNodeAtIndexFirstBit(p : seq<bit>, r :Tree, i : nat)
         requires 1 <= i <= |p| <= height(r) 
         requires isCompleteTree(r)
-        // requires 1 <= i <= |p|
         ensures match r 
             case Node(_, lc, rc) =>
                 nodeAt(take(p, i), r) == 
@@ -154,10 +153,9 @@ module PathInCompleteTrees {
     /**
      *  Simplify a path to a sibling at a given index.
      */
-    lemma {:induction r} simplifySiblingAtIndexFirstBit(p : seq<bit>, r :Tree, i : nat)
+    lemma {:induction false} simplifySiblingAtIndexFirstBit(p : seq<bit>, r :Tree, i : nat)
         requires 2 <= i <= |p| <= height(r) 
         requires isCompleteTree(r)
-        // requires 1 <= i <= |p|
         ensures match r 
             case Node(_, lc, rc) =>
                 siblingAt(take(p, i), r) == 

@@ -23,7 +23,7 @@ include "../trees/Trees.dfy"
  *  Provide proofs that right siblings are constant in Merkle like trees.
  */
 module RSiblings {
- 
+   
     import opened CompleteTrees
     import opened Helpers
     import opened PathInCompleteTrees
@@ -39,7 +39,7 @@ module RSiblings {
      *  @param  d   The default value attached to the leaves.
      *  @param  h   The height of the tree.
      *
-     */
+     */  
     function defaultValue<T>(f: (T, T) -> T, d: T, h : nat) : T
         decreases h
     {
@@ -53,7 +53,7 @@ module RSiblings {
     function method zeroes<T>(f: (T, T) -> T, d: T, h : nat) : seq<T>
         decreases h 
         ensures |zeroes(f, d, h)| == h + 1
-        ensures forall i :: 0 <= i < |zeroes(f, d, h)| ==> zeroes(f, d, h)[i] == defaultValue(f, d, h - i) 
+        ensures forall i {:induction i}:: 0 <= i < |zeroes(f, d, h)| ==> zeroes(f, d, h)[i] == defaultValue(f, d, h - i) 
     {
         if h == 0 then 
             [d]
@@ -126,7 +126,7 @@ module RSiblings {
      *  @param  i       An index on path p.
      *    
      */
-    lemma {:induction p, r} siblingsRightOfPathAreConstant<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, i : nat) 
+    lemma {:induction p, r, i} siblingsRightOfPathAreConstant<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, i : nat) 
 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
@@ -250,7 +250,7 @@ module RSiblings {
      *  @param  zeroes  The default f-value for each level.
      *    
      */
-    lemma {:induction p, r} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T) 
+    lemma {:induction p, r} {:timeLimitMultiplier 2} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T) 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
 
