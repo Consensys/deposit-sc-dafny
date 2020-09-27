@@ -12,7 +12,7 @@ do
   processedfiles=$((processedfiles + 1))
   echo -e "${BLUE}-------------------------------------------------------${NC}"
   echo -e "${BLUE}Processing $entry${NC}"
-  dafny /dafnyVerify:1 /compile:0 /tracePOs /traceTimes "$entry"
+  dafny /dafnyVerify:1 /compile:0 /tracePOs /traceTimes /noCheating:1 "$entry"
   # echo "$result"
   if [ $? -eq 0 ] 
   then
