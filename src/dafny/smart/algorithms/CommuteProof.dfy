@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys Software Inc..
+ * Copyright 2020 ConsenSys Software Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may 
  * not use this file except in compliance with the License. You may obtain 
@@ -53,19 +53,6 @@ module CommuteProof {
             
     {   //  Thanks Dafny
     }
-
-    // lemma foo111<T>(p: seq<bit>, left : seq<T>, right: seq<T>, f  : (T, T) -> T, seed : T)
-    //     requires 1 <= |p| == |left| == |right|
-    //     ensures forall i :: 0 <= i < |p| && p[i] == 1 ==>
-    //             // siblingValueAt(p, r, i + 1) ==
-    //             //     if p[i] == 1 then 
-    //                 left[i] ==
-    //                 computeLeftSiblingOnNextPathFromLeftRight(p, left, right, f, seed)[i]
-    // {
-
-
-    // }
-        
 
     /** 
      *  If the right vector is the zeroes that correspond to d, then
