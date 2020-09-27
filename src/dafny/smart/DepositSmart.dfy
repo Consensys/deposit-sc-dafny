@@ -70,7 +70,14 @@ module DepositSmart {
         /** The list of values added so far. */
         ghost var values : seq<int> 
 
-        /** Property to maintain to ensure correctness. */
+        //  Property to maintain to ensure correctness.
+
+        /** 
+         *  `values` record the valuea so far. buildMerkle(values, TREE_HEIGHT, f, d)
+         *  is the Merkle tree that corresponds to `values`.
+         *  Branch and zero_h should always contain the left (resp. right) siblings 
+         *  of the path to the |values|-th leaf in the Merkle tree.
+         */
         predicate Valid()
             reads this
         {
@@ -89,6 +96,14 @@ module DepositSmart {
 
         /**
          *  Initialisation.
+         *
+         *  @param  h       The height of the tree.
+         *  @param  f1      The function used to decorate the tree (e.g. hash).
+         *  @param  default The default value of the leaves in the tree.
+         *
+         *  @note           The initial value of `branch` is unconstrained (apart the length
+         *                  that should be the same as `h`). This means that the algorithms
+                            are correct given any initial values for `branch`.
          */
         constructor(h: nat, l : seq<int>, f1 : (int, int) -> int, default : int) 
             requires h >= 1
@@ -185,11 +200,11 @@ module DepositSmart {
             assert(zero_h == take(zero_h, TREE_HEIGHT - i));
             assert(|e| == TREE_HEIGHT);
             
-            ///////////////////////////////////////////////////////////////////
-            //  Compute new branch and increment count.
-            //  This is the actual algorithm.
-            ///////////////////////////////////////////////////////////////////
-            
+            //  In our version branch and zero_h store the vectors in reverse order, so we
+            //  use TREE_HEIGHT - i - 1  instead of index i in the original algorith.
+            //  @todo   Add a copy of branch in reverse order to use index i.
+            //  Algorithm. Note that the test TREE_HEIGHT - i - 1 < TREE_HEIGHT in the original
+            //  version of the algorithm alwaus evaluates to true and is reducndant.
             while size % 2 == 1 
                 invariant zero_h == old(zero_h)  && p == old(p) && count == old(count) && values == old(values) && branch == old(branch)
                 invariant 0 <= TREE_HEIGHT - i - 1 
@@ -206,21 +221,20 @@ module DepositSmart {
 
                 // invariant 
                 invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, TREE_HEIGHT - i)  // I1
-                invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, |take(p, TREE_HEIGHT - i)|)  // I1
-                //  we have bot found a zero in p yet 
+                invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, |take(p, TREE_HEIGHT - i)|)  // I2
 
+                //  Main invariant:
                 invariant e == 
                     computeLeftSiblingsOnNextpathWithIndex(
                         TREE_HEIGHT - i, size, 
                         take(branch, TREE_HEIGHT - i), 
                         take(zero_h, TREE_HEIGHT - i), f, value) 
-                    + drop(branch, TREE_HEIGHT - i);    //  proving the + may
-                    //  need sone help
+                    + drop(branch, TREE_HEIGHT - i);    //  proving the + may need sone help
 
                 //  Termination is easy as size decreases and must be zero.
                 decreases size 
             {
-                //  Some help to verify I1:
+                //  Some help to verify I1 and I2:
                 div2IsInit(size, take(p, TREE_HEIGHT - i));
                 assert(size / 2 < power2(|take(p, TREE_HEIGHT - i - 1)|));
                 power2LessThanDiv2(size, TREE_HEIGHT - i);
@@ -237,11 +251,13 @@ module DepositSmart {
                 i := i + 1;
             }
             assert(count == old(count));
+            //  Main invariant at the end of the loop:
             assert(e == computeLeftSiblingsOnNextpathWithIndex(
                         TREE_HEIGHT - i, size, 
                         take(branch, TREE_HEIGHT - i), 
                         take(zero_h, TREE_HEIGHT - i), f, value) 
                     + drop(branch, TREE_HEIGHT - i));
+            //  Relation expected value `e` and initial (old) value of branch.
             calc == {
                 e;
                 computeLeftSiblingsOnNextpathWithIndex(
@@ -255,14 +271,17 @@ module DepositSmart {
             }
             
             //  This is the important hidden property: TREE_HEIGHT - i - 1 is NEVER 
-            //  out of range. 
+            //  out of range, and always in [0, TREE_HEIGHT[
             branch := branch[TREE_HEIGHT - i - 1 := value];
+            //  Correctness is: value of updated branch is the same as e.
             assert(branch == old(branch)[TREE_HEIGHT - i - 1 := value]);
             assert(branch == e);
 
+            //  Finally increment count. Note that count can be incremented at the beginning
+            //  provided that the while loop condition is flipped to size % 2 == 0.
             count := count + 1;
 
-            //  Update ghost vars and prove correctness with new tree
+            //  Update ghost vars and prove correctness with lemma computeNewLeftIsCorrect.
             computeNewLeftIsCorrect(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
             values := values + [v];
         }
@@ -319,7 +338,6 @@ module DepositSmart {
                 h := h + 1;
             }
 
-            //  The correstness proof:
             //  By invariant at the end of the loop and definition of computeRootLeftRightUpWithIndex
             assert(e == computeRootLeftRightUpWithIndex(0, 0, [], [], f, r) == r);
              //  The proof of post condition follows easily from:
