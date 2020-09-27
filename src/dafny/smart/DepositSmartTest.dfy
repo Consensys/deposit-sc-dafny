@@ -330,5 +330,4 @@ module DepositSmart {
         }
     }
 
-    
 }
