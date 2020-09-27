@@ -70,11 +70,6 @@ module DepositSmart {
         /** The list of values added so far. */
         ghost var values : seq<int> 
 
-        /** The (Merkle) tree that corresponds to the list of values added so far. */
-        // ghost var t : Tree<int>
-
-        /** Path to index of next available leaf at index |values|. */
-        // ghost var p : seq<bit>
 
         /** Property to maintain to ensure correctness. */
         predicate Valid()
@@ -90,7 +85,7 @@ module DepositSmart {
             && zero_h == zeroes(f, d, TREE_HEIGHT - 1)
             //  branch and zero_h are the left and right siblings of path to 
             //  |values|-th leaf in buildMerkle(values, TREE_HEIGHT, f, d)
-            && areSiblingsValueForLeafAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h)
+            && areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h)
         }
 
         /**
@@ -115,24 +110,33 @@ module DepositSmart {
             rightSiblingsOfLastPathAreDefault(natToBitList2(0, h), buildMerkle([], h, f1, default), 0, f1, 0, default);
         }
 
-        // method deposit_ff(v : int) 
-        //     requires Valid()
-        //     requires count < power2(TREE_HEIGHT) - 1         
-        //     ensures Valid()
-        //     modifies this 
-        // {
-            
-        //     nextTree2(values, v, TREE_HEIGHT, branch, zero_h, f, d);
-        //     values := values + [v];
+/**
+         *  The (almost) function version deposit() function.
+         *
+         *  This method updates the left siblings (branch) in order
+         *  to maintain the correspondence with the Merkle tree for values.
+         *  This is captured by the Valid() predicate.
+         *  In this version we use the functions operating on sequences
+         *  in a functional style.
+         *  
+         *  @param  v   The new deposit amount.
+         */
+        method deposit_f(v : int) 
+            requires Valid()
+            requires count < power2(TREE_HEIGHT) - 1         
+            ensures Valid()
+            modifies this 
+        {
+            branch := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, count, branch, zero_h, f, v);
+            count := count + 1;
 
-        //     //  Algorithm
-        //     branch := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, count, branch, zero_h, f, v);
-        //     count := count + 1;
-
-        // }   
+             //  Update ghost vars and prove correctness with new tree
+            computeNewLeftIsCorrect(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
+            values := values + [v];
+        }   
 
         /**
-         *  The get_deposit_root() function.
+         *  The get_deposit_root() functional function.
          *
          *  This method should always return the root value of the tree.
          *
@@ -147,9 +151,18 @@ module DepositSmart {
             r := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
 
             //  The proof of post condition follows easily from:
-            computeRootUsingDefaultIsCorrectInAMerkleTree2(values, TREE_HEIGHT, branch, zero_h, f, d);
+            computeRootIsCorrect(values, TREE_HEIGHT, branch, zero_h, f, d);
         }
 
+        /** 
+         *  This method updates the left siblings (branch) in order
+         *  to maintain the correspondence with the Merkle tree for values.
+         *  This is captured by the Valid() predicate.
+         *  In this version we use the functions operating on sequences
+         *  in a functional style.
+         *  
+         *  @param  v   The new deposit amount.
+         */
         method deposit(v : int) 
             requires Valid()
             requires count < power2(TREE_HEIGHT) - 1         
@@ -246,7 +259,7 @@ module DepositSmart {
             count := count + 1;
 
             //  Update ghost vars and prove correctness with new tree
-            nextTree2(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
+            computeNewLeftIsCorrect(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
             values := values + [v];
 
         }
@@ -310,7 +323,7 @@ module DepositSmart {
             //  of computeRootLeftRightUpWithIndex
             // computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
              //  The proof of post condition follows easily from:
-            computeRootUsingDefaultIsCorrectInAMerkleTree2(values, TREE_HEIGHT, branch, zero_h, f, d);
+            computeRootIsCorrect(values, TREE_HEIGHT, branch, zero_h, f, d);
         }
     }
 
