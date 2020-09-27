@@ -24,8 +24,8 @@ include "./MerkleTrees.dfy"
 include "./intdiffalgo/IndexBasedAlgorithm.dfy"
 
 /**
- *  A proof of correctness for the Deposit Smart Contract Algorith.
- *  Version using FP algorithm.
+ *  A proof of correctness for the Deposit Smart Contract Algorithm.
+ *  
  */
 module DepositSmart {
 
@@ -161,13 +161,11 @@ module DepositSmart {
         ///////////////////////////////////////////////////////////////////////////
         //  Imperative versions of algorithms.
         ///////////////////////////////////////////////////////////////////////////
-               
+
         /** 
          *  This method updates the left siblings (branch) in order
          *  to maintain the correspondence with the Merkle tree for values.
          *  This is captured by the Valid() predicate.
-         *  In this version we use the functions operating on sequences
-         *  in a functional style.
          *  
          *  @param  v   The new deposit amount.
          */
@@ -327,9 +325,6 @@ module DepositSmart {
             //  The correstness proof:
             //  By invariant at the end of the loop and definition of computeRootLeftRightUpWithIndex
             assert(e == computeRootLeftRightUpWithIndex(0, 0, [], [], f, r) == r);
-            //  The proof of post condition follows easily from the correctness
-            //  of computeRootLeftRightUpWithIndex
-            // computeRootUsingDefaultIsCorrectInAMerkleTree(p, values, t, branch, zero_h, f, d);
              //  The proof of post condition follows easily from:
             computeRootIsCorrect(values, TREE_HEIGHT, branch, zero_h, f, d);
         }
