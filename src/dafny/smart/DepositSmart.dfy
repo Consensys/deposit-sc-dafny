@@ -70,7 +70,6 @@ module DepositSmart {
         /** The list of values added so far. */
         ghost var values : seq<int> 
 
-
         /** Property to maintain to ensure correctness. */
         predicate Valid()
             reads this
@@ -175,7 +174,6 @@ module DepositSmart {
             ensures Valid()
             modifies this 
         {
-            
             var value := v;
             var size : nat := count;
             var i : nat := 0;
@@ -267,7 +265,6 @@ module DepositSmart {
             //  Update ghost vars and prove correctness with new tree
             computeNewLeftIsCorrect(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
             values := values + [v];
-
         }
 
         /**
@@ -329,5 +326,4 @@ module DepositSmart {
             computeRootIsCorrect(values, TREE_HEIGHT, branch, zero_h, f, d);
         }
     }
-   
 }
