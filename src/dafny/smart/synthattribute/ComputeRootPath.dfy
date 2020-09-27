@@ -12,7 +12,6 @@
  * under the License.
  */
  
-// include "../intdiffalgo/DiffTree.dfy"
 include "../trees/CompleteTrees.dfy"
 include "GenericComputation.dfy"
 include "../helpers/Helpers.dfy"
@@ -32,7 +31,6 @@ include "../trees/Trees.dfy"
  */
 module ComputeRootPath {
  
-    // import opened DiffTree
     import opened CompleteTrees
     import opened GenericComputation
     import opened Helpers
@@ -239,7 +237,7 @@ module ComputeRootPath {
      *  @param  f       The binary operation to compute.
      *  @param  seed    The value at the end of the path.
      */
-    lemma shiftComputeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T) 
+    lemma {:induction p, left, right} shiftComputeAll<T>(p : seq<bit>, left : seq<T>, right: seq<T>, f: (T, T) -> T, seed: T) 
         requires |p| == |left| == |right|
         ensures computeAllUp(p, left, right, f, seed) == tail(computeAllUp2(p, left, right, f, seed))
         ensures forall i :: 0 <= i < |p| ==>  computeAllUp(p, left, right, f, seed)[i] == computeAllUp2(p, left, right, f, seed)[i + 1]
@@ -403,6 +401,8 @@ module ComputeRootPath {
 
         ensures forall i :: 0 <= i <= |p| ==> 
             nodeAt(take(p, i), r).v == computeAll(p, left, right, f, seed)[i]
+
+        decreases p 
     {
         
         forall (i : nat | 0 <= i <= |p|) 
