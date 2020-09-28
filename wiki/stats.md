@@ -3,7 +3,18 @@
 
 # Source Code Statistics
 
-|    | Files                             | Folder                         |   #LoC |   Theorems |   Implementations |   Documentation |   #Doc/#LoC (%) |   Proved |
+In the table below the columns represent:
+
+*  **Files/Folder**: the file name and the directory it can be found in.
+*  **#LoC** is the number of lines of code in the file (excluding white spaces and comments).
+*  **Lemmas** is the number of lemmas proved in the file.
+*  **Implementations** is the number of implementations with pre/post conditions proved in the file.
+* **Documentation** is the number of lines of documentation (JavaDoc style).
+* **#Doc/#LoC (%)** is the ratio of documentation vs LoC.
+* **Proved** is the number of lemmas and implementations proved in the file.
+
+
+|    | Files                             | Folder                         |   #LoC |   Lemmas |   Implementations |   Documentation |   #Doc/#LoC (%) |   Proved |
 |----|-----------------------------------|--------------------------------|--------|------------|-------------------|-----------------|-----------------|----------|
 |  0 | DepositSmart.dfy                  | src/dafny/smart                |    163 |          0 |                 5 |              90 |              55 |        5 |
 |  1 | CommuteProof.dfy                  | src/dafny/smart/algorithms     |     73 |          2 |                 0 |              31 |              42 |        2 |

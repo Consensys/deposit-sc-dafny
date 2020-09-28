@@ -53,5 +53,5 @@ The Dafny code (proof and algorithm) can be found [here](https://github.com/Pega
 
 *   Some [background information](./wiki//background.md) on Incremental Merkle Tree Algorithm.
 *   Some [Statistics](./wiki/stats.md) (number of proofs, LoC, ...)
-* A [nice graph](./wiki/structure.svg) of the architectire of this project
+* A [nice graph](./wiki/structure.svg) of the architecture of this project (self loops indicate recursive functions).
 
