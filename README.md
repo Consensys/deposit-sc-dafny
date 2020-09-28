@@ -47,6 +47,8 @@ method deposit(v : int)
 Alternatively `deposit_count` can be incremented at the beginning and in that case the `while` loop condition
 is negated `size % 2 == 0`.
 
+The Dafny code (proof and algorithm) can be found [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy#L186).
+
 # Supplementary Material
 
 *   Some [background information](./wiki//background.md) on Incremental Merkle Tree Algorithm.
