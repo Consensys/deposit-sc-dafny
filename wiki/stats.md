@@ -6,12 +6,15 @@
 In the table below the columns represent:
 
 *  **Files/Folder**: the file name and the directory it can be found in.
-*  **#LoC** is the number of lines of code in the file (excluding white spaces and comments).
-*  **Lemmas** is the number of lemmas proved in the file.
-*  **Implementations** is the number of implementations with pre/post conditions proved in the file.
-* **Documentation** is the number of lines of documentation (JavaDoc style).
+*  **#LoC** is the number of lines of code in the file (excluding white spaces and comments). This figure is obtained by running
+ `dafny /rprint:- /noAutoReq /noVerify /nologo /env:0 /printMode:NoIncludes file.dfy` that pretty-prints the non-comments code only. We filter out the blank lines to obtain the number **#LoC**.
+*  **Lemmas** is the number of lemmas proved in the file. This corresponds to the number of `lemma` functions in a file. 
+*  **Implementations** is the number of implementations with pre/post conditions proved in the file. This corresponds to `function` or `function methods` in a file.
+* **Documentation** is the number of lines of documentation (JavaDoc style). The documentation is the part of a file
+    within the documentation comment (`/** ... */`) delimiters. The number of lines of documentation is **#Doc**. 
 * **#Doc/#LoC (%)** is the ratio of documentation vs LoC.
-* **Proved** is the number of lemmas and implementations proved in the file.
+* **Proved** is the number of lemmas and implementations proved in the file. In this project **all the lemmas and functions are
+proved**.
 
 
 |    | Files                             | Folder                         |   #LoC |   Lemmas |   Implementations |   Documentation |   #Doc/#LoC (%) |   Proved |

@@ -1,6 +1,6 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
-[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://code.visualstudio.com/)
+ [![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://code.visualstudio.com/)
  [![Proofs](https://img.shields.io/badge/ProvedLemmas-136-yellow.svg)](https://shields.io/) 
  [![LoC](https://img.shields.io/badge/LoC-3536-green.svg)](https://shields.io/) 
  [![Checks](https://img.shields.io/badge/DafnyVerify-Verified-orange.svg)](https://shields.io/) 
@@ -57,9 +57,44 @@ is negated `size % 2 == 0`.
 
 The Dafny code for `deposit()` (proof and algorithm) can be found [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy#L186).
 
+# Overview
+
+Most of the code in this repository pertains to the **correctness** proofs of the algorithms.
+The _proof_ code is a Dafny program but does not need to be executable (e.g. we use `function` or `lemma` 
+to write the proofs rather `method` or `function method` to write executable code).
+The core algorithms for the incremental Merkle tree algorithms (imperative and functional styles) are very short (see  the _algorithms_ directory 
+[Statistics](./wiki/stats.md)).
+
+The Deposit Smart Contract code and its correctness proof in [DepositSmart.dfy](https://github.com/PegaSysEng/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy) relies on several auxiliary proofs with functions and lemmas.
+The code for these proofs has not been _optimised_ and some of the hints provided in the proof code are not necessary for Dafny
+to prove the results. 
+
+The proof of the algorithm follows a principled approach to algorithm design: 
+* some **key properties** of the problem are identified,
+* a **logical correctness criterion** is defined using Merkle trees,
+* **functional style algorithms** are designed and **proved correct** with respect to the correctness criterion,
+* finally the imperative versions (with `while` loops) are proved correct by showing that they compute the
+same result as the functional algorithms.
+
+This technique has the advantage of highlighting the main steps of the proof:
+* the incremental Merkle tree algorithm is an instance of **dynamic programming**,
+* the correctness proofs are provided on the **functional style versions first**. It is easier to prove correctness on the
+side-effect free algorithms. 
+The final step of proving that the imperative versions of the algorithms are correct boils down to proving that they compute the same result
+as their functional counter-parts and is somehow detached from the intricacy of the correctness proofs.
+
+
+The following sections may help the reader understand the idea of the proof and how it is implemented in Dafny:
+
+ * Some [background](./wiki//background.md) on the Incremental Merkle Tree problem and algorithm.
+ * The main proof ideas and sketch.
+
+
+
 # Supplementary Material
 
-*   Some [background information](./wiki//background.md) on Incremental Merkle Tree Algorithm.
-*   Some [Statistics](./wiki/stats.md) (number of proofs, LoC, ...)
-* A [nice graph](./wiki/structure.svg) of the architecture of this project (self loops indicate recursive functions).
+The following resources provide a high-level picture of the code:
+
+* [Statistics](./wiki/stats.md) (number of proofs, LoC, ...)
+* A [nice dependency or call graph](./wiki/structure.svg) tha depecits the architecture of this project (self loops indicate recursive functions).
 
