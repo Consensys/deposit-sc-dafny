@@ -47,19 +47,19 @@ module DepositSmart {
 
         //  State Variables.
 
-        /** The default value for the leaves. */
+        /** The default value for the leaves. It is 0 in the orginal algorithm. */
         const d : int 
 
-        /** The attribute function to synthesise. */
+        /** The attribute function to synthesise. Hash funciton in the original algorithm. */
         const f : (int, int) -> int
     
         /** The height of the tree. */
         const TREE_HEIGHT : nat
 
-        /** The values on the left siblings of the path to leaf of index k. */
+        /** The values on the left siblings of the path to leaf at index k. */
         var branch : seq<int>
 
-        /** The value sof the right siblings of path to leaf at index k. */
+        /** The values of the right siblings of the path to leaf at index k. */
         const zero_h : seq<int>
 
         /** The number of values added to the list. Also the index of the next available leaf. */
@@ -73,19 +73,21 @@ module DepositSmart {
         //  Property to maintain to ensure correctness.
 
         /** 
-         *  `values` record the valuea so far. buildMerkle(values, TREE_HEIGHT, f, d)
-         *  is the Merkle tree that corresponds to `values`.
-         *  Branch and zero_h should always contain the left (resp. right) siblings 
-         *  of the path to the |values|-th leaf in the Merkle tree.
+         *  @note   `values` record the values added so far. buildMerkle(values, TREE_HEIGHT, f, d)
+         *          is the Merkle tree that corresponds to `values`.
+         *          `branch` and `zero_h` should always contain the left (resp. right) siblings 
+         *          of the path to the |values|-th leaf in the Merkle tree. 
+         *  @note   |values| is the length of the
+         *          list `values`.
          */
         predicate Valid()
             reads this
         {
-            //  Height and sequences sizes.
+            //  Constraints on height and length of lists.
             1 <= TREE_HEIGHT == |branch| == |zero_h| 
             //  Maximum number of values stored in the tree bounded.
             && count < power2(TREE_HEIGHT) 
-            //  count is the number of values added so far.
+            //  count is the number of values added so far and should correspond to |values|.
             && |values| == count
             //  zero_h is constant and equal to default values for each level of t.
             && zero_h == zeroes(f, d, TREE_HEIGHT - 1)
@@ -102,7 +104,7 @@ module DepositSmart {
          *  @param  default The default value of the leaves in the tree.
          *
          *  @note           The initial value of `branch` is unconstrained (apart the length
-         *                  that should be the same as `h`). This means that the algorithms
+         *                  that should be the same as `h`). This implies that the algorithms
          *                  are correct given any initial values for `branch`.
          */
         constructor(h: nat, l : seq<int>, f1 : (int, int) -> int, default : int) 
@@ -117,7 +119,7 @@ module DepositSmart {
             //  Ghost variables
             values := [];
             
-            //  Proof that right siblings of path atToBitList2(0, h) are zero_h.
+            //  Proof that right siblings of path natToBitList2(0, h) are zero_h.
             bitToNatToBitsIsIdentity(0, h);
             valueIsZeroImpliesAllZeroes(natToBitList2(0, h));
             leafAtPathIsIntValueOfPath(natToBitList2(0, h), buildMerkle([], h, f1, default), 0, 0);
