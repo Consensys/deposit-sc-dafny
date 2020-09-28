@@ -1,27 +1,35 @@
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
+[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://code.visualstudio.com/)
+ [![Proofs](https://img.shields.io/badge/ProvedLemmas-136-yellow.svg)](https://shields.io/) 
+ [![LoC](https://img.shields.io/badge/LoC-3536-green.svg)](https://shields.io/) 
+ [![Checks](https://img.shields.io/badge/DafnyVerify-Verified-orange.svg)](https://shields.io/) 
+
+[![HitCount](http://hits.dwyl.com/https://githubcom/PegaSysEng/eth20-dafny.svg)](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny)
+
 # Verification of the Deposit Smart Contract in Dafny
 
 This repository contains the implementation and the formal proof of the Deposit Smart Contract algorithm.
 
 # Breakdown of our results
 
-The source code in this repository is the first complete formal proof of correctness of the
+The source code in this repository is the **first complete formal proof of correctness** of the
 incremental Merkle tree algorithm used in the Deposit Smart Contract.
 The proofs are designed for an arbitrary attribute of type `T` to be computed on a tree (not restricted to a _hash_ function).
 The height of the tree is also parametric and the proof holds for any height.
 
-The proofs and algorithms are written in Dafny, a verification-friendly programming language.
+The proofs and algorithms are written in [Dafny](https://github.com/dafny-lang/dafny/wiki), a verification-friendly programming language.
 
 The main contributions of this project are:
 
-*   a _formal definition_ of the correctness criterion,
-*   _functional specifications_ of correctness,
-*   functional and imperative style algorithms for the `deposit()` and `get_deposit_root()`.
+*   a **formal definition** of the correctness criterion,
+*   **functional specifications** of correctness,
+*   functional and imperative style **algorithms** for the `deposit()` and `get_deposit_root()`.
 
 The main results are:
 
-*   a complete proof of correctness (including termination)
-*   a simplified version of the `deposit()` algorithm.
+*   a **fully mechanised proof of correctness* (including termination)
+*   a **simplified** version of the `deposit()` algorithm.
 
 The **provably correct** simplified version of `deposit()` is as follows:
 
@@ -47,7 +55,7 @@ method deposit(v : int)
 Alternatively `deposit_count` can be incremented at the beginning and in that case the `while` loop condition
 is negated `size % 2 == 0`.
 
-The Dafny code (proof and algorithm) can be found [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy#L186).
+The Dafny code for `deposit()` (proof and algorithm) can be found [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy#L186).
 
 # Supplementary Material
 
