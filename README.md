@@ -5,7 +5,7 @@
  [![LoC](https://img.shields.io/badge/LoC-3536-green.svg)](https://shields.io/) 
  [![Checks](https://img.shields.io/badge/DafnyVerify-Verified-orange.svg)](https://shields.io/) 
 
-[![HitCount](http://hits.dwyl.com/https://githubcom/PegaSysEng/eth20-dafny.svg)](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny)
+[![HitCount](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny.svg)](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny)
 
 # Verification of the Deposit Smart Contract in Dafny
 
