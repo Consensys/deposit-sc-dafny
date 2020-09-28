@@ -16,12 +16,12 @@ The main contributions of this project are:
 
 *   a _formal definition_ of the correctness criterion,
 *   _functional specifications_ of correctness,
-*   funcional and imperative style algorithms for the `deposit()` and `get_deposit_root()`.
+*   functional and imperative style algorithms for the `deposit()` and `get_deposit_root()`.
 
 The main results are:
 
 *   a complete proof of correctness (including termination)
-*   a simplified version of the the `get_deposit_root()` algorithm.
+*   a simplified version of the `get_deposit_root()` algorithm.
 
 The **provably correct** simplified version of `deposit()` is as follows:
 
