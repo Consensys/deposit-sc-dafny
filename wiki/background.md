@@ -1,4 +1,7 @@
 
+[ [up] ](../README.md) [ [next] ](./stats.md)
+
+
 # Background
 
 The core component of the Deposit Smart Contract is the so-called _Incremental Merkle Tree_ algorithm.
@@ -133,3 +136,4 @@ in linear time (`O(h)`).
 
 For the reader familiar with algorithm design, it is a typical example of **dynamic programming**.
 
+[ [up] ](../README.md) [ [next] ](./stats.md)

@@ -1,4 +1,6 @@
 
+[ [up] ](../README.md) [ [next] ](./structure.svg)
+
 # Source Code Statistics
 
 |    | Files                             | Folder                         |   #LoC |   Theorems |   Implementations |   Documentation |   #Doc/#LoC (%) |   Proved |

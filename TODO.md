@@ -17,4 +17,19 @@
  1. merkle definition [DONE]
  2. merkle for a list [DONE]
 
+ ## Finalise
+
+ 1. proof that deposit() computes according to spec and preserves Valid()
+ 2. branch -> left, zero_h -> right and use branch for reverse(left) and zero_h for reverse(right)
+ to simplify the indices in the algorithm
+ 3. README and documentation: update!!!
+
+ ## Misc
+ Check the instances cannot be safely inlined.
+
+ ## Refactor
+ 1. shorten names 
+ 2. add functional version of algorithm
+ 
+
 

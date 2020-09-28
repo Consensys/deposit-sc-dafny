@@ -49,7 +49,7 @@ is negated `size % 2 == 0`.
 
 # Supplementary Material
 
-*   Some [background information](./background.md) on Incremental Merkle Tree Algorithm.
-*   Some [Statistics](./stats.md) (number of proofs, LoC, ...)
-* A [nice graph](./structure.svg) of the architectire of this project
+*   Some [background information](./wiki//background.md) on Incremental Merkle Tree Algorithm.
+*   Some [Statistics](./wiki/stats.md) (number of proofs, LoC, ...)
+* A [nice graph](./wiki/structure.svg) of the architectire of this project
 
