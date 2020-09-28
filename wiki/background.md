@@ -31,11 +31,12 @@ from the root of `T` of any leaf.
 > 1. a **binary** tree if every node that is not a leaf has at most two children and,
 > 2. a **complete** (or perfect) tree if all the branches of the tree from the root to the leaves have the same _height_ `h`.
 
-<center><img src="tree1.jpg" alt="Incomplete/Complete Binary Trees" width="500"></center>
-
-The tree composed of the black nodes above is a binary tree but is not complete.
-Adding the green nodes make it complete.
-The (complete) tree height is `3` and is has `15` nodes and `8` leaves.
+<center>
+<figure>
+<img src="ex1.jpg" alt="Incomplete/Complete Binary Trees" width="500">
+<figcaption><strong>Figure 1</strong>: A complete binary tree of height 3. The tree has 15 nodes and 8 leaves.</figcaption>
+</figure>
+</center>
 
 > As a complete binary tree `T` of height `h` satisfies the following properties:
 > 1. the number of nodes in `T` is `2^(h + 1) - 1` and,
@@ -51,18 +52,22 @@ The Merkle attribute belongs to the category of _synthesised_ attributes.
 > A _synthesised attribute_ on a tree is defined **bottom-up**: the values of the decorations are given on the leaves, and to compute the values on the internal nodes, the values of the left and right children are combined using a binary function.
 
 For the sake of simplicity we assume that the attribute to compute on the tree `T` is a simple function `diff`, 
-with `diff(x,y) == x - y`.
-Each leaf holds an _integer_ value, and the value of an internal node is the _difference_ between the values 
+with `diff(left, right) == left - right - 1`.
+Each leaf holds an _integer_ value, and the value of an internal node is the _diff_ function applied to the values 
 of the left and right children.
 
 The leaves of `T` contains the elements of a list `L` from left to right when traversed _in-order_ (left, node, right).
 To represent a list `L` of `n < 2^h` elements with a binary complete tree of height `h`,
  `L` can be **right-padded** with dummy or neutral elements (e.g. zeroes) to obtain `L'` of length `2^h`. 
 
-For instance, the tree below stores the list `[3, 6, 2, -1, 4]` and the value at the root of the tree is `-10`.
+For instance, the tree below stores the list `[3, 6, 2, -1, 4]` and the value at the root of the tree is `-11`.
 
 <center>
-<img src="tree2.jpg" alt="Storing a list in the tree leaves" width="500">
+<figure>
+<img src="ex2.jpg" alt="Storing a list in the tree leaves" width="500">
+<figcaption><strong>Figure 2</strong>: The `diff` attribute computed on a tree. The value of an internal node (including the root)
+is computed by combining the values of the left and right children using `diff`. </figcaption>
+</figure>
 </center>
 
 > The _root value_ of `T(L)` is the value of the attribute `diff` at the root of `T(L)`.
@@ -76,10 +81,10 @@ Given a list `L`, we denote `T(L)` the decorated tree of height `h` that contain
 The _incremental Merkle tree_ problem is informally stated as:
 
 > Assume we have a collection that _grows monotonically_, e.g. successive lists 
-> `L`, `L + e1`, `(L + e_1) + e_2`, ... and so on (where _+_ is the `append` operator on lists).
-> Can we _incrementally_ (and efficiently) compute the successive properties of `L`, `L + e1`, `(L + e_1) + e_2`
-> i.e. the values of the root of the trees `T(L)`, `T(L + e1)`,
-> `T(L + e1 + e2)`, ... ?
+> `L`, `L :: e1`, `L :: e_1 :: e_2`, ... and so on (where _::_ is the `append` operator on lists).
+> Can we _incrementally_ (and efficiently) compute the successive properties of `L`, `L :: e1`, `L :: e_1 :: e_2`
+> i.e. the values of the root of the trees `T(L)`, `T(L :: e1)`,
+> `T(L :: e1 :: e2)`, ... ?
 
 By efficiently, we mean without traversing the `2^h` nodes of the tree.
 
@@ -87,35 +92,41 @@ By efficiently, we mean without traversing the `2^h` nodes of the tree.
 
 Let `L = [3, 6, 2, -1, 4]`.
 Assume we want to compute the root value of the `diff` attribute for the list 
-`L + 3`.
-As depicted below, this amounts to inserting the new value `3` at the next available leftmost leaf
+`L :: 5`.
+As depicted on **Figure 3** below, this amounts to inserting the new value `3` at the next available leftmost leaf
 of the tree which is `n6`.
 
 <center>
-<img src="tree4.jpg" alt="Impact of leaf change" width="500">
+<figure>
+<img src="ex3.jpg" alt="Impact of leaf change" width="500">
+<figcaption><strong>Figure 3</strong>: Insertion of value at leaf `n6`. The purple nodes' attribute
+values  on the green path to leaf `n6` are impacted by the insertion. To compute the new root value, we only the inserted value, and the value of the nodes on the left (yellow) and right (orange) of the green path. </figcaption>
+</figure>
 </center>
 
 The green path above is the path from the root to the leaf where the new value is inserted. 
 
-> Fact 1: the decorations on the trees T(L) and T(L + 3) differ only on the green path.
+> Fact 1: the decorations on the trees T(L) and T(L :: 5) differ only on the green path.
 
-> Fact 2: to compute the root value of `T(L + 3)` we only need the values on the nodes that are _siblings_ of nodes
+> Fact 2: to compute the root value of `T(L :: 3)` we only need the values on the nodes that are _siblings_ of nodes
 >   on the green path. As depicted above, if we have the values of `diff` on the left (yellow) 
->   and on the right (purple) nodes, we can compute the root value of `T(L + 3)`.
+>   and on the right (purple) nodes, we can compute the root value of `T(L :: 3)`.
 
 > Fact 3: The leaves (`n7`, `n8`) on the right of the green path all have the default value. As a consequence, 
 >   the right (purple) nodes have a default value that correspond to their height.  Height `0` is
 >    a leaf, and the value is default (e.g. `0` for our `diff` attribute).
->   At height `1`, the value is `diff(0, 0)`, at height `2` it is `diff(diff(0,0), diff(0,0))` and so on. 
+>   At height `1`, the value is `diff(0, 0) = -1`, at height `2` it is `diff(diff(0,0), diff(0,0)) = -1` and so on. 
 
-
-If we want to compute the new root value after inserting `3` at `n6` we just need to walk up
+If we want to compute the new root value after inserting `5` at `n6` we just need to walk up
 the green path and compute the `diff` attribute. This can be done in time `O(h)` (`h` is the height of the tree).
 
-After inserting `3` at `n6` in the tree we obtain the new tree depicted below:
+After inserting `5` at `n6` in the tree we obtain the new tree depicted below in **Figure 4**:
 
 <center>
-<img src="tree5.jpg" alt="Nodes needed to compute updated root hash" width="500">
+<figure>
+<img src="ex4.jpg" alt="Nodes needed to compute updated root hash" width="500">
+<figcaption><strong>Figure 4</strong>: Insertion of another value at leaf `n7`. </figcaption>
+</figure>
 </center>
 
 The green path is also updated to be the path to the next available leaf (`n7`). 
@@ -130,7 +141,7 @@ Assume that when we insert a new value in the tree,
 we can also compute the new value of those vectors i.e. the values of siblings on the path to the next
 available leaf.
 
-In this case, if we can iteratively compute the root value of the tree for a list `e1 + e2 + ... + en`
+In this case, if we can iteratively compute the root value of the tree for a list `e1 :: e2 :: ... :: en`
 storing only two vectors of size `h`, and computing the new root value by walking up to current path 
 in linear time (`O(h)`).
 
