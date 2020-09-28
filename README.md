@@ -20,7 +20,7 @@ The main contributions of this project are:
 
 The main results are:
 
-*   a complete proof of correctness (including ternination)
+*   a complete proof of correctness (including termination)
 *   a simplified version of the the `get_deposit_root()` algorithm.
 
 The **provably correct** simplified version of `deposit()` is as follows:
