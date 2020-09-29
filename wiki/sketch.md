@@ -279,7 +279,7 @@ function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, left :
 } 
 ```
 
-### Computing the values of the siblings of next path after inserting a new value in the tree.
+### Computing the values of the siblings of next path after inserting a new value in the tree
 
 The `deposit()` function in the Deposit Smart Contract performs the computation of the values on `p` at the same time as it compute the values of the left siblings on `nextpath(p)` using the inserted value `seed` and the default values on the right siblings of `p`: 
 
