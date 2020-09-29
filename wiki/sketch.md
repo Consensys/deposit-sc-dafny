@@ -61,7 +61,7 @@ function computeRootUp(p : seq<bit>, s: seq<int>, seed: int) : int
 and if we split the siblings's values `s` into two vectors `b` and `z` for the left and right siblings:
 ```dafny
 function computeRootLeftRightUp(p : seq<bit>, b: seq<int>, z: seq<int>, seed: int) : int
-    requires |p| == |s|
+    requires |p| == |b| == |z|
     decreases p
 {
     if |p| == 0 then
@@ -87,7 +87,7 @@ As a consequence, the root value can be computed **without the knowledge of the 
 The (tail recursive) functional version of the algorithm for computing the root value is:
 ```dafny
 function get_deposit_root(p : seq<bit>, b: seq<int>, z: seq<int>) : int
-    requires |p| == |s|
+    requires |p| == |b| == |z|
     decreases p
 {
     if |p| == 0 then
