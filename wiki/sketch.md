@@ -303,4 +303,4 @@ function method computeLeftSiblingOnNextPathFromLeftRight(p: seq<bit>, left : se
 } 
 ```
 
-To summarise, we have designed the function `computeLeftSiblingOnNextPathFromLeftRight` to compute the siblings on the next path, given the siblings on the previous path and the value to insert.
+To summarise, we have designed the function `computeLeftSiblingOnNextPathFromLeftRight` to compute the left siblings on the next path, given the left siblings on the previous path, the default valus for right siblings, and the value to insert.
