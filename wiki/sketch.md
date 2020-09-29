@@ -140,7 +140,7 @@ the _next path_ of `p`  is the path to the `k + 1`-th leaf.
 
 <center>
 <figure>
-<img src="nextpath1.jpg" alt="Next path 1" width="600">
+<img src="nextPath1.jpg" alt="Next path 1" width="600">
 <figcaption><strong>Figure 3</strong>: The next path of a path to <strong>left</strong> leaf. </figcaption>
 </figure>
 </center>
@@ -161,7 +161,7 @@ last to first to build `nextPath(green)` as follows:
 
 <center>
 <figure>
-<img src="nextpath1.jpg" alt="Next path 1" width="600">
+<img src="nextPath2.jpg" alt="Next path 1" width="600">
 <figcaption><strong>Figure 4</strong>: The next path of a path to <strong>right</strong> leaf. </figcaption>
 </figure>
 </center>
