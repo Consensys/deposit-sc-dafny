@@ -176,8 +176,8 @@ The generalisation to arbitrary path follows: given `p` of the form `p = init ::
 
 A few remarks are in order to make sure the previous algorithm is correct:
 1. if a path `p` leads to a leaf that is **not the last one**, it **must have a zero** somewhere in its bit encoding.
-2. the computation of the encoding of `nextpath(p)`, say `0x.nextpath(p)`, can be obtained by adding `1` in binary to the
-encoding of `p`, i.e. `0x.nextpath(p) = 0x.p + 1`.
+2. the computation of the encoding of `nextpath(p)`, say `0b.nextpath(p)`, can be obtained by adding `1` in binary to the
+encoding of `p`, i.e. `0b.nextpath(p) = 0b.p + 0b1`.
 
 The following algorithm computes the encoding of the next path of `p`:
 ```dafny
@@ -207,4 +207,100 @@ In this section we address the following problem:
 > If we are **given the values of `diff` on a path `p` and on the left siblings of `p`**, can we compute 
 >    the **values of the left siblings on** `nextPath(p)`?
 
+Now that we have seen what `nextPath(p)` is compared to `p`, we can convince ourselves that the answer to this question is: yes.
+Or almost.
 
+**Figure 5** illustrates how we can solve this problem.
+Assume we have the values of nodes on the `green` path after a new value (`5`) is inserted at the end of `green`.
+The values appear in purple on the nodes of the `green` path and to compute them we used the values of the left (yellow) 
+and right (orange) siblings of the nodes on the `green` path.
+
+<center>
+<figure>
+<img src="nextPath3.jpg" alt="Next path 3" width="600">
+<figcaption><strong>Figure 5</strong>: The left siblings of next path. `blue` path is `nextpath(green)` </figcaption>
+</figure>
+</center>
+
+Let `b` be the values of the left siblings on the `green` path with `b = [-7, - , 4]`: `b[0]` is the left sibling for node `n14` (root),
+`b[1]` is not relevant aa the sibling at `n13` is on the right, and `b[2]` is the left sibling for node `n10`. 
+
+We want to compute `b'` which hold the values of the left siblings for `nextPath(p)`.
+We know that if `p` is of the form `p = init :: 0 :: ones(n)`, then `nextPath(p) = init :: 1 :: zeroes(n)`.
+It follows that on the suffix `zeroes(n)` of `nextPath(p)` all the values we need are from **right siblings** 
+(the values of which is determined by the current height in the tree). 
+As a result the last `n` values of `b'` are irrelevant as at the corresponding levels in the tree the nodes are right siblings.
+Moreover, `p` and `nextpath(p)` share the initial prefix prefix `init` and thus share the same initial prefix of left siblings.
+If `init` has length `m`, then `b'[0..m - 1] = b[0..m -1]`.
+The only unknown for `b'` is the value of the left sibling at level `m`.
+For example in **Figure 6**, node `n13` is where the next path of `green` forks from `green`.
+And at this level, the value of the left sibling of `n11` is the value at `n10` which is known as it is on the `green` path.
+
+Computing the value of the siblings on `nextPath(green)` `b'` can be done using the values of the left siblings of `green` (in `b`) and the values on `green` say in `v1`
+as follows:
+1. `b' := b`; the initial prefix  `b'[0..m - 1]` is the same as `b[0..m -1]` and the suffix after `m` is irrelant so we can
+ use the old values in `b`.
+2. `b'[m] := v1[m]`, this is only update that is needed to obtain the values of the left siblings on the next path.
+
+The following algorithm computes the values of left siblings of `nextPath(p)` given the value son the left siblings of `p` and
+the values on `p` (`first(p)` denotes the first element of the list `p`):
+
+```dafny
+function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, left : seq<T>) : seq<T>
+    requires 1 <= |p| 
+    requires |v1| == |left| == |p|
+    ensures |computeLeftSiblingOnNextPath(p, v1, left)| == |v1|
+
+    decreases p
+{
+    if |p| == 1 then
+       /*  If p[0] == 0, we use the value on the path i.e v1, and otherwise p[0] == 1 we can choose
+        *  whatever we want as at this level as the sibling on the next path is on is right siblings
+        *  We choose to use left i.e. keep the same value for sibling at this level,  in order to
+        *  enable optimisations in the imperative version of the algorithm where a single array is used.
+        */
+        if first(p) == 0 then v1 else left 
+    else 
+        assert(|p| >= 2);
+        if last(p) == 0 then 
+           /*  This is where the next path flips side. The next path is of the form init(p) + [1].
+            *  The prefix of p and of nextPath(p) share the same siblings, and the the left sibling 
+            *  on nextPath at this level is the elft child, so we use its value [last(v1)].
+            */
+            init(left) + [last(v1)]
+        else 
+            assert(last(p) == 1);
+            /*  The nextPath is of the form nextPath(init(p)) + [0].
+             *  So the sibling at this level is a right sibling and the value we store in the
+             *  result for this result is irrelevant. We choose to keep the value of the previous left
+             *  sibling from left in order to allow optimisations in the impertive version of the algorithm.
+             */
+            computeLeftSiblingOnNextPath(init(p), init(v1), init(left)) + [last(left)]
+} 
+```
+
+### Computing the values of the siblings of next path after inserting a new value in the tree.
+
+The `deposit()` function in the Deposit Smart Contract performs the computation of the values on `p` at the same time as it compute the values of the left siblings on `nextpath(p)` using the inserted value `seed` and the default values on the right siblings of `p`: 
+
+```dafny
+function method computeLeftSiblingOnNextPathFromLeftRight(p: seq<bit>, left : seq<int>, right : seq<int>, seed : int) : seq<int>
+    requires 1 <= |p| 
+    requires |left| == |right| == |p|
+
+    decreases p
+{
+    if |p| == 1 then
+        if first(p) == 0 then [seed] else left 
+    else 
+        assert(|p| >= 2);
+        if last(p) == 0 then 
+            init(left) + [seed]
+        else 
+            assert(last(p) == 1);
+            computeLeftSiblingOnNextPathFromLeftRight(init(p), init(left), init(right), diff(last(left), seed)) 
+            + [last(left)]
+} 
+```
+
+To summarise, we have designed the function `computeLeftSiblingOnNextPathFromLeftRight` to compute the siblings on the next path, given the siblings on the previous path and the value to insert.
