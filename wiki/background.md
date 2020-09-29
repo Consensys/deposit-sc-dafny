@@ -135,14 +135,14 @@ The green path is also updated to be the path to the next available leaf (`n7`).
 
 The result of the previous facts is that the computation of the new root value can be done using
 the values of the left and right siblings of the green path.
-They can be stored on two vectors of sizes the height of the tree.
+They can be stored in two vectors the size of which is the height of the tree.
 
-Assume that when we insert a new value in the tree, 
-we can also compute the new value of those vectors i.e. the values of siblings on the path to the next
+Now assume that when we insert a new value in the tree, 
+we can also compute the new value of those vectors i.e. the values of the siblings on the path to the next
 available leaf.
 
-In this case, if we can iteratively compute the root value of the tree for a list `e1 :: e2 :: ... :: en`
-storing only two vectors of size `h`, and computing the new root value by walking up to current path 
+In this case, we can iteratively compute the root value of the tree for a list `e1 :: e2 :: ... :: en`
+storing only the two vectors (of size `h`), and computing the new root value by walking up to current path 
 in linear time (`O(h)`).
 
 For the reader familiar with algorithm design, it is a typical example of **dynamic programming**.
