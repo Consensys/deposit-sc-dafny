@@ -28,7 +28,7 @@ The main contributions of this project are:
 
 The main results are:
 
-*   a **fully mechanised proof of correctness* (including termination)
+*   a **fully mechanised proof of correctness** (including termination)
 *   a **simplified** version of the `deposit()` algorithm.
 
 The **provably correct** simplified version of `deposit()` is as follows:
@@ -87,7 +87,7 @@ as their functional counter-parts and is somehow detached from the intricacy of 
 The following sections may help the reader understand the idea of the proof and how it is implemented in Dafny:
 
  * Some [background](./wiki//background.md) on the Incremental Merkle Tree problem and algorithm.
- * The main proof ideas and sketch.
+ * The main [proof ideas and sketch](./wiki/sketch.md).
 
 
 
