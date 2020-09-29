@@ -180,7 +180,7 @@ A few remarks are in order to make sure the previous algorithm is correct:
 encoding of `p`, i.e. `0x.nextpath(p) = 0x.p + 1`.
 
 The following algorithm computes the encoding of the next path of `p`:
-```
+```dafny
 function nextPath(p : seq<bit>) : seq<bit> 
     /** Path has at least on element. */
     requires |p| >= 1
