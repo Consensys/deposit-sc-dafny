@@ -84,7 +84,8 @@ The [proof of **Theorem 2**](https://github.com/PegaSysEng/deposit-sc-dafny/blob
 ```
 
 
-The [proof of **Theorem 1**](https://github.com/PegaSysEng/deposit-sc-dafny/blob/e4de78df6636652ba8f4a2b270c7649904866594/src/dafny/smart/DepositSmart.dfy#L188) amounts to showing that `Valid` is preserved:
+The [proof of **Theorem 1**](https://github.com/PegaSysEng/deposit-sc-dafny/blob/e4de78df6636652ba8f4a2b270c7649904866594/src/dafny/smart/DepositSmart.dfy#L188) amounts to showing that `Valid` is preserved (note that in our code `branch` is stored in reverse order
+compared to the original algorithm and we use index `TREE_HEIGHT - i - 1` instead of `i`):
 ```dafny
 method  deposit(v : int) 
     requires Valid()
