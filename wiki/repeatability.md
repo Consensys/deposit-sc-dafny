@@ -3,7 +3,7 @@
 
 # How to check the proofs?
 
-To mechanically check the proofs you can either our Docker container with Dafny pre-installed, or istall Dafny on your computer.
+To mechanically check the proofs you can either use our Docker container with Dafny pre-installed, or istall Dafny on your computer.
 To check the proofs we recommend Dafny 2.3.0 (we have not tested the most recent pre-release 3.0.x). 
 
 ## Using a Docker container
@@ -13,7 +13,7 @@ Pre-requisites:
 1. a working installation of [Docker](https://docs.docker.com),
 2. a fork or clone of this repository.
 
-A simple way to check the proofs is to use a pre-configured installation of Dafny on a Docker container.
+A simple way to check the proofs is to use a pre-configured installation of Dafny with a Docker container.
 
 On Unix-based system, `cd` to the root directory of your working copy of this repository.
 ```bash
@@ -22,7 +22,7 @@ On Unix-based system, `cd` to the root directory of your working copy of this re
 /home/user1/deposit-sc-dafny $ 
 ```
 
-The next commands will start a [Docker container](https://hub.docker.com/repository/docker/franck44/linux-dafny) with Dafny pre-installed, and mount your local working directory as a volume in the Docker machine (this way you can access it from the running Docker machine).
+The next commands will start a Docker container with [Linux, Mono and Dafny](https://hub.docker.com/repository/docker/franck44/linux-dafny) with Dafny pre-installed, and mount your local working directory as a volume in the Docker machine (this way you can access it from the running Docker machine).
 You can check that your system is correctly set up with the following commands:
 ```bash
 /home/user1/deposit-sc-dafny $ docker run -v /home/user1/deposit-sc-dafny:/deposit-sc-dafny -it franck44/linux-dafny /bin/bash
