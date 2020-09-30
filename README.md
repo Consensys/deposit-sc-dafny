@@ -103,6 +103,9 @@ dafny /dafnyVerify:1 /compile:0 /tracePOs /traceTimes /noCheating:1 file.dfy
 The `/noCheating:1` ensures that any `assume` statement (if any) is treated as _untrusted_ and 
 processed by the verifier as claim to prove rather than assume i.e. as an `assert`. 
 
+To install and run the verification you may refer to the following:
+* the steps to [check the proofs](./wiki/repeatability.md),
+* some references if you choose to [install dafny](./wiki/dafny-install.md).
 
 
 # Supplementary Material
