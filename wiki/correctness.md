@@ -105,5 +105,8 @@ method  deposit(v : int)
 
     //  Update of the list of values inserted so far
     values := values + [v];
+
+    //  proof 
+    ...
 }
 ```
