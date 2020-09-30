@@ -7,11 +7,9 @@ NC='\033[0m' # No Color
 error=0
 processeddirs=0
 
-DIR="/Users/franck/development/deposit-sc-dafny/src/dafny/smart"
-
 # The list of dirs 
-listofdirs=`ls -d $DIR/*/`
-for dir in $listofdirs "$DIR/"
+listofdirs=`ls -d $1/*/`
+for dir in $listofdirs "$1/"
 do
     ./verifyAll.sh $dir
     if [ $? -eq 0 ] # check if errors
