@@ -246,7 +246,7 @@ The following algorithm computes the values of left siblings of `nextPath(p)` gi
 the values on `p` (`first(p)` denotes the first element of the list `p`):
 
 ```dafny
-function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, left : seq<T>) : seq<T>
+function computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, left : seq<T>) : seq<T>
     requires 1 <= |p| 
     requires |v1| == |left| == |p|
     ensures |computeLeftSiblingOnNextPath(p, v1, left)| == |v1|
@@ -284,7 +284,7 @@ function method computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, left :
 The `deposit()` function in the Deposit Smart Contract performs the computation of the values on `p` at the same time as it compute the values of the left siblings on `nextpath(p)` using the inserted value `seed` and the default values on the right siblings of `p`: 
 
 ```dafny
-function method computeLeftSiblingOnNextPathFromLeftRight(p: seq<bit>, left : seq<int>, right : seq<int>, seed : int) : seq<int>
+function computeLeftSiblingOnNextPathFromLeftRight(p: seq<bit>, left : seq<int>, right : seq<int>, seed : int) : seq<int>
     requires 1 <= |p| 
     requires |left| == |right| == |p|
 
