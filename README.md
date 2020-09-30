@@ -1,11 +1,11 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
  [![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://code.visualstudio.com/)
- [![Proofs](https://img.shields.io/badge/Proved-132-yellow.svg)](https://shields.io/) 
+ [![Proofs](https://img.shields.io/badge/TheoremsProved-132-yellow.svg)](https://shields.io/) 
  [![LoC](https://img.shields.io/badge/LoC-3536-green.svg)](https://shields.io/) 
  [![Checks](https://img.shields.io/badge/DafnyVerify-Verified-orange.svg)](https://shields.io/) 
 
-[![HitCount](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny.svg)](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny)
+[![HitCount](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny.svg)](http://hits.dwyl.com/https://github.com/PegaSysEng/deposit-sc-dafny)
 
 # Verification of the Deposit Smart Contract in Dafny
 
