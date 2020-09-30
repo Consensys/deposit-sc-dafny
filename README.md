@@ -92,6 +92,18 @@ The following sections may help the reader understand the idea of the proof and 
  * The `deposit()` and `get_deposit_root()` algorithms (TBD). 
 
 
+# Repeatability of Results
+
+We provide a Docker container to run the verification with Dafny.
+
+All the files are checked using the following command assuming `dafny` is the Dafny executable:
+```bash
+dafny /dafnyVerify:1 /compile:0 /tracePOs /traceTimes /noCheating:1 file.dfy
+```
+The `/noCheating:1` ensures that any `assume` statement (if any) is treated as _untrusted_ and 
+processed by the verifier as claim to prove rather than assume i.e. as an `assert`. 
+
+
 
 # Supplementary Material
 
