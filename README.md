@@ -88,7 +88,7 @@ The following sections may help the reader understand the idea of the proof and 
 
  * Some [background](./wiki//background.md) on the Incremental Merkle Tree problem and algorithm.
  * The main [proof ideas and sketch](./wiki/sketch.md).
- * The correctness criterion (TBD).  
+ * The [correctness criterion](./wiki/correctness.md).  
  * The `deposit()` and `get_deposit_root()` algorithms (TBD). 
 
 
