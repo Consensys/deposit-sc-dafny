@@ -83,13 +83,14 @@ side-effect free algorithms.
 The final step of proving that the imperative versions of the algorithms are correct boils down to proving that they compute the same result
 as their functional counter-parts and is somehow detached from the intricacy of the correctness proofs.
 
+# Problem and Proof
 
 The following sections may help the reader understand the idea of the proof and how it is implemented in Dafny:
 
  * Some [background](./wiki//background.md) on the Incremental Merkle Tree problem and algorithm.
  * The main [proof ideas and sketch](./wiki/sketch.md).
  * The [correctness criterion](./wiki/correctness.md).  
- * The `deposit()` and `get_deposit_root()` algorithms (TBD). 
+ * The `deposit()` and `get_deposit_root()` [algorithms](./wiki/algos.md). 
 
 
 # Repeatability of Results
