@@ -1,5 +1,5 @@
 
-[ [up] ](../README.md) [ [next] ](./stats.md)
+[ [up] ](../README.md) [ [next] ](./sketch.md)
 
 
 # Background
@@ -149,4 +149,4 @@ in linear time (`O(h)`).
 
 For the reader familiar with algorithm design, it is a typical example of **dynamic programming**.
 
-[ [up] ](../README.md) [ [next] ](./stats.md)
+[ [up] ](../README.md) [ [next] ](./sketch.md)

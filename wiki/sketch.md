@@ -1,5 +1,5 @@
 
-[ [up] ](../README.md) 
+[ [up] ](../README.md) [ [next] ](./correctness.md)
 
 # Sketch of the proof
 
@@ -305,3 +305,5 @@ function computeLeftSiblingOnNextPathFromLeftRight(p: seq<bit>, left : seq<int>,
 ```
 
 To summarise, we have designed the function `computeLeftSiblingOnNextPathFromLeftRight` to compute the left siblings on the next path `nextPath(p)`, given the left siblings on the current path `p`, the default values for right siblings of `p`, and the value to insert at end of `p`.
+
+[ [up] ](../README.md) [ [next] ](./correctness.md)
