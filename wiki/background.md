@@ -4,23 +4,6 @@
 
 # Background
 
-The core component of the Deposit Smart Contract is the so-called _Incremental Merkle Tree_ algorithm.
-
-> A **Merkle tree** is a _binary_ and _complete_ tree decorated with the Merkle (_hash_) attribute.
-
-A node's _decoration_ (or _attribute_ in the sequel) is a value attached to a node. 
-Using this definition, in a Merkle Tree, a node's attribute is the _hash_ of the attributes of its children (the attributes on the leaves are given).
-Computing the attribute for all the nodes of a tree usually requires to walk the tree (up or down) and to explore all the nodes, for instance via a Depth First Traversal algorithm.
-
-In the context of a Blockchain, a Merkle tree is used to compute a _property_ of a collection of elements e.g. a list `L`. 
-Given `L`, we first build a tree `T(L)` associated with `L`, such that the leaves of `T(L)` are the elements of `L`.
-The property of the list `L` is the value of the attribute (e.g. _hash_) at the root of `T(L)`.
-
-The value on the tree root can be used to test membership of an element in the list `L`. The is known as a _Merkle Proof_.
-
-> In this project we are not concerned with Merkle Proofs but rather in computing an attribute (e.g. _hash_) on the root of a tree that stores a list `L`.
-
-
 ## Binary and Complete Trees
 
 We assume the reader is familiar with standard tree structures. Given a tree `T`, the _height_ of `T` is the length of the longest path
@@ -43,24 +26,44 @@ from the root of `T` of any leaf.
 
 <!-- > It follows that complete binary trees of height `h` can store lists of at most `2^h` elements. -->
 
+## Merkle Tree
+
+The core component of the Deposit Smart Contract is the so-called _Incremental Merkle Tree_ algorithm.
+
+> A **Merkle tree** is a _binary_ and _complete_ tree decorated with the Merkle (_hash_) attribute.
+
+A node's _decoration_ (or _attribute_ in the sequel) is a value attached to a node. 
+Using this definition, in a Merkle Tree, a node's attribute is the _hash_ of the attributes of its children (the attributes on the leaves are given).
+Computing the attribute for all the nodes of a tree usually requires to walk the tree (up or down) and to explore all the nodes, for instance via a Depth First Traversal algorithm.
+
+In the context of a Blockchain, a Merkle tree is used to compute a _property_ of a collection of elements e.g. a list `L`. 
+Given `L`, we first build a tree `T(L)` associated with `L`, such that the leaves of `T(L)` are the elements of `L`.
+The property of the list `L` is the value of the attribute (e.g. _hash_) at the root of `T(L)`.
+
+The value on the tree root can be used to test membership of an element in the list `L`. The is known as a _Merkle Proof_.
+
+> In this project we are not concerned with Merkle Proofs but rather in computing an attribute (e.g. _hash_) on the root of a tree that stores a list `L`.
+
+
+
 
 ## Attributed trees 
 
 An _attributed_ tree is a tree the nodes of which are decorated with a value of a given type, called the _attribute_.
-The _hash_ attribute in Merkle Trees belongs to the category of _synthesised_ attributes:
+The _hash_ attribute in Merkle trees belongs to the category of _synthesised_ attributes:
 
-> A _synthesised attribute_ on a tree is defined **bottom-up**: the values of the attribute are given on the leaves, and to compute the values on the internal nodes, the values of the left and right children are combined using a binary function.
+> A _synthesised attribute_ on a (complete binary) tree is defined **bottom-up**: the values of the attribute are given on the leaves, and to compute the values on the internal nodes, the values of the left and right children are combined using a binary function.
 
 For the sake of simplicity we assume that the attribute to compute on the tree `T` is a simple function `diff`, 
 defined by: `diff(left, right) == left - right - 1`.
 Each leaf holds an _integer_ value, and the value of an internal node is the _diff_ function applied to the values 
-of the left and right children.
+of the `left` and `right` children.
 
 The leaves of `T` contains the elements of a list `L` from left to right when traversed _in-order_ (left, node, right).
 To represent a list `L` of <math>n < 2<sup>h</sup></math> elements with a binary complete tree of height `h`,
  `L` can be **right-padded** with dummy or neutral elements (e.g. zeroes) to obtain `L'` of length <math>2<sup>h</sup></math>. 
 
-For instance, the tree below stores the list `[3, 6, 2, -1, 4]` and the value of `diff` at the root of the tree for this list is `-11`.
+For instance, the tree below stores the list `[3, 6, 2, -1, 4]` in the leaves of the tree, and the value of `diff` at the root of the tree for this list is `-11`.
 
 <center>
 <figure>
@@ -93,26 +96,25 @@ By efficiently, we mean without traversing the <math>2<sup>h</sup></math> nodes 
 Let `L = [3, 6, 2, -1, 4]`.
 Assume we want to compute the root value of the `diff` attribute for the list 
 `L::5`.
-As depicted on **Figure 3** below, this amounts to inserting the new value `3` at the next available leftmost leaf
-of the tree which is `n6`.
+As depicted on **Figure 3** below, this amounts to inserting the new value `5` at the next available leftmost leaf of the tree which is `n6`.
 
 <center>
 <figure>
 <img src="ex3.jpg" alt="Impact of leaf change" width="500">
-<figcaption><strong>Figure 3</strong>: Insertion of value at leaf `n6`. The purple nodes' attribute
+<figcaption><strong>Figure 3</strong>: Insertion of value `5` at leaf `n6`. The purple nodes' attribute
 values  on the green path to leaf `n6` are impacted by the insertion. To compute the new root value, we only the inserted value, and the value of the nodes on the left (yellow) and right (orange) of the green path. </figcaption>
 </figure>
 </center>
 
 The green path above is the path from the root to the leaf where the new value is inserted. 
 
-> Fact 1: the decorations on the trees `T(L)` and `T(L::5)` differ only on the green path.
+> **Fact 1**: the decorations on the trees `T(L)` and `T(L::5)` differ only on the green path.
 
-> Fact 2: to compute the root value of `T(L::3)` we only need the values on the nodes that are _siblings_ of nodes
+> **Fact 2**: to compute the root value of `T(L::3)` we only need the values on the nodes that are _siblings_ of nodes
 >   on the green path. As depicted above, if we have the values of `diff` on the left (yellow) 
->   and on the right (orange) nodes, we can compute the root value of `T(L::3)`.
+>   and on the right (orange) nodes, we can compute the root value of `T(L::5)`.
 
-> Fact 3: The leaves (`n7`, `n8`) on the right of the green path all have the default value. As a consequence, 
+> **Fact 3**: The leaves (`n7`, `n8`) on the right of the green path all have the default value. As a consequence, 
 >   the right (orange) nodes have a default value that correspond to their height.  Height `0` is
 >    a leaf, and the value is the `default` value (e.g. `0` for our `diff` attribute).
 >   At height `1`, the value is `diff(0, 0) = -1`, at height `2` it is `diff(diff(0,0), diff(0,0)) = -1` and so on. 
