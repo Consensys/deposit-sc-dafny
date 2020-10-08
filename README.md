@@ -83,7 +83,8 @@ The final step of proving that the imperative versions of the algorithms are cor
 as their functional counter-parts and is somehow detached from the intricacy of the correctness proofs.
 
 > **Note:** The results extend to ternary or more generally n-ary (`n >= 2`) complete trees. The Dafny code considers only binary trees, but the proof architecture relies on paths and their encodings (in binary for binary trees.) The results carry over to n-ary trees by considering the encoding of a path in **base n** rather then `2`. The modulo operation used in the condition e.g. `k % 2 == 1` is modified to `k % n == n - 1`, and computation of the `nextPath` adds `1` to the encoding of a path in **base n**.
-> The Dafny code for this general case requires some re-factoring and left for future work.
+> The Dafny code for this general case requires some re-factoring and is left for future work.
+> The **advantage of n-ary** trees is that the _state update_ (in `deposit()`) is performed in **constant time**, `O(1)`, `n - 1` times out of `n` `deposit()` operations.   
 
 # Problem and Proof
 
