@@ -8,8 +8,8 @@ for a quick introduction to the problem.
 
 In this section, without loss of generality,  
 
-> we use a simple attribute `diff` instead of the _hash_ function in Merkle trees.  
-> we assume that the trees we mentioned in the sequel are all binary and complete trees.
+> we use a **simple synthesised attribute** `diff` instead of the _hash_ function in Merkle trees.  
+> we assume that the trees we mentioned in the sequel are all **binary and complete** trees.
 
 
 ## Computing the root value of a Merkle tree
@@ -26,9 +26,9 @@ can be computed as follows:
 
 * the **green path** leads to the leaf where the new value `4` is inserted,
 * assume we have the **values of the attribute `diff`** on the **left** (yellow) and **right** (purple) **siblings** for each node on the green path.
-* we can compute the new root value given by `diff` by **walking up** the green path in the tree.   
+* we can compute the new root value defined by `diff` by **walking up** the green path in the tree.   
 
-If we denote by `n.v` the value of `diff` on a node of the tree, the computation runs as follows walking up each level of the tree:
+If we denote by `n.v` the value of `diff` on a node of the tree, the computation runs as follows walking up each level of the tree from the leaf `n5`:
 
 0. `n5.v = 4` (inserted value) and `n6.v = 0` (default value).
 1. `n11.v = diff(n5.v, n6.v) = 3`
@@ -67,7 +67,7 @@ function computeRootUp(p : seq<bit>, s: seq<int>, seed: int) : int
         computeRootUp(init(p), init(s), x)
 }
 ```
-And if we split the siblings's values `s` into two vectors `b` and `z` for the left and right siblings:
+And if we split the siblings's values in `s` into two vectors `b` (orange vector in **Figure 1**) and `z` (purple vector in **Figure 1**) for the left and right siblings:
 ```dafny
 function computeRootLeftRightUp(p : seq<bit>, b: seq<int>, z: seq<int>, seed: int) : int
     requires |p| == |b| == |z|
@@ -76,14 +76,16 @@ function computeRootLeftRightUp(p : seq<bit>, b: seq<int>, z: seq<int>, seed: in
     if |p| == 0 then
         seed 
     else 
+        //  Combine seed according to the direction of the path
         var x := if last(p) == 0 then diff(seed, last(z)) else diff(last(b), seed);
+        //  Use the new value as the seed on the prefix of the path
         computeLeftRightRootUp(init(p), init(b), init(z), x)
 }
 ```
 This is it.
 
 The `get_deposit_root()` function in the Deposit Smart Contract makes use of a neat trick: the insertion of a new value in the tree
-is handled by a function `deposit()` that makes sure the two vectors `b` and `z` hold the values on the left and right siblings for the path to the leaf that is **next** to the leaf where the last value was inserted (see **Figure 2**).  
+is handled by a function `deposit()` that makes sure the two vectors `b` and `z` hold the values on the left and right siblings for the path to the **next** leaf (blue) and not to the leaf (`n5`) where the last value was inserted (see **Figure 2**).  
 <center>
 <figure>
 <img src="computeRoot2.jpg" alt="Impact of leaf change" width="600">
@@ -92,8 +94,8 @@ leaf. </figcaption>
 </figure>
 </center>
 
-As a consequence, the root value can be computed **without the knowledge of the last inserted value** using the default value (0) as the seed.  
-The (tail recursive) functional version of the algorithm for computing the root value is:
+As a consequence, the root value can be computed using the blue path and  **without the knowledge of the last inserted value**, by using the default value (0) as the seed (at the end of the blue path).  
+The (tail recursive) functional version of the algorithm for computing the root value becomes (provided `s` and `z` holds the siblings of the path to the next available leaf):
 ```dafny
 function get_deposit_root(p : seq<bit>, b: seq<int>, z: seq<int>) : int
     requires |p| == |b| == |z|
@@ -120,21 +122,19 @@ Indeed, the right siblings are constant (depending on each level) and we do not 
 We will explain how to maintain the values of the left siblings of a path in phases and address the following
 issues:
 
-1. given a path to a leaf, what is the **encoding (list of bits) of the next path**, `nextpath(p)` ?
+1. given a path to a leaf, what is the **encoding (list of bits) of the next path**, `nextPath(p)` ?
 2. if we are **given the values of `diff` on a path `p` and the left siblings `p`**, can we compute 
     the **values of the left siblings on** `nextPath(p)`?
 3. if we are **given the value to insert** at the of the current path `p` (and the left siblings of `p`), can we compute
  the **values of the left siblings on** `nextPath(p)`?
 
-The next section address these issues.
+The next section address these questions.
 
 ### The next path
-
-in this section we address the following problem:
  
-> Given a path to a leaf, what is the **encoding (list of bits) of the next path**, `nextpath(p)` ?
+> Given a path to a leaf, what is the **encoding (list of bits) of the next path**, `nextPath(p)` ?
 
-The leaves of a complete binary tree of height `h` are indexed from left (index `0`) to right `index power2(h) - 1` (see **Figure 3**). 
+The leaves of a complete binary tree of height `h` are indexed from left (index `0`) to right index `power2(h) - 1` (see **Figure 3**). 
 Given a path `p` to the `k`-th  with `k < power2(h) - 1` (i.e not the last leaf), 
 the _next path_ of `p`  is the path to the `k + 1`-th leaf.
 
@@ -152,12 +152,12 @@ It is easy to compute the path to the next leaf when a leaf is a left child: we 
 a `1`.
 
 When `p` leads to a right child as `green` in **Figure 4** (below) the next path of `green` is slighly more complicated to compute:
-we have to go up the `green` path until we hit a node coming from the left child and then we swap.
+we have to go up the `green` path until we hit a node that is a left child and then we flip side.
 In other words, we go up the `green` path and process the bit encoding of `green` form 
 last to first to build `nextPath(green)` as follows:
- * if the current bit is a `1` we replace it with `0`,
- * if the current bit is `0` we flip it to a `1`.
- * after flipping to `1` we leave the bits unchanged.  
+ * if the current bit is a `1` we replace it with `0` (mirror),
+ * if the current bit is `0` we flip it to a `1` (flip).
+ * after flipping to `1` we leave the reaming bits unchanged.  
 
 <center>
 <figure>
@@ -166,18 +166,18 @@ last to first to build `nextPath(green)` as follows:
 </figure>
 </center>
 
-As it turns out, we can write the bit encoding of `green` in the form `init :: 0 :: ones(n)` where `ones(n)`, 
+As it turns out, we can write the bit encoding of `green` in the form `init::0::ones(n)` where `ones(n)`, 
 `n >= 0` is the list of `n` `1`'s (empty for `n = 0`.)
-And `nextpath(green)` is `init :: 1 :: zeroes(n)` where `zeroes` is `n` zeroes.
+And `nextPath(green)` is `init::1::zeroes(n)` where `zeroes` is `n` zeroes.
 
-The generalisation to arbitrary path follows: given `p` of the form `p = init :: 0 :: ones(n)`, `nextPath(p) = init :: 1 :: zeroes(n)`. 
-`nextpath(p)` can be broken down into three components as depicted in **Figure 4**: the common  prefix `init` between `p` and 
-`nextpath(p)`, the flipped bit, and the _mirrored_ tail of ones.
+The generalisation to arbitrary path follows: given `p` of the form `p = init::0::ones(n)`, `nextPath(p) = init::1::zeroes(n)`. 
+`nextPath(p)` can be broken down into three components as depicted in **Figure 4**: the common  prefix `init` between `p` and 
+`nextPath(p)`, the flipped bit, and the _mirrored_ tail of ones.
 
 A few remarks are in order to make sure the previous algorithm is correct:
 1. if a path `p` leads to a leaf that is **not the last one**, it **must have a zero** somewhere in its bit encoding.
-2. the computation of the encoding of `nextpath(p)`, say `0b.nextpath(p)`, can be obtained by adding `1` in binary to the
-encoding of `p`, i.e. `0b.nextpath(p) = 0b.p + 0b1`.
+2. the computation of the binary encoding of `nextPath(p)`, denoted `0b.nextPath(p)`, can be obtained by adding `1` in binary to the
+encoding of `p`, i.e. `0b.nextPath(p) = 0b.p + 0b1`.
 
 The following algorithm computes the encoding of the next path of `p`:
 ```dafny
@@ -197,7 +197,7 @@ function nextPath(p : seq<bit>) : seq<bit>
 }
 ```
 
-The Dafny source code for operations on path as sequences of bits is [SeqOfBits.dfy](https://github.com/PegaSysEng/deposit-sc-dafny/blob/master/src/dafny/smart/seqofbits/SeqOfBits.dfy).
+The Dafny source code for operations on path as sequences of bits is in [SeqOfBits.dfy](https://github.com/PegaSysEng/deposit-sc-dafny/blob/master/src/dafny/smart/seqofbits/SeqOfBits.dfy).
 Note that we do not need to compute or execute the `nextPath` function so we do not need to make it tail recursive.
 
 ### Computing the values of the siblings on the next path 
@@ -218,31 +218,31 @@ and right (orange) siblings of the nodes on the `green` path.
 <center>
 <figure>
 <img src="nextPath3.jpg" alt="Next path 3" width="600">
-<figcaption><strong>Figure 5</strong>: The left siblings of next path. `blue` path is `nextpath(green)` </figcaption>
+<figcaption><strong>Figure 5</strong>: The left siblings of next path. `blue` path is `nextPath(green)` </figcaption>
 </figure>
 </center>
 
 Let `b` be the values of the left siblings on the `green` path with `b = [-7, - , 4]`: `b[0]` is the left sibling for node `n14` (root),
 `b[1]` is not relevant aa the sibling at `n13` is on the right, and `b[2]` is the left sibling for node `n10`. 
 
-We want to compute `b'` which hold the values of the left siblings for `nextPath(p)`.
-We know that if `p` is of the form `p = init :: 0 :: ones(n)`, then `nextPath(p) = init :: 1 :: zeroes(n)`.
-It follows that on the suffix `zeroes(n)` of `nextPath(p)` all the values we need are from **right siblings** 
-(the values of which is determined by the current height in the tree). 
+We want to compute `b'` that holds the values of the left siblings for `nextPath(p)`.
+We know that if `p` is of the form `p = init::0::ones(n)`, then `nextPath(p) = init::1:: zeroes(n)`.
+It follows that on the suffix `zeroes(n)` of `nextPath(p)` all the sblings are m **right siblings** 
+(the values of which is solely determined by the current level in the tree). 
 As a result the last `n` values of `b'` are irrelevant as at the corresponding levels in the tree the nodes are right siblings.
-Moreover, `p` and `nextpath(p)` share the initial prefix prefix `init` and thus share the same initial prefix of left siblings.
+Moreover, `p` and `nextPath(p)` share the initial prefix  `init` and thus share the same initial prefix of left siblings.
 If `init` has length `m`, then `b'[0..m - 1] = b[0..m -1]`.
 The only unknown for `b'` is the value of the left sibling at level `m`.
-For example in **Figure 6**, node `n13` is where the next path of `green` forks from `green`.
-And at this level, the value of the left sibling of `n11` is the value at `n10` which is known as it is on the `green` path.
+For example in **Figure 5**, node `n13` is where the next path of `green` forks from `green`.
+And at this level, the value of the (left) sibling of `n11` is the value at `n10` which is known as it is on the `green` path.
 
-Computing the value of the siblings on `nextPath(green)` `b'` can be done using the values of the left siblings of `green` (in `b`) and the values on `green` say in `v1`
+Computing the value of the siblings on `nextPath(green)`, `b'`, can be done using the values of the left siblings of `green` (in `b`) and the values on `green` say in `v1`
 as follows:
 1. `b' := b`; the initial prefix  `b'[0..m - 1]` is the same as `b[0..m -1]` and the suffix after `m` is irrelant so we can
  use the old values in `b`.
 2. `b'[m] := v1[m]`, this is only update that is needed to obtain the values of the left siblings on the next path.
 
-The following algorithm computes the values of left siblings of `nextPath(p)` given the value son the left siblings of `p` and
+The following algorithm computes the values of left siblings of `nextPath(p)` given the values on the left siblings of `p` and
 the values on `p` (`first(p)` denotes the first element of the list `p`):
 
 ```dafny
@@ -281,7 +281,8 @@ function computeLeftSiblingOnNextPath<T>(p: seq<bit>, v1 : seq<T>, left : seq<T>
 
 ### Computing the values of the siblings of next path after inserting a new value in the tree
 
-The `deposit()` function in the Deposit Smart Contract performs the computation of the values on `p` at the same time as it compute the values of the left siblings on `nextpath(p)` using the inserted value `seed` and the default values on the right siblings of `p`: 
+The `deposit()` function in the Deposit Smart Contract **performs the computation of the values on `p` at the same time as it compute the values of the left siblings** on `nextpath(p)` using the inserted value `seed` and the default values on the right siblings of `p`.
+This means that we do not need `v1` (values on `p` as mentioned above) and it computed on-the-fly:
 
 ```dafny
 function computeLeftSiblingOnNextPathFromLeftRight(p: seq<bit>, left : seq<int>, right : seq<int>, seed : int) : seq<int>
@@ -303,4 +304,4 @@ function computeLeftSiblingOnNextPathFromLeftRight(p: seq<bit>, left : seq<int>,
 } 
 ```
 
-To summarise, we have designed the function `computeLeftSiblingOnNextPathFromLeftRight` to compute the left siblings on the next path, given the left siblings on the previous path, the default valus for right siblings, and the value to insert.
+To summarise, we have designed the function `computeLeftSiblingOnNextPathFromLeftRight` to compute the left siblings on the next path `nextPath(p)`, given the left siblings on the current path `p`, the default values for right siblings of `p`, and the value to insert at end of `p`.
