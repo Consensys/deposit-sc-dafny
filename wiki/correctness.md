@@ -11,23 +11,22 @@ We assume a given fixed height >= 1 for the tree.
 
 The Deposit Smart Contract behaviour should correspond to incrementally building a Merkle tree that records the values inserted so far
 and retrieving the correct value for the root hash.
-On a time line, the initial tree corresponds to an empty list of inserted values: it is denoted `T([])` in the [background](./background.md).
-After `n` insertions the list of inserted values is `v1 :: v2 :: ... :: vn` and the corresponding Merkle tree is
-`T(v1 :: v2 :: ... :: vn)`.
+On a time line, the initial tree corresponds to an empty list of inserted values: it is denoted `T([])` in the [background](./background.md) section.
+After `n` insertions the list of inserted values is `v1::v2::...::vn` and the corresponding Merkle tree is
+`T(v1::v2::...::vn)`.
 
 
-The visible desirable behaviour of the `deposit()` and `get_deposit_root()` functions, which is the **correctness criterion** should be as follows:
+The _visible_ and desirable behaviour of the `deposit()` and `get_deposit_root()` functions, which is the **correctness criterion** should be as follows:
 1. if `deposit()` is called `n` times with the sequence of values `v1, v2, ..., vn`, i.e. we successively execute
     `deposit(v1)`, `deposit(v2)`, ..., `deposit(vn)`, 
-2. then if we call `get_deposit_root()` the value that should be returned is `T(v1 :: v2 :: ... :: vn).v` which is the value
-    of the _hash_ attribute on the root of the tree `T(v1 :: v2 :: ... :: vn)`.
+2. then if we call `get_deposit_root()` the value that should be returned is `T(v1::v2::...::vn).v` which is the value
+    of the _hash_ attribute on the root of the tree `T(v1::v2::...::vn)`.
 
-Of course the main feature of the functions `deposit()` and `get_deposit_root()` is that they should do so while **avoiding to actually maintain a full representation of the tree**.
+Of course the main feature of the functions `deposit()` and `get_deposit_root()` is that they should do so while **avoiding to actually maintain a full representation of the tree** and this is why we use the term _visible_ behaviour above.
 
 However, the correctness criterion requires that we model the tree that would be obtained after the `n` insertions. 
 
-This is why a substantial part of the source code (including the `tree` folder) is devoted to **Tree** data-structures and theorems, although this is used only for verification purposes.
-
+This is why a substantial part of the source code (including the `tree` folder) is devoted to the **Tree** data-structures and theorems, although this is used only for verification purposes.
 
 Our correctness proof relies on two main properties of `deposit()` and `get_deposit_root()`:
 
@@ -60,9 +59,11 @@ predicate Valid()
     && areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h)
 }
 ```
-where the last line encodes the desired property: `values` is tracking the list of values inserted so far, and
-`branch` and `zero_h` should contains the values of the siblings (predicate `areSiblingsAtIndex`) 
-of the path to the leaf indexed `|values|` in the tree that corresponds to `values` (`buildMerkle(values, TREE_HEIGHT, f, d))` with `f` the attribute to compute and `d` the default values).
+where the last line encodes the desired property: 
+
+* `values` is tracking the list of values inserted so far (it is a `ghost` variable in Dafny), 
+* and `branch` and `zero_h` should contain the values of the siblings (predicate `areSiblingsAtIndex`) 
+of the path to the leaf indexed `|values|` (length of values) in the tree that corresponds to `values` (`buildMerkle(values, TREE_HEIGHT, f, d))` with `f` the attribute to compute and `d` the default values).
 
 <!-- ## Merkle Trees -->
 
@@ -82,7 +83,14 @@ The [proof of **Theorem 2**](https://github.com/PegaSysEng/deposit-sc-dafny/blob
     ...
 }
 ```
+The post-conditions ensure:
 
+1. that `Valid()` is preserved,
+2. the value that is returned at any point in time is the value that the root of the Merkle tree for `values` would have.
+To prove this Theorem, the source code of `get_deposit_root()` must be annotated by some
+loop invariants (properties) that are automatically checked by Dafny.
+
+The invariant-annotated source code for this function is [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/ee2710bfc88dc60777031ec1a6d18ab11f32a571/src/dafny/smart/DepositSmart.dfy#L298).
 
 The [proof of **Theorem 1**](https://github.com/PegaSysEng/deposit-sc-dafny/blob/e4de78df6636652ba8f4a2b270c7649904866594/src/dafny/smart/DepositSmart.dfy#L188) amounts to showing that `Valid` is preserved (note that in our code `branch` is stored in reverse order
 compared to the original algorithm and we use index `TREE_HEIGHT - i - 1` instead of `i`):
@@ -111,3 +119,6 @@ method  deposit(v : int)
     ...
 }
 ```
+The proof if this property requires the annotation of the source code with loop invariants
+that can be checked by Dafny.
+The -annotated source code for this function is [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/ee2710bfc88dc60777031ec1a6d18ab11f32a571/src/dafny/smart/DepositSmart.dfy#L188).
