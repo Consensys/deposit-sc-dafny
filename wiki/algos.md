@@ -1,7 +1,7 @@
 [ [up] ](../README.md) 
 
 
-# The Deposit Smart Contract Algorithm
+# The Deposit Smart Contract Functions
 
 In the previous sections [background](background.md) and [sketch](sketch.md) we have proposed recursive (functional) algorithms to define the `deposit()` and `get_deposit_root()` functions. 
 

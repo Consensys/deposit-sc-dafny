@@ -77,11 +77,13 @@ The proof of the algorithm follows a principled approach to algorithm design:
 same result as the functional algorithms.
 
 This technique has the advantage of highlighting the main steps of the proof:
-* the incremental Merkle tree algorithm is an instance of **dynamic programming**,
-* the correctness proofs are provided on the **functional style versions first**. It is easier to prove correctness on the
-side-effect free algorithms. 
+* the incremental Merkle tree efficient algorithm is an instance of **dynamic programming**,
+* the correctness proofs are provided on the **functional style versions first**. It is easier to prove correctness on the side-effect free algorithms. 
 The final step of proving that the imperative versions of the algorithms are correct boils down to proving that they compute the same result
 as their functional counter-parts and is somehow detached from the intricacy of the correctness proofs.
+
+> **Note:** The results extend to ternary or more generally n-ary (`n >= 2`) complete trees. The Dafny code considers only binary trees, but the proof architecture relies on paths and their encodings (in binary for binary trees.) The results carry over to n-ary trees by considering the encoding of a path in **base n** rather then `2`. The modulo operation used in the condition e.g. `k % 2 == 1` is modified to `k % n == n - 1`, and computation of the `nextPath` adds `1` to the encoding of a path in **base n**.
+> The Dafny code for this general case requires some re-factoring and left for future work.
 
 # Problem and Proof
 
