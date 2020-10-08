@@ -3,8 +3,8 @@
 
 # How to check the proofs?
 
-To mechanically check the proofs you can either use our Docker container with Dafny pre-installed, or istall Dafny on your computer.
-To check the proofs we recommend Dafny 2.3.0 (we have not tested the most recent pre-release 3.0.x). 
+To mechanically check the proofs you can either use our Docker container with Dafny pre-installed, or install Dafny on your computer.
+To check the proofs we recommend Dafny 2.3.0 (we have not tested the most recent pre-releases 3.0.x). 
 
 ## Using a Docker container
 
@@ -22,7 +22,7 @@ On Unix-based system, `cd` to the root directory of your working copy of this re
 /home/user1/deposit-sc-dafny $ 
 ```
 
-The next commands will start a Docker container with [Linux, Mono and Dafny](https://hub.docker.com/repository/docker/franck44/linux-dafny) with Dafny pre-installed, and mount your local working directory as a volume in the Docker machine (this way you can access it from the running Docker machine).
+The next commands will start a Docker container with [Linux, Mono and Dafny](https://hub.docker.com/repository/docker/franck44/linux-dafny) (pre-installed), and mount your local working directory as a volume in the Docker machine (this way you can access it from the running Docker machine).
 You can check that your system is correctly set up with the following commands:
 ```bash
 /home/user1/deposit-sc-dafny $ docker run -v /home/user1/deposit-sc-dafny:/deposit-sc-dafny -it franck44/linux-dafny /bin/bash
@@ -33,11 +33,11 @@ Dafny 2.3.0.10506
 Dafny program verifier finished with 9 verified, 0 errors
 root@749938cb155d:/deposit-sc-dafny# 
 ```
-You can check all the files using the following command (it can take up to several minutes all the files):
+You can check all the files using the following command (it can take up to several minutes to process all the files):
 ```bash
 /home/user1/deposit-sc-dafny $ ./verifyAllRec.sh src/dafny/smart
 ```
-This script will run Dafny wth some tracing options that provide some statistics on the verification.
+This script will run Dafny (`noCheating` mode on) with some tracing options that provide some statistics on the verification.
 
 ## Install Dafny on your computer
 
