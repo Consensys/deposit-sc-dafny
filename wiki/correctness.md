@@ -4,7 +4,10 @@
 # Correctness criterion
 
 In this section we describe the correctness criterion we use to prove correctness.
-You may get familiar with the [background](./background.md) and [sketch](./sketch.md) sections before you embark on reading the sequel.  
+ 
+In the previous sections [background](background.md) and [sketch](sketch.md) we have proposed recursive (functional) algorithms to define the `deposit()` and `get_deposit_root()` functions. 
+
+In this section we explain how we can prove that the imperative versions used in the deposit smart contract are correct.
 
 ## Correctness
 We assume a given fixed height >= 1 for the tree.
