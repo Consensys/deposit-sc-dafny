@@ -4,8 +4,7 @@
  [![Proofs](https://img.shields.io/badge/TheoremsProved-132-yellow.svg)](https://shields.io/) 
  [![LoC](https://img.shields.io/badge/LoC-3536-orange.svg)](https://shields.io/) 
  [![Checks](https://img.shields.io/badge/VerificationStatus-Verified-green.svg)](https://shields.io/) 
-
-[![HitCount](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny.svg)](http://hits.dwyl.com/https://githubcom/PegaSysEng/deposit-sc-dafny)
+[![HitCount](http://hits.dwyl.com/PegaSysEng/https://githubcom/PegaSysEng/deposit-sc-dafny.svg)](http://hits.dwyl.com/PegaSysEng/https://githubcom/PegaSysEng/deposit-sc-dafny)
 
 
 
