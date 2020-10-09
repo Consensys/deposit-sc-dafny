@@ -49,7 +49,7 @@ method deposit(v : int)
     } 
     //  i is guaranteed to satisfy 0 <= i < TREE_HEIGHT 
     //  This ensures the absence of out of bounds error in the following update 
-    branch[i] := := root;
+    branch[i] := root;
     deposit_count := deposit_count + 1;
 }
 ```
