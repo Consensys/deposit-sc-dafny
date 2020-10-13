@@ -74,8 +74,9 @@ function method computeLeftSiblingsOnNextpathWithIndex<T>(
     }
 ```
 Dafny can verify that this algorithm is correct given the simple annotation (that is checked by the Dafny verifier) `assert(k / 2 < power2(h - 1))`. The fact that this holds is a consequence of a lemma
-`power2Div2LessThan(k, h)` defined [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/d8b082301e3431776ace38e0a3638b9fd63c392d/src/dafny/smart/helpers/Helpers.dfy#L65).
-The previous function is defined [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/d8b082301e3431776ace38e0a3638b9fd63c392d/src/dafny/smart/algorithms/IndexBasedAlgorithm.dfy#L228).
+`power2Div2LessThan(k, h)` defined [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/helpers/Helpers.dfy#L65).
+
+The previous function is defined [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/algorithms/IndexBasedAlgorithm.dfy#L228).
             
 <center>
 <figure>
@@ -112,6 +113,6 @@ function method computeRootLeftRightUpWithIndex<T>(h : nat, k : nat, left : seq<
             )
     }
 ```
-and the function is defined [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/d8b082301e3431776ace38e0a3638b9fd63c392d/src/dafny/smart/algorithms/IndexBasedAlgorithm.dfy#L93). 
+and the function is defined [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/algorithms/IndexBasedAlgorithm.dfy#L93). 
 
 [ [up] ](../README.md) 

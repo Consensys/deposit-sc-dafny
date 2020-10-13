@@ -197,7 +197,7 @@ function nextPath(p : seq<bit>) : seq<bit>
 }
 ```
 
-The Dafny source code for operations on path as sequences of bits is in [SeqOfBits.dfy](https://github.com/PegaSysEng/deposit-sc-dafny/blob/master/src/dafny/smart/seqofbits/SeqOfBits.dfy).
+The Dafny source code for operations on path as sequences of bits is in [SeqOfBits.dfy](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/seqofbits/SeqOfBits.dfy).
 Note that we do not need to compute or execute the `nextPath` function so we do not need to make it tail recursive.
 
 ### Computing the values of the siblings on the next path 

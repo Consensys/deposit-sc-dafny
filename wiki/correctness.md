@@ -44,7 +44,7 @@ Our correctness proof relies on two main properties of `deposit()` and `get_depo
 **Theorem 1** is proved by induction on the length of the list of inserted values. In Dafny it is proved by showing that a property
 called `Valid()` is an inductive invariant.
 
-The [inductive invariant](https://github.com/PegaSysEng/deposit-sc-dafny/blob/e4de78df6636652ba8f4a2b270c7649904866594/src/dafny/smart/DepositSmart.dfy#L83) is defined by:
+The [inductive invariant](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L83) is defined by:
 ```dafny
 predicate Valid()
     reads this
@@ -74,7 +74,7 @@ of the path to the leaf indexed `|values|` (length of values) in the tree that c
 
 ## Pre and Post-conditions
 
-The [proof of **Theorem 2**](https://github.com/PegaSysEng/deposit-sc-dafny/blob/e4de78df6636652ba8f4a2b270c7649904866594/src/dafny/smart/DepositSmart.dfy#L298) is encoded as a pre/post-conditions for the `get_deposit_root()` function:
+The [proof of **Theorem 2**](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L298) is encoded as a pre/post-conditions for the `get_deposit_root()` function:
 
 ```dafny
  method get_deposit_root() returns (r : int) 
@@ -93,9 +93,9 @@ The post-conditions ensure:
 To prove this Theorem, the source code of `get_deposit_root()` must be annotated by some
 loop invariants (properties) that are automatically checked by Dafny.
 
-The invariant-annotated source code for this function is [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/ee2710bfc88dc60777031ec1a6d18ab11f32a571/src/dafny/smart/DepositSmart.dfy#L298).
+The invariant-annotated source code for this function is [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L298).
 
-The [proof of **Theorem 1**](https://github.com/PegaSysEng/deposit-sc-dafny/blob/e4de78df6636652ba8f4a2b270c7649904866594/src/dafny/smart/DepositSmart.dfy#L188) amounts to showing that `Valid` is preserved (note that in our code `branch` is stored in reverse order
+The [proof of **Theorem 1**](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L188) amounts to showing that `Valid` is preserved (note that in our code `branch` is stored in reverse order
 compared to the original algorithm and we use index `TREE_HEIGHT - i - 1` instead of `i`):
 ```dafny
 method  deposit(v : int) 
@@ -124,6 +124,6 @@ method  deposit(v : int)
 ```
 The proof if this property requires the annotation of the source code with loop invariants
 that can be checked by Dafny.
-The -annotated source code for this function is [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/ee2710bfc88dc60777031ec1a6d18ab11f32a571/src/dafny/smart/DepositSmart.dfy#L188).
+The annotated source code for this function is [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L188).
 
 [ [up] ](../README.md) 
