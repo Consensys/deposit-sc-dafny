@@ -29,7 +29,8 @@ The main contributions of this project are:
 
 The main results are:
 
-*   a **fully mechanised proof of correctness** (including termination)
+*   a **fully mechanised proof of correctness** (including termination),
+*   a proof that the **initial values** in the `branch` array **do not matter** (hence there is no need to initialise it),
 *   a **simplified** version of the `deposit()` algorithm.
 
 The **provably correct** simplified version of `deposit()` is as follows:
