@@ -173,8 +173,8 @@ module IndexBasedAlgorithm {
      *
      *  @param  h           Height of the tree.
      *  @param  k           Index of leaf in the tree.
-     *  @param  left        The values of the left siblings of nodes on path `p`.
-     *  @param  right       The values of the left siblings of nodes on path `p`.
+     *  @param  left        The values of the left siblings of nodes on the path to `k`-th leaf.
+     *  @param  right       The values of the left siblings of nodes on the path to `k`-th leaf.
      *  @param  seed        The value at nodeAt(p).
      *  @param  f           The binary operation to compute.
      */
@@ -218,8 +218,8 @@ module IndexBasedAlgorithm {
      *
      *  @param  h           Height of the tree.
      *  @param  k           Index of leaf in the tree.
-     *  @param  left        The values of the left siblings of nodes on path `p`.
-     *  @param  right       The values of the left siblings of nodes on path `p`.
+     *  @param  left        The values of the left siblings of nodes on the path to `k`-th leaf.
+     *  @param  right       The values of the left siblings of nodes on the path to `k`-th leaf.
      *  @param  seed        The value at nodeAt(p).
      *  @param  f           The binary operation to compute.
      *  @returns            The values of the left siblings on the next path.
