@@ -1,0 +1,49 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage[landscape]{geometry}
+\usepackage{booktabs}
+\begin{document}
+\section*{https://github.com/PegaSysEng/-dafny}
+\subsection*{Data collected: 2020-10-13}
+\scriptsize
+\begin{tabular}{llrrrrrr}
+\toprule
+                             Files &                          Folder &  \#LoC &  Theorems &  Implementations &  Documentation &  \#Doc/\#LoC (\%) &  Proved \\
+\midrule
+                  DepositSmart.dfy &                 src/dafny/smart &   163 &         0 &                5 &             92 &             56 &       5 \\
+                  CommuteProof.dfy &      src/dafny/smart/algorithms &    73 &         2 &                0 &             31 &             42 &       2 \\
+           IndexBasedAlgorithm.dfy &      src/dafny/smart/algorithms &    96 &         3 &                2 &             59 &             61 &       5 \\
+                 MainAlgorithm.dfy &      src/dafny/smart/algorithms &    66 &         2 &                0 &             38 &             58 &       2 \\
+              OptimalAlgorithm.dfy &      src/dafny/smart/algorithms &    24 &         2 &                0 &             15 &             62 &       2 \\
+                       Helpers.dfy &         src/dafny/smart/helpers &    51 &         5 &                1 &             10 &             20 &       6 \\
+                    SeqHelpers.dfy &         src/dafny/smart/helpers &   137 &        10 &                6 &             34 &             25 &      16 \\
+ NextPathInCompleteTreesLemmas.dfy &           src/dafny/smart/paths &   262 &         3 &                2 &             99 &             38 &       5 \\
+           PathInCompleteTrees.dfy &           src/dafny/smart/paths &   408 &        15 &                0 &             60 &             15 &      15 \\
+                     SeqOfBits.dfy &       src/dafny/smart/seqofbits &   527 &        19 &                0 &            100 &             19 &      19 \\
+               ComputeRootPath.dfy &  src/dafny/smart/synthattribute &   305 &        11 &                0 &            116 &             38 &      11 \\
+            GenericComputation.dfy &  src/dafny/smart/synthattribute &   148 &         6 &                0 &             75 &             51 &       6 \\
+                 RightSiblings.dfy &  src/dafny/smart/synthattribute &   210 &         5 &                1 &             57 &             27 &       6 \\
+                      Siblings.dfy &  src/dafny/smart/synthattribute &   124 &         2 &                0 &             31 &             25 &       2 \\
+                  SiblingsPlus.dfy &  src/dafny/smart/synthattribute &   556 &         4 &                0 &             52 &              9 &       4 \\
+                 CompleteTrees.dfy &           src/dafny/smart/trees &    89 &         8 &                1 &             19 &             21 &       9 \\
+                   MerkleTrees.dfy &           src/dafny/smart/trees &   208 &         6 &                3 &            101 &             49 &       9 \\
+                         Trees.dfy &           src/dafny/smart/trees &    91 &         3 &                5 &             41 &             45 &       8 \\
+                                   &                           TOTAL &  3538 &       106 &               26 &           1030 &             29 &     132 \\
+\bottomrule
+\end{tabular}
+
+\vspace{2em}
+\begin{tabular}{llllllll}
+\toprule
+                         Folder & \#Files &  \#LoC & Theorems & Implementations & Documentation & \#Doc/\#LoC (\%) & Proved \\
+\midrule
+          src/dafny/smart/trees &     18 &  3538 &      106 &              26 &          1030 &            29 &    132 \\
+     src/dafny/smart/algorithms &      4 &   259 &        9 &               2 &           143 &            55 &     11 \\
+        src/dafny/smart/helpers &      2 &   188 &       15 &               7 &            44 &            23 &     22 \\
+          src/dafny/smart/paths &      2 &   670 &       18 &               2 &           159 &            24 &     20 \\
+      src/dafny/smart/seqofbits &      1 &   527 &       19 &               0 &           100 &            19 &     19 \\
+ src/dafny/smart/synthattribute &      5 &  1343 &       28 &               1 &           331 &            25 &     29 \\
+          src/dafny/smart/trees &      3 &   388 &       17 &               9 &           161 &            41 &     26 \\
+\bottomrule
+\end{tabular}
+
+\end{document}
