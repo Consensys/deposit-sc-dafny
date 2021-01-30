@@ -185,109 +185,6 @@ module DepositSmart {
          *  
          *  @param  v   The new deposit amount.
          */
-        method {:timeLimitMultiplier 5} deposit(v : int) 
-            requires Valid()
-            requires count < power2(TREE_HEIGHT) - 1         
-            ensures Valid()
-            modifies this 
-        {
-            var value := v;
-            var size : nat := count;
-            var i : nat := 0;
-            
-            ghost var e := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, size, branch, zero_h, f, v);
-            ghost var p := natToBitList(|values|, TREE_HEIGHT);
-
-            assert(branch == take(branch, TREE_HEIGHT - i));
-            assert(zero_h == take(zero_h, TREE_HEIGHT - i));
-            assert(|e| == TREE_HEIGHT);
-            
-            //  In our version branch and zero_h store the vectors in reverse order, so we
-            //  use TREE_HEIGHT - i - 1  instead of index i < TREE_HEIGHT in the original algorith.
-            //  @todo   Add a copy of branch in reverse order to use index i.
-            //  Note that the test i < TREE_HEIGHT in the original
-            //  version of the algorithm always evaluates to true and is redundant.
-            while size % 2 == 1 
-                invariant zero_h == old(zero_h)  && p == old(p) && count == old(count) && values == old(values) && branch == old(branch)
-                invariant 0 <= TREE_HEIGHT - i - 1 
-                //  The next one is the important invariant that ensures
-                //  that the update of branch after the loop does not
-                //  result in a out of bounds error.
-                invariant TREE_HEIGHT - i - 1 < TREE_HEIGHT 
-                invariant |branch| == |e| == |zero_h| == TREE_HEIGHT
-                //  The sequel are helper invariants
-                invariant 0 <= size < power2(TREE_HEIGHT - i) - 1
-                invariant TREE_HEIGHT - i <= |p|
-                invariant |take(p, TREE_HEIGHT - i)| == TREE_HEIGHT - i
-                invariant size < power2(|take(p, TREE_HEIGHT - i)|)
-
-                // invariant 
-                invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, TREE_HEIGHT - i)  // I1
-                invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, |take(p, TREE_HEIGHT - i)|)  // I2
-
-                //  Main invariant:
-                invariant e == 
-                    computeLeftSiblingsOnNextpathWithIndex(
-                        TREE_HEIGHT - i, size, 
-                        take(branch, TREE_HEIGHT - i), 
-                        take(zero_h, TREE_HEIGHT - i), f, value) 
-                    + drop(branch, TREE_HEIGHT - i);    //  proving the + may need sone help
-
-                //  Termination is easy as size decreases and must be zero.
-                decreases size 
-            {
-                //  Some help to verify I1 and I2:
-                div2IsInit(size, take(p, TREE_HEIGHT - i));
-                assert(size / 2 < power2(|take(p, TREE_HEIGHT - i - 1)|));
-                power2LessThanDiv2(size, TREE_HEIGHT - i);
-                // assert(size / 2 < power2(TREE_HEIGHT - i - 1) - 1);
-                assert(init(take(p, TREE_HEIGHT - i)) == take(p, TREE_HEIGHT - i - 1));
-
-                //  Some help to verify I2:
-                assert(init(take(branch, TREE_HEIGHT - i)) == take(branch, TREE_HEIGHT - i - 1));
-                assert(init(take(zero_h, TREE_HEIGHT - i)) == take(zero_h, TREE_HEIGHT - i - 1));
-                assert(last(take(branch, TREE_HEIGHT - i)) == branch[TREE_HEIGHT - i - 1]);
-
-                value := f(branch[TREE_HEIGHT - i - 1], value);
-                size := size / 2;
-                i := i + 1;
-            }
-            assert(count == old(count));
-            //  Main invariant at the end of the loop:
-            assert(e == computeLeftSiblingsOnNextpathWithIndex(
-                        TREE_HEIGHT - i, size, 
-                        take(branch, TREE_HEIGHT - i), 
-                        take(zero_h, TREE_HEIGHT - i), f, value) 
-                    + drop(branch, TREE_HEIGHT - i));
-            //  Relation expected value `e` and initial (old) value of branch.
-            calc == {
-                e;
-                computeLeftSiblingsOnNextpathWithIndex(
-                        TREE_HEIGHT - i, size, 
-                        take(branch, TREE_HEIGHT - i), 
-                        take(zero_h, TREE_HEIGHT - i), f, value) 
-                    + drop(branch, TREE_HEIGHT - i);
-                { assert(size % 2 == 0); }
-                init(take(branch, TREE_HEIGHT - i)) + [value] + drop(branch, TREE_HEIGHT - i);
-                old(branch)[TREE_HEIGHT - i - 1 := value];
-            }
-            
-            //  This is the important hidden property: TREE_HEIGHT - i - 1 ( i < TREE_HEIGHT)
-            //  in original version) is NEVER out of range, and always in [0, TREE_HEIGHT[
-            branch := branch[TREE_HEIGHT - i - 1 := value];
-            //  Correctness is: value of updated branch is the same as e.
-            assert(branch == old(branch)[TREE_HEIGHT - i - 1 := value]);
-            assert(branch == e);
-
-            //  Finally increment count. Note that count can be incremented at the beginning
-            //  provided that the while loop condition is flipped to size % 2 == 0.
-            count := count + 1;
-
-            //  Update ghost vars and prove correctness with lemma computeNewLeftIsCorrect.
-            computeNewLeftIsCorrect(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
-            values := values + [v];
-        }
-
          method {:timeLimitMultiplier 5} depositv2(v : int) 
             requires Valid()
             requires count < power2(TREE_HEIGHT) - 1         
@@ -309,23 +206,13 @@ module DepositSmart {
                 }
                 take(branch, TREE_HEIGHT);
             }
-            // assert(branch == take(branch, TREE_HEIGHT - i));
-            // assert(zero_h == take(zero_h, TREE_HEIGHT - i));
-            // assert(|e| == TREE_HEIGHT);
-            // assert(|branch| == |take(branch, TREE_HEIGHT - i)| );
-            // assert(|zero_h| == |take(zero_h, TREE_HEIGHT - i)| );
-            // assert(|e| == TREE_HEIGHT);
-            // == |zero_h| == |e| == TREE_HEIGHT);
-            
+
             //  In our version branch and zero_h store the vectors in reverse order, so we
             //  use TREE_HEIGHT - i - 1  instead of index i < TREE_HEIGHT in the original algorith.
             //  @todo   Add a copy of branch in reverse order to use index i.
             //  Note that the test i < TREE_HEIGHT in the original
             //  version of the algorithm always evaluates to true and is redundant.
             while size % 2 == 1 
-                // invariant zero_h == old(zero_h)  
-                // && p == old(p) 
-                // && count == old(count) && values == old(values) && 
                 modifies {}
 
                 invariant branch == old(branch) 
@@ -334,19 +221,8 @@ module DepositSmart {
                 //  invariants related to range of index TREE_HEIGHT - i - 1 
                 invariant 0 <= TREE_HEIGHT - i - 1 
                 invariant 0 <= size < power2(TREE_HEIGHT - i) - 1
-                //  The next one is the important invariant that ensures
-                //  that the update of branch after the loop does not
-                //  result in a out of bounds error.
-                // invariant TREE_HEIGHT - i - 1 < TREE_HEIGHT 
+                
                 invariant |branch| == |e| == |zero_h| == TREE_HEIGHT
-                //  The sequel are helper invariants
-                // invariant TREE_HEIGHT - i <= |p|
-                // invariant |take(p, TREE_HEIGHT - i)| == TREE_HEIGHT - i
-                // invariant size < power2(|take(p, TREE_HEIGHT - i)|)
-
-                // invariant 
-                // invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, TREE_HEIGHT - i)  // I1
-                // invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, |take(p, TREE_HEIGHT - i)|)  // I2
 
                 //  Main invariant:
                 invariant e == 
@@ -359,14 +235,17 @@ module DepositSmart {
                 //  Termination is easy as size decreases and must be zero.
                 decreases size 
             {
-                foo404(TREE_HEIGHT - i, size, branch, zero_h, f, value);
-                ghost var c := count ;
+                //  program loc at entry
+                label E:
+
+                mainInvariantProofHelper(TREE_HEIGHT - i, size, branch, zero_h, f, value);
 
                 value := f(branch[TREE_HEIGHT - i - 1], value);
                 size := size / 2;
                 i := i + 1;
 
-                assert(count == c);
+                assert(count == old@E(count));
+                assert(branch == old@E(branch));
                 
             }
             assert(branch == old(branch));
@@ -388,7 +267,7 @@ module DepositSmart {
                     init(take(branch, TREE_HEIGHT - i)) + [value];
                 }
                 init(take(branch, TREE_HEIGHT - i)) + [value] + drop(branch, TREE_HEIGHT - i);
-                { foo101(branch, value, TREE_HEIGHT - i);} 
+                { updateAndsplitSeqAtIndex(branch, value, TREE_HEIGHT - i);} 
                 branch[TREE_HEIGHT - i - 1 := value];
                 calc == {
                     branch;
@@ -431,7 +310,7 @@ module DepositSmart {
             
         }
 
-        lemma foo101<T>(s: seq<T>, v: T, i: nat) 
+        lemma updateAndsplitSeqAtIndex<T>(s: seq<T>, v: T, i: nat) 
             requires |s| >= 1
             requires 1 <= i <= |s|
             ensures s[i - 1:= v] == init(take(s,i)) + [v] + drop(s, i)
@@ -439,30 +318,29 @@ module DepositSmart {
             // assume(s[i - 1:= v] == init(take(s,i)) + [v] + drop(s, i));
         }
 
-        lemma foo303<T>(
-            h : nat, k : nat, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T) 
-            requires 1 <= |left| == |right| == h
-            requires 0 < k < power2(h) 
-            requires k % 2 == 1
-        {
-            assume(k / 2 < power2(h - 1));
-            assert(
-                computeLeftSiblingsOnNextpathWithIndex(h, k, left, right, f, seed)
-                ==
-                computeLeftSiblingsOnNextpathWithIndex(
-                    h - 1, k / 2, init(left), init(right), f, f(last(left), seed)) + [last(left)]
-            );
-        }
+        // lemma foo303<T>(
+        //     h : nat, k : nat, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T) 
+        //     requires 1 <= |left| == |right| == h
+        //     requires 0 < k < power2(h) 
+        //     requires k % 2 == 1
+        // {
+        //     assume(k / 2 < power2(h - 1));
+        //     assert(
+        //         computeLeftSiblingsOnNextpathWithIndex(h, k, left, right, f, seed)
+        //         ==
+        //         computeLeftSiblingsOnNextpathWithIndex(
+        //             h - 1, k / 2, init(left), init(right), f, f(last(left), seed)) + [last(left)]
+        //     );
+        // }
 
-        lemma foo404(h: nat, k : nat, left : seq<int>, right : seq<int>, f : (int, int) -> int, seed: int)
+        /**
+         *  Equality of computations used to prove the main invariant 
+         *  of deposit. 
+         */
+        lemma mainInvariantProofHelper(h: nat, k : nat, left : seq<int>, right : seq<int>, f : (int, int) -> int, seed: int)
             requires 1 <= h <= |left| == |right| 
             requires 0 < k < power2(h) 
             requires k % 2 == 1
-            // requires e == computeLeftSiblingsOnNextpathWithIndex(
-            //             h, k, 
-            //             take(left, h), 
-            //             take(right, h), f, seed) 
-            //         + drop(left, h)  
             ensures k / 2 < power2(h - 1)
             ensures computeLeftSiblingsOnNextpathWithIndex(
                         h, k, 
