@@ -288,6 +288,223 @@ module DepositSmart {
             values := values + [v];
         }
 
+         method {:timeLimitMultiplier 5} depositv2(v : int) 
+            requires Valid()
+            requires count < power2(TREE_HEIGHT) - 1         
+            ensures Valid()
+            modifies this 
+        {
+            var value := v;
+            var size : nat := count;
+            var i : nat := 0;
+            
+            ghost var e := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, size, branch, zero_h, f, v);
+            ghost var p := natToBitList(|values|, TREE_HEIGHT);
+
+            //  Helpers for proving main invariant on entry
+            calc == {
+                branch;
+                calc {
+                    |branch| == TREE_HEIGHT;
+                }
+                take(branch, TREE_HEIGHT);
+            }
+            // assert(branch == take(branch, TREE_HEIGHT - i));
+            // assert(zero_h == take(zero_h, TREE_HEIGHT - i));
+            // assert(|e| == TREE_HEIGHT);
+            // assert(|branch| == |take(branch, TREE_HEIGHT - i)| );
+            // assert(|zero_h| == |take(zero_h, TREE_HEIGHT - i)| );
+            // assert(|e| == TREE_HEIGHT);
+            // == |zero_h| == |e| == TREE_HEIGHT);
+            
+            //  In our version branch and zero_h store the vectors in reverse order, so we
+            //  use TREE_HEIGHT - i - 1  instead of index i < TREE_HEIGHT in the original algorith.
+            //  @todo   Add a copy of branch in reverse order to use index i.
+            //  Note that the test i < TREE_HEIGHT in the original
+            //  version of the algorithm always evaluates to true and is redundant.
+            while size % 2 == 1 
+                // invariant zero_h == old(zero_h)  
+                // && p == old(p) 
+                // && count == old(count) && values == old(values) && 
+                modifies {}
+
+                invariant branch == old(branch) 
+                invariant values == old(values)
+                invariant count == old(count)
+                //  invariants related to range of index TREE_HEIGHT - i - 1 
+                invariant 0 <= TREE_HEIGHT - i - 1 
+                invariant 0 <= size < power2(TREE_HEIGHT - i) - 1
+                //  The next one is the important invariant that ensures
+                //  that the update of branch after the loop does not
+                //  result in a out of bounds error.
+                // invariant TREE_HEIGHT - i - 1 < TREE_HEIGHT 
+                invariant |branch| == |e| == |zero_h| == TREE_HEIGHT
+                //  The sequel are helper invariants
+                // invariant TREE_HEIGHT - i <= |p|
+                // invariant |take(p, TREE_HEIGHT - i)| == TREE_HEIGHT - i
+                // invariant size < power2(|take(p, TREE_HEIGHT - i)|)
+
+                // invariant 
+                // invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, TREE_HEIGHT - i)  // I1
+                // invariant take(p, TREE_HEIGHT - i) == natToBitList2(size, |take(p, TREE_HEIGHT - i)|)  // I2
+
+                //  Main invariant:
+                invariant e == 
+                    computeLeftSiblingsOnNextpathWithIndex(
+                        TREE_HEIGHT - i, size, 
+                        take(branch, TREE_HEIGHT - i), 
+                        take(zero_h, TREE_HEIGHT - i), f, value) 
+                    + drop(branch, TREE_HEIGHT - i)     //  proving the + may need sone help
+
+                //  Termination is easy as size decreases and must be zero.
+                decreases size 
+            {
+                foo404(TREE_HEIGHT - i, size, branch, zero_h, f, value);
+                ghost var c := count ;
+
+                value := f(branch[TREE_HEIGHT - i - 1], value);
+                size := size / 2;
+                i := i + 1;
+
+                assert(count == c);
+                
+            }
+            assert(branch == old(branch));
+            assert(count == old(count));
+            assert(values == old(values));
+            calc == {
+                e;
+                computeLeftSiblingsOnNextpathWithIndex(
+                        TREE_HEIGHT - i, size, 
+                        take(branch, TREE_HEIGHT - i), 
+                        take(zero_h, TREE_HEIGHT - i), f, value) 
+                    + drop(branch, TREE_HEIGHT - i);
+                calc == {
+                    computeLeftSiblingsOnNextpathWithIndex(
+                        TREE_HEIGHT - i, size, 
+                        take(branch, TREE_HEIGHT - i), 
+                        take(zero_h, TREE_HEIGHT - i), f, value) ;
+                    { assert(size % 2 == 0 && TREE_HEIGHT - i > 0 ); }
+                    init(take(branch, TREE_HEIGHT - i)) + [value];
+                }
+                init(take(branch, TREE_HEIGHT - i)) + [value] + drop(branch, TREE_HEIGHT - i);
+                { foo101(branch, value, TREE_HEIGHT - i);} 
+                branch[TREE_HEIGHT - i - 1 := value];
+                calc == {
+                    branch;
+                    old(branch);
+                }
+                old(branch)[TREE_HEIGHT - i - 1 := value];
+            }
+            //  This is the important hidden property: TREE_HEIGHT - i - 1 ( i < TREE_HEIGHT)
+            //  in original version) is NEVER out of range, and always in [0, TREE_HEIGHT[
+            branch := branch[TREE_HEIGHT - i - 1 := value];
+            //  Correctness is: value of updated branch is the same as e.
+            assert(branch == old(branch)[TREE_HEIGHT - i - 1 := value]);
+            assert(branch == e);
+
+            //  Finally increment count. Note that count can be incremented at the beginning
+            //  provided that the while loop condition is flipped to size % 2 == 0.
+            assert(count == old(count));
+            count := count + 1;
+            assert(count == old(count) + 1);
+
+            // computeNewLeftIsCorrect(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
+            values := values + [v];
+            //  Constraints on height and length of lists.
+            calc {
+                |branch|;
+                |e|;
+                TREE_HEIGHT;
+            }
+            assert(1 <= TREE_HEIGHT == |branch| == |zero_h|);
+            assert(count < power2(TREE_HEIGHT));
+            //  count is the number of values added so far and should correspond to |values|.
+            assert(|values| == count);
+            //  zero_h is constant and equal to default values for each level of t.
+            assert(zero_h == zeroes(f, d, TREE_HEIGHT - 1));
+            //  branch and zero_h are the left and right siblings of path to 
+            //  |values|-th leaf in buildMerkle(values, TREE_HEIGHT, f, d)
+            computeNewLeftIsCorrect(old(values), v, TREE_HEIGHT, old(branch), zero_h, f, d);
+            assert(values == old(values) + [v]);
+            assert(areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h));
+            
+        }
+
+        lemma foo101<T>(s: seq<T>, v: T, i: nat) 
+            requires |s| >= 1
+            requires 1 <= i <= |s|
+            ensures s[i - 1:= v] == init(take(s,i)) + [v] + drop(s, i)
+        {
+            // assume(s[i - 1:= v] == init(take(s,i)) + [v] + drop(s, i));
+        }
+
+        lemma foo303<T>(
+            h : nat, k : nat, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T) 
+            requires 1 <= |left| == |right| == h
+            requires 0 < k < power2(h) 
+            requires k % 2 == 1
+        {
+            assume(k / 2 < power2(h - 1));
+            assert(
+                computeLeftSiblingsOnNextpathWithIndex(h, k, left, right, f, seed)
+                ==
+                computeLeftSiblingsOnNextpathWithIndex(
+                    h - 1, k / 2, init(left), init(right), f, f(last(left), seed)) + [last(left)]
+            );
+        }
+
+        lemma foo404(h: nat, k : nat, left : seq<int>, right : seq<int>, f : (int, int) -> int, seed: int)
+            requires 1 <= h <= |left| == |right| 
+            requires 0 < k < power2(h) 
+            requires k % 2 == 1
+            // requires e == computeLeftSiblingsOnNextpathWithIndex(
+            //             h, k, 
+            //             take(left, h), 
+            //             take(right, h), f, seed) 
+            //         + drop(left, h)  
+            ensures k / 2 < power2(h - 1)
+            ensures computeLeftSiblingsOnNextpathWithIndex(
+                        h, k, 
+                        take(left, h), 
+                        take(right, h), f, seed) 
+                    + drop(left, h) 
+                    == computeLeftSiblingsOnNextpathWithIndex(
+                        h - 1, k / 2 , 
+                        take(left, h - 1), 
+                        take(right, h - 1), f,  f(left[h - 1], seed)) 
+                    + drop(left, h - 1)
+        {
+            power2Div2LessThan(k, h);
+            calc == {
+                computeLeftSiblingsOnNextpathWithIndex(
+                        h, k, 
+                        take(left, h), 
+                        take(right, h), f, seed) 
+                    + drop(left, h);
+                calc == {
+                    computeLeftSiblingsOnNextpathWithIndex(
+                        h, k, 
+                        take(left, h), 
+                        take(right, h), f, seed) ;
+                    { assert(k % 2 == 1 && h > 0 ); }
+                    computeLeftSiblingsOnNextpathWithIndex(
+                        h - 1, k / 2 , 
+                        init(take(left, h)), 
+                        init( take(right, h)), f,  f(last(take(left, h)), seed)) + [last(take(left, h))];
+                    { seqIndexLemmas(left, h); seqIndexLemmas(right, h); }
+                    computeLeftSiblingsOnNextpathWithIndex(
+                        h - 1, k / 2 , 
+                        take(left, h - 1), 
+                        take(right, h - 1), f,  f(left[h - 1], seed)) + [left[h - 1]];
+                }
+                computeLeftSiblingsOnNextpathWithIndex(
+                        h - 1, k / 2 , 
+                        take(left, h - 1), 
+                        take(right, h - 1), f,  f(left[h - 1], seed)) + [left[h - 1]] + drop(left, h);
+            }
+        }
+
         /**
          *  The get_deposit_root() function.
          *
