@@ -83,6 +83,7 @@ module SeqHelpers {
         ensures |take(p, k)| == k
         ensures take(p, k) ==  p[..k]
         ensures take(p, k) <= p 
+        ensures take(p, |p|) == p
         ensures k < |p| ==> take(p, k) < p 
     {
         p[..k]   
