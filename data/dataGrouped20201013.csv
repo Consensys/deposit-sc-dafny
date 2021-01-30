@@ -1,0 +1,8 @@
+Folder,#Files,#LoC,Theorems,Implementations,Documentation,#Doc/#LoC (%),Proved
+src/dafny/smart/trees,18,3538,106,26,1030,29,132
+src/dafny/smart/algorithms,4,259,9,2,143,55,11
+src/dafny/smart/helpers,2,188,15,7,44,23,22
+src/dafny/smart/paths,2,670,18,2,159,24,20
+src/dafny/smart/seqofbits,1,527,19,0,100,19,19
+src/dafny/smart/synthattribute,5,1343,28,1,331,25,29
+src/dafny/smart/trees,3,388,17,9,161,41,26
