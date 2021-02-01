@@ -126,7 +126,7 @@ module RSiblings {
      *  @param  i       An index on path p.
      *    
      */
-    lemma {:induction p, r, i} siblingsRightOfPathAreConstant<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, i : nat) 
+    lemma {:induction p, r} siblingsRightOfPathAreConstant<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T, i : nat) 
 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
@@ -143,96 +143,130 @@ module RSiblings {
         requires 0 <= i < |p|
         ensures p[i] == 0 ==> siblingValueAt(p, r, i + 1) == defaultValue(f, d, height(r) - (i + 1))
 
-        decreases r 
+        decreases r
     {
-        reveal_siblingValueAt();
-        if height(r) == 1 {
-            match r 
-                case Node(_, lc, rc) => 
-                    assert(|p| == 1);
-                    //  We have to prove the property for i == 0
-                    if (p[0] == 0) {
-                        //  i == 0, first(p) == 0, the sibling is the rc.
-                        //  and k == 0 so rc.v == d
-                        assert(k == 0);
-                        calc == {
-                            siblingAt(take(p, i + 1), r).v;
-                            siblingAt(take(p, 0 + 1), r).v;
-                            siblingAt([0], r).v;
-                            calc == {
-                                [] + [1];
-                                [1];
-                            }
-                            nodeAt([1], r).v;
-                            leavesIn(r)[1].v;
-                            d;
-                            defaultValue(f, d, height(r) - 1);
-                        }
+        if p[i] == 0 {
+            //  if tree height 1 easy else split i == 0 and i >= 1 (induction)
+            if height(r) == 1 {
+                    calc == {
+                        |p|;
+                        height(r);
+                        1;
                     }
-        } else if p[i] == 0 {
-            //  |p| >= 1, induction on left and right child
-            //  Prove pre-conditions hold for them
-            match r 
-                case Node(_, lc, rc) => 
-                     //  Leaves of left and right children are equal to d.
-                    childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
-                    assert(leavesIn(lc) == leavesIn(r)[.. power2(height(r)) / 2]);
-                    assert(leavesIn(rc) == leavesIn(r)[power2(height(r)) / 2 ..]);
-                    if first(p) == 0 {
-                        initPathDeterminesIndex(r, p, k, index);
-                        assert(k < power2(height(r)) / 2);
-                        assert(k < |leavesIn(lc)|); 
-                        //  Induction on lc
-                        if i >= 1 {
-                            //  sibling is in lc
+                    calc == {
+                        p;
+                        [p[0]];
+                        [0];
+                    }
+                    calc == {
+                        siblingValueAt(p, r, i + 1);
+                        { reveal_siblingValueAt(); }
+                        siblingAt(take(p, i + 1), r).v;
+                        { assert( i == 0); }
+                        siblingAt(take(p, 1), r).v;
+                        calc == {
+                            take(p, 1);
+                            [p[0]];
+                            [0];
+                        }
+                        siblingAt([0], r).v;
+                        calc == {
+                            init([0]) + [1];
+                            [1];
+                        }
+                        nodeAt([1], r).v;
+                        //  same as leaf at index 1
+                        leavesIn(r)[1].v;
+                        d;
+                        defaultValue(f, d, height(r) - (i + 1));
+                    }
+            } else {
+                if (i == 0) {
+                    match r 
+                        case Node(_, lc, rc) => 
+                            //  first index of path is 0. All leaves in rc have default value d.
+                            //  Hence root of rc has default value 
+                            
+                            //  Leaves of left and right children are equal to d.
+                            childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
+                            assert(leavesIn(lc) == leavesIn(r)[.. power2(height(r)) / 2]);
+                            assert(leavesIn(rc) == leavesIn(r)[power2(height(r)) / 2 ..]);
+                            assert(
+                                forall l :: l in leavesIn(rc) ==> l.v == d
+                            );
+                            allLeavesDefaultImplyRootNodeDefault(rc, f, d);
+                            assert(rc.v == defaultValue(f, d, height(rc)));
                             calc == {
-                                siblingAt(take(p, i + 1), r).v;
-                                { simplifySiblingAtIndexFirstBit(p, r, i + 1);  }
-                                siblingAt(take(tail(p), i), lc).v ;
-                                //  induction
-                                { siblingsRightOfPathAreConstant(tail(p), lc, k, f, index, d, i - 1);}
-                                defaultValue(f, d, height(lc) - (i));
-                            }
-                        } else {
-                            //  i == 0, first(p) == 0, the sibling is the rc.
-                            calc == {
-                                siblingAt(take(p, i + 1), r).v;
-                                siblingAt(take(p, 0 + 1), r).v;
+                                siblingValueAt(p, r, i + 1);
+                                siblingValueAt(p, r, 1);
+                                { reveal_siblingValueAt(); }
+                                siblingAt(take(p, 1), r).v;
+                                calc == {
+                                    take(p, 1);
+                                    [p[0]];
+                                    [0];
+                                }
                                 siblingAt([0], r).v;
                                 calc == {
-                                    [] + [1];
+                                    init([0]) + [1];
                                     [1];
                                 }
                                 nodeAt([1], r).v;
-                                rc.v;
-                                { allLeavesDefaultImplyRootNodeDefault(rc, f, d);}
+                                rc.v; 
+                                { allLeavesDefaultImplyRootNodeDefault(rc, f, d); }
                                 defaultValue(f, d, height(rc));
-                                defaultValue(f, d, height(r) - 1);
+                                defaultValue(f, d, height(r) - (i + 1));
+                        
                             }
-                        }
-                    } else {
-                        //  first(p) == 1, path in rc.
-                        initPathDeterminesIndex(r, p, k, index);
-                        assert(k >= power2(height(r)) / 2);
-                        assert(k -  power2(height(r)) / 2 < |leavesIn(rc)|); 
-
-                       //  Induction on rc
-                        if i >= 1 {
-                            //  sibling is in rc
-                            calc == {
-                                siblingAt(take(p, i + 1), r).v;
-                                { simplifySiblingAtIndexFirstBit(p, r, i + 1);  }
-                                siblingAt(take(tail(p), i), rc).v ;
-                                //  induction
-                                { siblingsRightOfPathAreConstant(tail(p), rc, k - power2(height(r)) / 2, f, index + power2(height(r)) / 2, d, i - 1);}
-                                defaultValue(f, d, height(rc) - (i));
+                } else {
+                    assert(height(r) >= 2);
+                    assert(i >= 1);
+                    assert(|p| >= 2);
+                    //  i is an index on p either in lc or rc. Apply induction on rc or lc
+                    childrenInCompTreesHaveHeightMinusOne(r);
+                    match r 
+                        case Node(_, lc, rc) => 
+                            //  Leaves of left and right children are equal to d.
+                            childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
+                            assert(leavesIn(lc) == leavesIn(r)[.. power2(height(r)) / 2]);
+                            assert(leavesIn(rc) == leavesIn(r)[power2(height(r)) / 2 ..]);
+                            if (first(p) == 0) {
+                                //  p[i] is in lc
+                                initPathDeterminesIndex(r, p, k, index);
+                                assert(k < power2(height(r)) / 2);
+                                assert(k < |leavesIn(lc)|); 
+                                
+                                calc == {
+                                    siblingValueAt(p, r, i + 1);
+                                    { reveal_siblingValueAt(); }
+                                    siblingAt(take(p, i + 1), r).v;
+                                    { simplifySiblingAtIndexFirstBit(p, r, i + 1);}
+                                    siblingAt(take(tail(p), i), lc).v;
+                                    { reveal_siblingValueAt(); }
+                                    siblingValueAt(tail(p), lc, i);
+                                    { siblingsRightOfPathAreConstant(tail(p), lc, k, f, index, d, i - 1); }
+                                    defaultValue(f, d, height(r) - (i + 1));
+                                }
+                            } else {
+                                //  p[i] is in rc
+                                initPathDeterminesIndex(r, p, k, index);
+                                assert(k - power2(height(r)) / 2 < power2(height(r)) / 2);
+                                assert(k - power2(height(r)) / 2 < |leavesIn(rc)|); 
+                                
+                                calc == {
+                                    siblingValueAt(p, r, i + 1);
+                                    { reveal_siblingValueAt(); }
+                                    siblingAt(take(p, i + 1), r).v;
+                                    { simplifySiblingAtIndexFirstBit(p, r, i + 1);}
+                                    siblingAt(take(tail(p), i), rc).v;
+                                    { reveal_siblingValueAt(); }
+                                    siblingValueAt(tail(p), rc, i);
+                                    { siblingsRightOfPathAreConstant(tail(p), rc, k - power2(height(r)) / 2, f, index + power2(height(r)) / 2, d, i - 1); }
+                                    defaultValue(f, d, height(r) - (i + 1));
+                                }
                             }
-                        } else {
-                            //  i == 0, as p[i] == p[0] == first(p), this case does not
-                            //  occur as witnessed by asserting false here.
-                            assert(false);
-                        }
-                    }
+                }
+            }
         }
     }
 
