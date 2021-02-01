@@ -402,6 +402,7 @@ module DepositSmart {
             ensures Valid()
             /** The result of get_deposit_root_() is the root value of the Merkle tree for values.  */
             ensures r == buildMerkle(values, TREE_HEIGHT, f, d).v 
+            modifies {}
         {
             //  Some help to prove that the main invariant holds on entry:
             assert(take(branch, TREE_HEIGHT) == branch);
