@@ -68,7 +68,7 @@ module CompleteTrees {
     function {:opaque} dropLeavesIn<T>(r : Tree<T>, k : nat) : seq<Tree<T>>
         requires isCompleteTree(r)
         requires k <= |leavesIn(r)|
-        ensures |takeLeavesIn(r, k)| == k 
+        ensures |dropLeavesIn(r, k)| == |leavesIn(r)| - k
     {
         completeTreeNumberLemmas(r);
         drop(leavesIn(r), k)
