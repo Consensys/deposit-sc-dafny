@@ -167,8 +167,15 @@ module DepositSmart {
             ensures Valid()
             /** The result of get_deposit_root_() is the root value of the Merkle tree for values.  */
             ensures r == buildMerkle(values, TREE_HEIGHT, f, d).v 
+            modifies {}
         {
             r := computeRootLeftRightUpWithIndex(TREE_HEIGHT, count, branch, zero_h, f, d);
+
+            calc ==> {
+                Valid();
+                |values| < power2(TREE_HEIGHT);
+            }
+            assert |values| < power2(TREE_HEIGHT) ;
 
             //  The proof of post condition follows easily from:
             computeRootIsCorrect(values, TREE_HEIGHT, branch, zero_h, f, d);
