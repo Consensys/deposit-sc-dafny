@@ -59,7 +59,7 @@ module Trees {
      */
     function method nodesIn(root : Tree) : seq<Tree>
         ensures |nodesIn(root)| >= 1
-        ensures nodesIn(root)[0] == root
+        ensures nodesIn(root)[0] == root  
         decreases root
     {
         match root 
@@ -145,7 +145,7 @@ module Trees {
 
     //  Constant tree iff same values on all nodes (and leaves)
 
-     lemma {:induction r} isConstantImpliesSameValuesEveryWhere<T>(r : Tree<T>, c: T)
+    lemma {:induction r} isConstantImpliesSameValuesEveryWhere<T>(r : Tree<T>, c: T)
         requires isConstant(r, c)
         ensures  
             (forall k :: 0 <= k < |nodesIn(r)|  ==> nodesIn(r)[k].v == c)
