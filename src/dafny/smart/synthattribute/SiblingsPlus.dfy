@@ -371,7 +371,7 @@ module SiblingsPlus {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma {:induction p} siblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
+    lemma {:induction false} siblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
@@ -400,109 +400,46 @@ module SiblingsPlus {
                 && dropLeavesIn(rc, k' + 1) == dropLeavesIn(rc', k' + 1)
                 && nodeAt(tail(p), rc) == leavesIn(rc)[k']
                 && nodeAt(tail(p), rc') == leavesIn(rc')[k']
-                && siblingValueAt(p, r', i + 1) == siblingValueAt(tail(p), rc', i)
                 && siblingValueAt(p, r, i + 1) == siblingValueAt(tail(p), rc, i)
+                && siblingValueAt(p, r', i + 1) == siblingValueAt(tail(p), rc', i)
 
     {
         reveal_siblingValueAt();
         reveal_takeLeavesIn();
         reveal_dropLeavesIn();
 
-            match (r, r')
-                case (Node(_, lc, rc), Node(_, lc', rc')) =>
-                childrenCompTreeValidIndex(r, height(r), index);
-                childrenCompTreeValidIndex(r', height(r'), index);
+        match (r, r')
+            case (Node(_, lc, rc), Node(_, lc', rc')) =>
+            childrenCompTreeValidIndex(r, height(r), index);
+            childrenCompTreeValidIndex(r', height(r'), index);
 
-                childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
-                childrenInCompTreesHaveHalfNumberOfLeaves(r', height(r'));
+            childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));
+            childrenInCompTreesHaveHalfNumberOfLeaves(r', height(r'));
 
-                completeTreeNumberLemmas(r);
-                completeTreeNumberLemmas(r');
+            completeTreeNumberLemmas(r);
+            completeTreeNumberLemmas(r');
 
-                leafAtPathIsIntValueOfPath(p, r, k, index);
-                leafAtPathIsIntValueOfPath(p, r', k, index);
-                assert(nodeAt(p, r) == leavesIn(r)[k]);
-                assert(nodeAt(p, r') == leavesIn(r')[k]);
+            leafAtPathIsIntValueOfPath(p, r, k, index);
+            leafAtPathIsIntValueOfPath(p, r', k, index);
+            assert(nodeAt(p, r) == leavesIn(r)[k]);
+            assert(nodeAt(p, r') == leavesIn(r')[k]);
 
-                //  Use vars to store power2(height(r)) / 2 and prove some useful inequalities.
-                var k'' := power2(height(r)) / 2;
-                initPathDeterminesIndex(r, p, k, index);
-                assert(k >= power2(height(r)) / 2 == k'');
-                var k' := k  - power2(height(r)) / 2;
-                assert(k + 1 >  k'');
+            //  Use vars to store power2(height(r)) / 2 and prove some useful inequalities.
+            var k'' := power2(height(r)) / 2;
+            initPathDeterminesIndex(r, p, k, index);
+            assert(k >= power2(height(r)) / 2 == k'');
+            var k' := k  - power2(height(r)) / 2;
+            assert(k + 1 >  k'');
 
-                calc == {
-                    first(take(p,i + 1));
-                    { seqIndexLemmas(p, i + 1) ; }
-                    first(p);
-                    1;
-                }
-
-                //    siblingAt(take(p,i + 1), r).v is the same as siblingAt(take(tail(p), i), lc).v;
-                calc == {
-                    siblingAt(take(p,i + 1), r).v;
-                    { simplifySiblingAtIndexFirstBit(p, r, i + 1); }
-                    siblingAt(take(tail(p), i), rc).v;
-                }
-                assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(tail(p), i), rc).v);
-                reveal_siblingValueAt();
-
-                calc == {
-                    take(leavesIn(rc), k');
-                    take(drop(leavesIn(r), k''), k');
-                    { seqTakeDrop(leavesIn(r), k'', k); }
-                    leavesIn(r)[k''..k];
-                    { prefixSeqs(leavesIn(r), leavesIn(r'), k'', k); }
-                    leavesIn(r')[k''..k];
-                    { seqTakeDrop(leavesIn(r'), k'', k); }
-                    take(drop(leavesIn(r'), k''),k');
-                    take(leavesIn(rc'), k');
-                }
-                assert(take(leavesIn(rc), k') == take(leavesIn(rc'), k'));
-                reveal_takeLeavesIn();
-
-                calc == {
-                    drop(leavesIn(rc), k' + 1);
-                    drop(drop(leavesIn(r), k''), k' + 1); 
-                    {  seqDropDrop(leavesIn(r), k'', k + 1); }
-                    drop(leavesIn(r), k + 1);
-                    { reveal_dropLeavesIn() ; }
-                    dropLeavesIn(r, k + 1);
-                    dropLeavesIn(r', k + 1);
-                    { reveal_dropLeavesIn() ; }                    
-                    drop(leavesIn(r'), k + 1);
-                    { seqDropDrop(leavesIn(r'), k'', k + 1); }
-                    drop(drop(leavesIn(r'), k''), k' + 1); 
-                    drop(leavesIn(rc'), k' + 1);
-                }
-                assert(drop(leavesIn(rc), k' + 1) == drop(leavesIn(rc'), k' + 1));
-                reveal_dropLeavesIn();
-
-                calc == {
-                    leavesIn(rc)[k'];
-                    leavesIn(r)[k];
-                    nodeAt(p, r);
-                    { simplifyNodeAtFirstBit(p, r); }
-                    nodeAt(tail(p), rc);
-                }
-                assert(nodeAt(tail(p), rc) == leavesIn(rc)[k']);
-
-                calc == {
-                    leavesIn(rc')[k'];
-                    leavesIn(r')[k];
-                    nodeAt(p, r');
-                    { simplifyNodeAtFirstBit(p, r'); }
-                    nodeAt(tail(p), rc');
-                }
-                assert(nodeAt(tail(p), rc') == leavesIn(rc')[k']);
-
-                calc == {
-                    siblingAt(take(p,i + 1), r').v;
-                    {  assert(first(p) == 1); simplifySiblingAtIndexFirstBit(p, r', i + 1);}
-                    siblingAt(take(tail(p), i), rc').v;
-                }
-                assert(siblingAt(take(p,i + 1), r').v == siblingAt(take(tail(p), i), rc').v); 
-                reveal_siblingValueAt();
+            calc == {
+                first(take(p,i + 1));
+                { seqIndexLemmas(p, i + 1) ; }
+                first(p);
+                1;
+            }
+                        
+            simplifySiblingAtIndexFirstBit(p, r', i + 1);
+            simplifySiblingAtIndexFirstBit(p, r, i + 1);
 
     }
 
