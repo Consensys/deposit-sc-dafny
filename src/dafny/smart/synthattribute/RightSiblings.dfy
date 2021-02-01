@@ -250,7 +250,7 @@ module RSiblings {
      *  @param  zeroes  The default f-value for each level.
      *    
      */
-    lemma {:induction p, r} {:timeLimitMultiplier 2} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T) 
+    lemma {:induction false} {:timeLimitMultiplier 2} rightSiblingsOfLastPathAreDefault<T>(p : seq<bit>, r : Tree<T>, k : nat, f: (T, T) -> T, index : nat, d : T) 
         requires isCompleteTree(r)
         requires isDecoratedWith(f, r)
 
