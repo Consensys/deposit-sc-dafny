@@ -317,34 +317,21 @@ module DepositSmart {
             assert(areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h));
         }
 
+        /**
+         *  Split a seq with take/drop at a given index and update.
+         */
         lemma updateAndsplitSeqAtIndex<T>(s: seq<T>, v: T, i: nat) 
             requires |s| >= 1
             requires 1 <= i <= |s|
             ensures s[i - 1:= v] == init(take(s,i)) + [v] + drop(s, i)
-        {
-            // assume(s[i - 1:= v] == init(take(s,i)) + [v] + drop(s, i));
+        {   //  Thanks Dafny 
         }
-
-        // lemma foo303<T>(
-        //     h : nat, k : nat, left : seq<T>, right : seq<T>, f : (T, T) -> T, seed: T) 
-        //     requires 1 <= |left| == |right| == h
-        //     requires 0 < k < power2(h) 
-        //     requires k % 2 == 1
-        // {
-        //     assume(k / 2 < power2(h - 1));
-        //     assert(
-        //         computeLeftSiblingsOnNextpathWithIndex(h, k, left, right, f, seed)
-        //         ==
-        //         computeLeftSiblingsOnNextpathWithIndex(
-        //             h - 1, k / 2, init(left), init(right), f, f(last(left), seed)) + [last(left)]
-        //     );
-        // }
 
         /**
          *  Equality of computations used to prove the main invariant 
          *  of deposit. 
          */
-        lemma mainInvariantProofHelper(h: nat, k : nat, left : seq<int>, right : seq<int>, f : (int, int) -> int, seed: int)
+        lemma {:induction false} mainInvariantProofHelper(h: nat, k : nat, left : seq<int>, right : seq<int>, f : (int, int) -> int, seed: int)
             requires 1 <= h <= |left| == |right| 
             requires 0 < k < power2(h) 
             requires k % 2 == 1
@@ -363,10 +350,10 @@ module DepositSmart {
             power2Div2LessThan(k, h);
             calc == {
                 computeLeftSiblingsOnNextpathWithIndex(
-                        h, k, 
-                        take(left, h), 
-                        take(right, h), f, seed) 
-                    + drop(left, h);
+                    h, k, 
+                    take(left, h), 
+                    take(right, h), f, seed) 
+                + drop(left, h);
                 calc == {
                     computeLeftSiblingsOnNextpathWithIndex(
                         h, k, 
@@ -384,9 +371,10 @@ module DepositSmart {
                         take(right, h - 1), f,  f(left[h - 1], seed)) + [left[h - 1]];
                 }
                 computeLeftSiblingsOnNextpathWithIndex(
-                        h - 1, k / 2 , 
-                        take(left, h - 1), 
-                        take(right, h - 1), f,  f(left[h - 1], seed)) + [left[h - 1]] + drop(left, h);
+                    h - 1, k / 2 , 
+                    take(left, h - 1), 
+                    take(right, h - 1), f,  f(left[h - 1], seed)) + [left[h - 1]] 
+                + drop(left, h);
             }
         }
 
@@ -445,11 +433,26 @@ module DepositSmart {
                 }
                 size := size / 2;
                 h := h + 1;
+                assert(
+                    e == 
+                    computeRootLeftRightUpWithIndex(
+                        TREE_HEIGHT - h, size, 
+                        take(branch, TREE_HEIGHT - h), take(zero_h, TREE_HEIGHT - h), f, r)
+                );
             }
 
             //  By invariant at the end of the loop and definition of computeRootLeftRightUpWithIndex
             assert(e == computeRootLeftRightUpWithIndex(0, 0, [], [], f, r) == r);
-             //  The proof of post condition follows easily from:
+            assert(1 <= TREE_HEIGHT);
+            calc ==> {
+                Valid();
+                |values| < power2(TREE_HEIGHT);
+            }
+            assert |values| < power2(TREE_HEIGHT) ;
+            assert |branch| == |zero_h| == TREE_HEIGHT ;
+            assert areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h);
+
+            //  The proof of post condition follows easily from:
             computeRootIsCorrect(values, TREE_HEIGHT, branch, zero_h, f, d);
         }
     }
