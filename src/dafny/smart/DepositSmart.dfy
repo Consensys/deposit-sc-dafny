@@ -162,7 +162,7 @@ module DepositSmart {
          *
          *  @returns    The root value of the Merkle Tree for values.
          */
-        method get_deposit_root_f() returns (r : int) 
+        method {:timeMultiplier 2} get_deposit_root_f() returns (r : int) 
             requires Valid()
             ensures Valid()
             /** The result of get_deposit_root_() is the root value of the Merkle tree for values.  */
@@ -185,7 +185,7 @@ module DepositSmart {
          *  
          *  @param  v   The new deposit amount.
          */
-         method {:timeLimitMultiplier 5} depositv2(v : int) 
+         method {:timeLimitMultiplier 5} deposit(v : int) 
             requires Valid()
             requires count < power2(TREE_HEIGHT) - 1         
             ensures Valid()
