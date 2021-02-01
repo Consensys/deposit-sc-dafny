@@ -215,7 +215,7 @@ module MerkleTrees {
         requires areSiblingsAtIndex(|l|, buildMerkle(l, h, f, d), left, right)
 
         ensures computeRootLeftRightUpWithIndex(h, |l|, left, right, f, d) == buildMerkle(l, h, f, d).v 
-    {
+    {    
         var p := natToBitList(|l|, h);
         bitToNatToBitsIsIdentity(|l|, h);
         assert(bitListToNat(p) == |l|);
