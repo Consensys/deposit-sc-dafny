@@ -33,9 +33,11 @@ module SiblingsPlus {
 
     /**
      *  This is the base case for the proof of Lemma [[LeftSiblings.]]
-     *  Let two trees r and r' (same height) that agree on all values of their leaves except possibly at k.
+     *  Let two trees r and r' (same height) that agree on all values of their leaves 
+     *  except possibly at k.
      *  Let p be the path to the k-th leaf.
-     *  Then the values on the i-th left siblings of p in r is equal to the values on the i-th left siblings of p in r'.
+     *  Then the values on the i-th left siblings of p in r is equal to the values on 
+     *  the i-th left siblings of p in r'.
      *
      *  @param  p       A path to a leaf.
      *  @param  r       A tree.
@@ -186,8 +188,10 @@ module SiblingsPlus {
     }
 
     /**
-     *  This is the prelimiary of inductive case for the proof of Lemma [[LeftSiblings.leftSiblingsInEquivTrees]]
-     *  It establishes the pre-conditions to apply apply the lemma [[LeftSiblings.leftSiblingsInEquivTrees]]
+     *  This is the prelimiary of inductive case for the proof of Lemma 
+     *  [[LeftSiblings.leftSiblingsInEquivTrees]]
+     *  It establishes the pre-conditions to apply apply the lemma 
+     *  [[LeftSiblings.leftSiblingsInEquivTrees]]
      *  on the left child.
      *
      *  @param  p       A path to a leaf.
@@ -353,8 +357,10 @@ module SiblingsPlus {
     }
 
     /**
-     *  This is the prelimiary of inductive case for the proof of Lemma [[LeftSiblings.leftSiblingsInEquivTrees]]
-     *  It establishes the pre-conditions to apply apply the lemma [[LeftSiblings.leftSiblingsInEquivTrees]]
+     *  This is the preliminary of inductive case for the proof of Lemma
+     *  [[LeftSiblings.leftSiblingsInEquivTrees]]
+     *  It establishes the pre-conditions to apply apply the lemma 
+     *  [[LeftSiblings.leftSiblingsInEquivTrees]]
      *  on the right child.
      *
      *  @param  p       A path to a leaf.
