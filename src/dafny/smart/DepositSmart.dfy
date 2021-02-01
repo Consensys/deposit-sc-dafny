@@ -253,8 +253,9 @@ module DepositSmart {
 
                 assert(count == old@E(count));
                 assert(branch == old@E(branch));
-                
+                assert(count == old@E(count));
             }
+
             assert(branch == old(branch));
             assert(count == old(count));
             assert(values == old(values));
@@ -295,11 +296,11 @@ module DepositSmart {
             count := count + 1;
             assert(count == old(count) + 1);
 
-            // computeNewLeftIsCorrect(values, v, TREE_HEIGHT, old(branch), zero_h, f, d);
             values := values + [v];
             //  Constraints on height and length of lists.
             calc {
                 |branch|;
+                |old(branch)|;
                 |e|;
                 TREE_HEIGHT;
             }
@@ -314,7 +315,6 @@ module DepositSmart {
             computeNewLeftIsCorrect(old(values), v, TREE_HEIGHT, old(branch), zero_h, f, d);
             assert(values == old(values) + [v]);
             assert(areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h));
-            
         }
 
         lemma updateAndsplitSeqAtIndex<T>(s: seq<T>, v: T, i: nat) 
