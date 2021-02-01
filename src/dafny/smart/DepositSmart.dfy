@@ -417,6 +417,10 @@ module DepositSmart {
             var size := count;
 
             while h < TREE_HEIGHT
+                invariant branch == old(branch)
+                invariant values == old(values)
+                invariant count == old(count)
+
                 //  no out of range in seqs:
                 invariant 0 <= h <= TREE_HEIGHT
                 invariant 0 <= size < power2(TREE_HEIGHT - h)
