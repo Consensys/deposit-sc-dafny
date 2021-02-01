@@ -126,7 +126,7 @@ module CompleteTrees {
     }
 
     /**
-     *  Children of a node r in a complete tree of height >-= 2
+     *  Children of a node r in a complete tree of height >= 1
      *  evenly partition leavesIn(r).
      */
     lemma {:induction r} childrenInCompTreesHaveHalfNumberOfLeaves(r : Tree, h : nat) 
