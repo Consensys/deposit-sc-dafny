@@ -14,7 +14,7 @@ do
     ./verifyAll.sh $dir
     if [ $? -eq 0 ] # check if errors
     then
-      echo -e "${GREEN}No errors in direcctory $dir${NC}"
+      echo -e "${GREEN}No errors in directory $dir${NC}"
     else
       echo -e "${RED}Some errors occured in directory $dir${NC}"
       error=$((error + 1))
