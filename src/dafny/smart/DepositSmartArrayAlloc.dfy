@@ -151,28 +151,36 @@ module DepositSmartArrayAlloc {
             rightSiblingsOfLastPathAreDefault(natToBitList2(0, h), buildMerkle([], h, f1, default), 0, f1, 0, default);
         }
 
-        // method init_zero_hashes(z: array<int>, h: nat, f1 : (int, int) -> int, d: int)
-        //     requires h >= 1
-        //     ensures z[..] == reverse(zeroes(f1, d, h - 1))
-        //     // modifies this.z
-        // {
-        //     // z := new int[h];
-        //     var i := 0 ;
-        //     z[0] := d;
-        //     while i < h - 1 {
-        //         z[i + 1] := f1(z[i], z[i]);
-        //         i := i + 1;
-        //     }
-        //     assume(z[..] == reverse(zeroes(f1, d, h - 1)));
-        // }
-        // for (uint height = 0; height < DEPOSIT_CONTRACT_TREE_DEPTH - 1; height++)
-        //     zero_hashes[height + 1] = sha256(abi.encodePacked(zero_hashes[height], zero_hashes[height]));
-
-
         ///////////////////////////////////////////////////////////////////////////
         //  Imperative versions of algorithms with dynamic array allocations.
         ///////////////////////////////////////////////////////////////////////////
 
+        /**
+         *  This method initialises the array zero_hashes.
+         *  The autocintracts proof implies:
+         *  1. whenever init_zero_hashes() is called, Valid() holds
+         *  2. it follows that it holds if the initilisation happens right after
+         *      the constructor or at any other time later.
+         */
+        method init_zero_hashes()
+            modifies this.zero_hashes
+        {
+            assert(zero_hashes.Length >= 1);
+            var i := 0 ;
+            zero_hashes[0] := d;
+            while i < zero_hashes.Length - 1 
+                invariant 0 <= i <=  zero_hashes.Length - 1
+                invariant zero_hashes[..i + 1] == reverse(zero_h)[..i + 1]
+            {
+                zero_hashes[i + 1] := f(zero_hashes[i], zero_hashes[i]);
+                i := i + 1;
+            }
+
+            assert(zero_hashes[..] == reverse(zero_h));
+
+        }
+
+       
         /** 
          *  This method updates the left siblings (rBranch) in order
          *  to maintain the correspondence with the Merkle tree for values.
