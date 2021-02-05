@@ -171,11 +171,14 @@ module DepositSmartArrayAlloc {
             while i < zero_hashes.Length - 1 
                 invariant 0 <= i <=  zero_hashes.Length - 1
                 invariant zero_hashes[..i + 1] == reverse(zero_h)[..i + 1]
+
+                decreases zero_hashes.Length - i
             {
                 zero_hashes[i + 1] := f(zero_hashes[i], zero_hashes[i]);
                 i := i + 1;
             }
 
+            //  Invariant for i == zero_hashes.Length - 1
             assert(zero_hashes[..] == reverse(zero_h));
 
         }
