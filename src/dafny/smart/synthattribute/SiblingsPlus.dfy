@@ -412,7 +412,25 @@ module SiblingsPlus {
             var k' := k  - power2(height(r)) / 2;
             assert(k + 1 >  k'');
             assert(first(take(p,i + 1)) == first(p));
-                        
+        
+            calc == {
+                leavesIn(rc)[k'];
+                { childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));}
+                leavesIn(r)[k];
+                { leafAtPathIsIntValueOfPath(p, r, k, index) ;}
+                nodeAt(p, r);
+                { simplifyNodeAtFirstBit(p, r); } 
+                nodeAt(tail(p),  rc);
+            }
+            calc == {
+                leavesIn(rc')[k'];
+                { childrenInCompTreesHaveHalfNumberOfLeaves(r', height(r'));}
+                leavesIn(r')[k];
+                { leafAtPathIsIntValueOfPath(p, r', k, index) ;}
+                nodeAt(p, r');
+                { simplifyNodeAtFirstBit(p, r'); } 
+                nodeAt(tail(p),  rc');
+            }
             simplifySiblingAtIndexFirstBit(p, r', i + 1);
             simplifySiblingAtIndexFirstBit(p, r, i + 1);
 
