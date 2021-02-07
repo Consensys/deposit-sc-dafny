@@ -202,7 +202,7 @@ module SiblingsPlus {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma {:induction false } siblingsInEquivTreesNonBaseCaseFirstLeft<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
+    lemma {:induction false } {:timeLimitMultiplier 2} siblingsInEquivTreesNonBaseCaseFirstLeft<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
@@ -230,8 +230,6 @@ module SiblingsPlus {
                 && dropLeavesIn(lc, k + 1) == dropLeavesIn(lc', k + 1)
                 && nodeAt(tail(p), lc) == leavesIn(lc)[k]
                 && leavesIn(lc')[k] == nodeAt(tail(p), lc')
-                // i <= |tail(p)|
-                // && bitListToNat(tail(p)) < power2(height(lc)) == power2(height(lc'))
                 && siblingValueAt(p, r', i + 1) == siblingValueAt(tail(p), lc', i)
                 && siblingValueAt(p, r, i + 1) == siblingValueAt(tail(p), lc, i)
     {
@@ -267,45 +265,35 @@ module SiblingsPlus {
                 assert(k < |leavesIn(lc)| == |leavesIn(lc')|);
 
                 assert(1 <= i + 1 <= |p|);
-                // assert(0 <= i  <= |tail(p)|);
-                // bitListOfTailForFirstZero(p);
-                // assert(bitListToNat(tail(p)) ==  bitListToNat(p) == k);
 
                 calc == {
                     first(take(p,i + 1));
-                    { seqIndexLemmas(p, i + 1) ; }
                     first(p);
                     0;
                 }
+
                 //    siblingAt(take(p,i + 1), r).v is the same as siblingAt(take(tail(p), i), lc).v;
                 calc == {
                     siblingValueAt(p, r, i + 1);
-                    { reveal_siblingValueAt(); }
                     siblingAt(take(p,i + 1), r).v;
                     { assert(first(p) == 0) ; simplifySiblingAtIndexFirstBit(p, r, i + 1); }
                     siblingAt(take(tail(p), i), lc).v;
-                    { reveal_siblingValueAt(); }
                     siblingValueAt(tail(p), lc, i);
                 }
-                assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(tail(p), i), lc).v); 
-                reveal_siblingValueAt();
+
                 calc == {
                     take(leavesIn(lc), k);
                     take(leavesIn(r)[..k'], k);
                     take(take(leavesIn(r), k'), k);
                     { seqTakeTake(leavesIn(r), k, k'); }
                     take(leavesIn(r), k);
-                    { reveal_takeLeavesIn() ; }
                     takeLeavesIn(r, k);
                     takeLeavesIn(r', k);
-                    { reveal_takeLeavesIn() ; }
                     take(leavesIn(r'), k);
                     { seqTakeTake(leavesIn(r'), k, k'); }
                     take(take(leavesIn(r'), k), k);
                     take(leavesIn(lc'), k);
                 }
-                assert(take(leavesIn(lc), k) == take(leavesIn(lc'), k));
-                reveal_takeLeavesIn();
 
                 assert(k + 1 <=  k');
                 calc == {
@@ -325,9 +313,6 @@ module SiblingsPlus {
                     drop(leavesIn(lc'), k + 1);
                 }
 
-                assert(drop(leavesIn(lc), k + 1) == drop(leavesIn(lc'), k + 1));
-                reveal_dropLeavesIn();
-
                 calc == {
                     leavesIn(lc)[k];
                     leavesIn(r)[k];
@@ -335,7 +320,6 @@ module SiblingsPlus {
                     { simplifyNodeAtFirstBit(p, r); }
                     nodeAt(tail(p), lc);
                 }
-                assert(nodeAt(tail(p), lc) == leavesIn(lc)[k]);
 
                 calc == {
                     leavesIn(lc')[k];
@@ -344,7 +328,6 @@ module SiblingsPlus {
                     { simplifyNodeAtFirstBit(p, r'); }
                     nodeAt(tail(p), lc');
                 }
-                assert(leavesIn(lc')[k] == nodeAt(tail(p), lc'));
 
                 calc == {
                     siblingAt(take(p,i + 1), r').v;
@@ -352,8 +335,6 @@ module SiblingsPlus {
                     siblingAt(take(tail(p), i), lc').v;
 
                 }
-                assert(siblingAt(take(p,i + 1), r').v == siblingAt(take(tail(p), i), lc').v);
-                reveal_siblingValueAt();
     }
 
     /**
@@ -371,7 +352,7 @@ module SiblingsPlus {
      *  @param  i       An index on the path p.
      *  @param  index   The initial value of the indexing of leaves in r and r'.
      */
-    lemma {:induction false} siblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
+    lemma {:induction false} {:timeLimitMultiplier 2} siblingsInEquivTreesNonBaseCaseFirstRight<T>(p : seq<bit>, r : Tree<T>, r' : Tree<T>, k: nat, f : (T, T) -> T, i : nat, index: nat) 
         requires isCompleteTree(r)
         requires isCompleteTree(r')
         requires isDecoratedWith(f, r)
@@ -430,14 +411,26 @@ module SiblingsPlus {
             assert(k >= power2(height(r)) / 2 == k'');
             var k' := k  - power2(height(r)) / 2;
             assert(k + 1 >  k'');
-
+            assert(first(take(p,i + 1)) == first(p));
+        
             calc == {
-                first(take(p,i + 1));
-                { seqIndexLemmas(p, i + 1) ; }
-                first(p);
-                1;
+                leavesIn(rc)[k'];
+                { childrenInCompTreesHaveHalfNumberOfLeaves(r, height(r));}
+                leavesIn(r)[k];
+                { leafAtPathIsIntValueOfPath(p, r, k, index) ;}
+                nodeAt(p, r);
+                { simplifyNodeAtFirstBit(p, r); } 
+                nodeAt(tail(p),  rc);
             }
-                        
+            calc == {
+                leavesIn(rc')[k'];
+                { childrenInCompTreesHaveHalfNumberOfLeaves(r', height(r'));}
+                leavesIn(r')[k];
+                { leafAtPathIsIntValueOfPath(p, r', k, index) ;}
+                nodeAt(p, r');
+                { simplifyNodeAtFirstBit(p, r'); } 
+                nodeAt(tail(p),  rc');
+            }
             simplifySiblingAtIndexFirstBit(p, r', i + 1);
             simplifySiblingAtIndexFirstBit(p, r, i + 1);
 

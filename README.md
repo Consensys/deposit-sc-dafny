@@ -6,9 +6,6 @@
  [![Checks](https://img.shields.io/badge/VerificationStatus-Verified-green.svg)](https://shields.io/) 
 [![HitCount](http://hits.dwyl.com/franck44/https://githubcom/ConsenSys/deposit-sc-dafny.svg)](http://hits.dwyl.com/franck44/https://githubcom/ConsenSys/deposit-sc-dafny)
 
-
-
-
 # Verification of the Deposit Smart Contract in Dafny
 
 This repository contains the implementation and the formal proof of the Deposit Smart Contract algorithm.
@@ -26,11 +23,11 @@ The main contributions of this project are:
 
 *   a **formal definition** of the correctness criterion,
 *   **functional specifications** of correctness,
-*   functional and imperative style **algorithms** for the `deposit()` and `get_deposit_root()`.
+*   **verified algorithms** for the `deposit()` and `get_deposit_root()`.
 
 The main results are:
 
-*   a **fully mechanised proof of correctness** (including termination),
+*   a **fully mechanised proof of correctness** (including termination, memory safety and array allocations),
 *   a proof that the **initial values** in the `branch` array **do not matter** (hence there is no need to initialise it),
 *   a **simplified** version of the `deposit()` algorithm.
 
@@ -58,7 +55,15 @@ method deposit(v : int)
 Alternatively `deposit_count` can be incremented at the beginning and in that case the `while` loop condition
 is negated `size % 2 == 0`.
 
-The Dafny code for `deposit()` (proof and algorithm) can be found [here](https://github.com/PegaSysEng/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy#L186).
+Note that our proofs include **memory safety** and we have verified that:
+1. arrays (`branch` and `zero_hashes`) are properly referenced,
+2. there is side-effects on `zero_hashes` when updating an element in `branch`,
+
+We have also proved the `zero_hashes` initialisation algorithm. 
+
+This uses Dafny _dynamic framing_ features and the `{:autocontracts}` annotation for the deposit contract class. 
+
+The Dafny code for `deposit()` (proof and algorithm) can be found [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy#L186).
 
 # Overview
 
@@ -76,7 +81,8 @@ The proof of the algorithm follows a principled approach to algorithm design:
 * some **key properties** of the problem are identified,
 * a **logical correctness criterion** is defined using Merkle trees,
 * **functional style algorithms** are designed and **proved correct** with respect to the correctness criterion,
-* finally the imperative versions (with `while` loops) are proved correct by showing that they compute the
+* **memory safety** using _dynamic framing_ supported by Dafny,
+* finally the **imperative versions** (with `while` loops) are **proved correct** by showing that they compute the
 same result as the functional algorithms.
 
 This technique has the advantage of highlighting the main steps of the proof:
@@ -85,9 +91,7 @@ This technique has the advantage of highlighting the main steps of the proof:
 The final step of proving that the imperative versions of the algorithms are correct boils down to proving that they compute the same result
 as their functional counter-parts and is somehow detached from the intricacy of the correctness proofs.
 
-
-
-# Problem and Proof
+# Problem Statement and Proof
 
 The following sections may help the reader understand the idea of the proof and how it is implemented in Dafny:
 
@@ -101,17 +105,25 @@ The following sections may help the reader understand the idea of the proof and 
 
 We provide a Docker container to run the verification with Dafny.
 
-All the files are checked using the following command assuming `dafny` is the Dafny executable:
+All the files can be checked using the following command assuming `dafny` is the Dafny executable:
 ```bash
 dafny /dafnyVerify:1 /compile:0 /tracePOs /traceTimes /noCheating:1 file.dfy
 ```
-The `/noCheating:1` ensures that any `assume` statement (if any) is treated as _untrusted_ and 
-processed by the verifier as claim to prove rather than assume i.e. as an `assert`. 
+The `/noCheating:1` ensures that  `assume` statements (if any) are treated as _untrusted_ and 
+processed by the verifier as claim to prove rather than `assume`, i.e. they are replaced by  `assert`. 
 
-To install and run the verification you may refer to the following:
+> The time it takes to verify the proofs depend on the computer, and OS. 
+> As a result it may happen that the analysis is inconclusive (times out) with the Dafny 
+> default command line flags. We provide a shell script that runs the verification
+> for each directory/file with dafny command line arguments that should be suitable for the 
+> analysis to run to completion (see [check the proofs](./wiki/repeatability.md)). 
+
+
+To install and run the full verification you may refer to the following:
 * the steps to [check the proofs](./wiki/repeatability.md),
 * some references if you choose to [install dafny](./wiki/dafny-install.md).
 
+  
 
 # Supplementary Material
 
