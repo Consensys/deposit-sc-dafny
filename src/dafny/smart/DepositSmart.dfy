@@ -31,7 +31,7 @@ include "./algorithms/IndexBasedAlgorithm.dfy"
  *  memory footprint (and to prove that no overwriting of array elements occur.)
  *  
  */
-module DepositSmartArrayAlloc {
+module DepositSmart {
 
     import opened ComputeRootPath
     import opened RSiblings
