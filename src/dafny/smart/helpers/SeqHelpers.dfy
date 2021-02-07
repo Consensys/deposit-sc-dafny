@@ -104,6 +104,24 @@ module SeqHelpers {
         p[k..]
     }
 
+    /**
+     *  Reverses a sequence.
+     *  
+     *  @param  p   A sequence.
+     *  @returns    The sequence `p` in reverse order.
+     */
+    function method reverse<T>(p: seq<T>) : seq<T> 
+        ensures |reverse(p)| == |p| 
+        ensures forall k:: 0 <= k < |p| ==> reverse(p)[|p| - 1 - k] == p[k]
+        ensures forall k:: 0 <= k < |p| ==> reverse(p)[k] == p[|p| - 1 - k]
+        decreases p 
+    {
+        if |p| == 0 then 
+            []
+        else 
+            reverse(tail(p)) + [first(p)]
+    }
+
     //  Useful lemmas on init, last, take and drop.
     lemma seqLemmas<T>(p : seq<T>) 
         requires 1 <= |p|

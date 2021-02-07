@@ -168,20 +168,26 @@ module Siblings {
                     assert(k >= power2(height(r)) / 2);
 
                     if (i >= 1) {
+
                         var k' := k  - power2(height(r)) / 2;
                         assert(k + 1 >  power2(height(r)) / 2);
  
                         siblingsInEquivTreesNonBaseCaseFirstRight(p, r, r', k, f, i, index);
                         calc == {
+                            siblingValueAt(p, r, i + 1);
+                            { reveal_siblingValueAt() ; }
                             siblingAt(take(p,i + 1), r).v;
+                            { simplifySiblingAtIndexFirstBit(p, r, i + 1); }
                             siblingAt(take(tail(p), i), rc).v;
                             { 
                                 siblingsInEquivTreesAreEqual(tail(p), rc, rc', k - power2(height(r)) / 2, f, i - 1, index + power2(height(r)) / 2); 
                             }
                             siblingAt(take(tail(p), i), rc').v;
-                            siblingAt(take(p,i + 1), r').v;
+                            { simplifySiblingAtIndexFirstBit(p, r', i + 1); }
+                            siblingAt(take(p, i + 1), r').v;
+                            { reveal_siblingValueAt() ; }
+                            siblingValueAt(p, r', i + 1);
                         }
-                        assert(siblingAt(take(p,i + 1), r).v == siblingAt(take(p,i + 1), r').v);
                     } else {
                         assert(i == 0);
                         siblingsInEquivTreesBaseCase(p, r, r', k, f, index);

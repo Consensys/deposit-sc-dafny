@@ -153,7 +153,7 @@ module MerkleTrees {
      *  @param  d       The default value for type T.
      *
      */
-     lemma {:induction false} computeNewLeftIsCorrect<T>(
+    lemma {:induction false} computeNewLeftIsCorrect<T>(
             l: seq<T>, a : T, h : nat, left : seq<T>, right : seq<T>, f : (T, T) -> T, d : T) 
         requires 1 <= h 
         requires |l| < power2(h) - 1
