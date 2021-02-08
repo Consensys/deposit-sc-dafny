@@ -257,7 +257,6 @@ module DepositSmart {
                 value := f(branch[i], value);
                 size := size / 2;
                 i := i + 1;
-    
             }
             //  Show that e == rBranch[TREE_HEIGHT - i - 1 := value]
             calc == {
