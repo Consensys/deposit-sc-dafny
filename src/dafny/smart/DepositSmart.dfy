@@ -317,7 +317,8 @@ module DepositSmart {
          */
         lemma {:induction false} mainInvariantProofHelper(h: nat, k : nat, left : seq<int>, right : seq<int>, f : (int, int) -> int, seed: int)
             requires 1 <= h <= |left| == |right| 
-            requires 0 < k < power2(h) 
+            // requires 0 < k < power2(h) 
+            requires k < power2(h) 
             requires k % 2 == 1
             ensures k / 2 < power2(h - 1)
             ensures computeLeftSiblingsOnNextpathWithIndex(
