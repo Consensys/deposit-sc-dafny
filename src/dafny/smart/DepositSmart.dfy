@@ -12,14 +12,11 @@
  * under the License.
  */
 
-include "./synthattribute/ComputeRootPath.dfy"
 include "./synthattribute/RightSiblings.dfy"
 include "./helpers/Helpers.dfy"
 include "./helpers/SeqHelpers.dfy"
 include "./paths/PathInCompleteTrees.dfy"
-include "./paths/NextPathInCompleteTreesLemmas.dfy"
 include "./seqofbits/SeqOfBits.dfy"
-include "./trees/Trees.dfy"
 include "./trees/MerkleTrees.dfy"
 include "./algorithms/IndexBasedAlgorithm.dfy"
 
@@ -33,14 +30,11 @@ include "./algorithms/IndexBasedAlgorithm.dfy"
  */
 module DepositSmart {
 
-    import opened ComputeRootPath
     import opened RSiblings
     import opened Helpers
     import opened SeqHelpers
-    import opened NextPathInCompleteTreesLemmas
     import opened PathInCompleteTrees
     import opened SeqOfBits
-    import opened Trees 
     import opened MerkleTrees
     import opened IndexBasedAlgorithm
 
