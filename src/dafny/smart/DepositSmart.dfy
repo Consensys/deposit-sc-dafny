@@ -132,7 +132,13 @@ module DepositSmart {
             ensures branch != zero_hashes
         {
             //  State variables
-            TREE_HEIGHT, count, f, d := h, 0, f1, default;
+            //  Due to a bug (Issue #1111) in Dafny 3.0.0 in the translation
+            //  of concurrent assignments for consts, we initialise them one by one.
+            // TREE_HEIGHT, count, f, d := h, 0, f1, default;
+            TREE_HEIGHT := h;
+            count := 0;
+            f := f1;
+            d := default;
 
             //  Allocate the array branch, and initialise with `l`.
             branch := new int[h](i requires 0 <= i < h => l[i]);
