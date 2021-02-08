@@ -242,7 +242,10 @@ module DepositSmart {
                         take(rBranch, TREE_HEIGHT - i), 
                         take(zero_h, TREE_HEIGHT - i), f, value) 
                     + drop(rBranch, TREE_HEIGHT - i);
-                    { mainInvariantProofHelper(TREE_HEIGHT - i, size, rBranch, zero_h, f, value); }
+                    { 
+                        assert(size < power2(TREE_HEIGHT));
+                        mainInvariantProofHelper(TREE_HEIGHT - i, size, rBranch, zero_h, f, value); 
+                    }
                     computeLeftSiblingsOnNextpathWithIndex(
                         TREE_HEIGHT - i - 1, size / 2, 
                         take(rBranch, TREE_HEIGHT - i - 1), 
