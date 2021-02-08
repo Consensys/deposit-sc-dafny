@@ -210,8 +210,8 @@ module DepositSmart {
             //  Store the expected result in e.
             ghost var e := computeLeftSiblingsOnNextpathWithIndex(TREE_HEIGHT, old(size), old(rBranch), zero_h, f, v);
            
-            //  rBranch and zero_h correspond to  the vectors branch and zero_hashes in reverse
-            //   order, so the index TREE_HEIGHT - i - 1  is used in place if i to dereference them.
+            //  rBranch and zero_h correspond to the vectors branch and zero_hashes in reverse
+            //  order, so the index TREE_HEIGHT - i - 1 is used in place if i to dereference them.
             while size % 2 == 1 
 
                 invariant 0 <= TREE_HEIGHT - i - 1 < |rBranch| == branch.Length
@@ -228,11 +228,7 @@ module DepositSmart {
                 //  Termination is easy as size decreases and must be zero.
                 decreases size 
             {
-                //  This is not an invarint but true if siez % 2 == 1 and 
-                //  pre-condition for mainInvariantProofHelper
-                assert(0 != size);
-
-                //  The proof steps for the main invariant,
+                //  The proof steps for the main invariant.
                 calc == {
                     e;
                     computeLeftSiblingsOnNextpathWithIndex(
