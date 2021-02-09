@@ -44,40 +44,43 @@ Our correctness proof relies on two main properties of `deposit()` and `get_depo
 **Theorem 1** is proved by induction on the length of the list of inserted values. In Dafny it is proved by showing that a property
 called `Valid()` is an inductive invariant.
 
-The [inductive invariant](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L83) is defined by:
+The [inductive invariant](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L91) is defined by:
 ```dafny
 predicate Valid()
     reads this
 {
-    //  Constraints on height and length of lists.
-    1 <= TREE_HEIGHT == |branch| == |zero_h| 
+   //  Constraints on height and length of lists.
+    1 <= TREE_HEIGHT == branch.Length == |rBranch| == |zero_h| 
+    && branch[..] == reverse(rBranch)
     //  Maximum number of values stored in the tree bounded.
     && count < power2(TREE_HEIGHT) 
     //  count is the number of values added so far and should correspond to |values|.
     && |values| == count
+    //  the pointers to the arrays are distinct
+    && zero_hashes != branch
     //  zero_h is constant and equal to default values for each level of t.
     && zero_h == zeroes(f, d, TREE_HEIGHT - 1)
-    //  branch and zero_h are the left and right siblings of path to 
+    && zero_hashes[..] == reverse(zero_h)
+    //  rBranch and zero_h are the left and right siblings of path to 
     //  |values|-th leaf in buildMerkle(values, TREE_HEIGHT, f, d)
-    && areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), branch, zero_h)
+    && areSiblingsAtIndex(|values|, buildMerkle(values, TREE_HEIGHT, f, d), rBranch, zero_h)
 }
 ```
 where the last line encodes the desired property: 
 
 * `values` is tracking the list of values inserted so far (it is a `ghost` variable in Dafny), 
-* and `branch` and `zero_h` should contain the values of the siblings (predicate `areSiblingsAtIndex`) 
+* and `rbranch` and `zero_h` should contain the values of the siblings (predicate `areSiblingsAtIndex`) 
 of the path to the leaf indexed `|values|` (length of values) in the tree that corresponds to `values` (`buildMerkle(values, TREE_HEIGHT, f, d))` with `f` the attribute to compute and `d` the default values).
+The two arrays `branch` and `zero_hashes` contain the values of `rBranch` and `zero_h` in **reverse** order.
 
 <!-- ## Merkle Trees -->
 
-
-
 ## Pre and Post-conditions
 
-The [proof of **Theorem 2**](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L298) is encoded as a pre/post-conditions for the `get_deposit_root()` function:
+The [proof of **Theorem 2**](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L380) is encoded as a pre/post-conditions for the `get_deposit_root()` function (note that the requires and ensures `Valid()` are ommitted in the actual code and are implicitely added if the `{:autocontracts}` attribute is attached the to enclosing class):
 
 ```dafny
- method get_deposit_root() returns (r : int) 
+method get_deposit_root() returns (r : int) 
     requires Valid()    //  assume Theorem 1 holds before the call
     ensures Valid()     //  ensures Theorem 1 still holds after the call
     /** Ensures the result r of get_deposit_root_() is the root value of the Merkle tree for values.  */
@@ -88,14 +91,15 @@ The [proof of **Theorem 2**](https://github.com/ConsenSys/deposit-sc-dafny/blob/
 ```
 The post-conditions ensure:
 
-1. that `Valid()` is preserved,
+1. that `Valid()` is preserved, and this check is implicitely perfomed 
+if the `{:autocontracts}` attribute is attached the to enclosing class,
 2. the value that is returned at any point in time is the value that the root of the Merkle tree for `values` would have.
 To prove this Theorem, the source code of `get_deposit_root()` must be annotated by some
 loop invariants (properties) that are automatically checked by Dafny.
 
-The invariant-annotated source code for this function is [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L298).
+The invariant-annotated source code for this function is [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L380).
 
-The [proof of **Theorem 1**](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L188) amounts to showing that `Valid` is preserved (note that in our code `branch` is stored in reverse order
+The [proof of **Theorem 1**](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L200) amounts to showing that `Valid` is preserved (note that in our code `rbranch` is stored in reverse order
 compared to the original algorithm and we use index `TREE_HEIGHT - i - 1` instead of `i`):
 ```dafny
 method  deposit(v : int) 
@@ -108,11 +112,11 @@ method  deposit(v : int)
     var size : nat := count;
     var i : nat := 0;
     while size % 2 == 1 {
-        value := f(branch[TREE_HEIGHT - i - 1], value);
+        value := f(rbranch[TREE_HEIGHT - i - 1], value);
         size := size / 2;
         i := i + 1;
     }
-    branch := branch[TREE_HEIGHT - i - 1 := value];
+    rbranch := rbranch[TREE_HEIGHT - i - 1 := value];
     count := count + 1;
 
     //  Update of the list of values inserted so far
@@ -124,6 +128,9 @@ method  deposit(v : int)
 ```
 The proof if this property requires the annotation of the source code with loop invariants
 that can be checked by Dafny.
-The annotated source code for this function is [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/1a6f1dffa5a941fa87cc1ddfa77e9e20094b65d4/src/dafny/smart/DepositSmart.dfy#L188).
+The [actual code for deposit()](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L200) uses dynamically allocated arrays, `branch` and `zero_hashes`. 
+As a result, the verification of the  [DepositSmart.dfy](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy) file 
+takes into account the menory footprint of the contract object and proves
+that an update to `branch` does not modify `zero_hashes`. 
 
 [ [up] ](../README.md) 

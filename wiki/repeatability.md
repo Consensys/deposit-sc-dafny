@@ -111,6 +111,30 @@ Dafny program verifier finished with 9 verified, 0 errors
 root@749938cb155d:/deposit-sc-dafny# 
 ```
 
+An example of a an object creation and usage is provided in 
+[RunDeposit.dy](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/RunDeposit.dfy) and be executed in the docker container by:
+
+```bash
+root@749938cb155d:/deposit-sc-dafny# dafny  /compile:4  src/dafny/smart/RunDeposit.dfy
+Dafny program verifier finished with 1 verified, 0 errors
+Running...
+
+Running some tests for the DSC
+root for list []: -1
+=> Depositing: 3
+root for list [3]: 2
+=> Depositing: 6
+root for list [3,6]: -4
+=> Depositing: 2
+root for list [3,6,2]:-6
+=> Depositing: -2
+root for list [3,6,2,-2]:-8
+=> Depositing: 4
+root for list [3,6,2,-2,4]:-12
+=> Depositing: 5
+root for list [3,6,2,-2,4,5]:-7
+root@749938cb155d:/deposit-sc-dafny#
+```
 
 Finally you can check all the files using the following command (it can take up to several minutes to process all the files):
 ```bash
@@ -120,6 +144,7 @@ This script will run Dafny (`noCheating` mode on) with some tracing options that
 
 > On a MacBook Pro 2.3 GHz 8-Core Intel Core i9, running Docker 3.0.0, the previous analysis
 > (of all the files) takes around 4mins, and you should see the progress on the standard output.  
+
 
 ## Install Dafny on your computer
 

@@ -63,7 +63,7 @@ We have also proved the `zero_hashes` initialisation algorithm.
 
 This uses Dafny _dynamic framing_ features and the `{:autocontracts}` annotation for the deposit contract class. 
 
-The Dafny code for `deposit()` (proof and algorithm) can be found [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy#L186).
+The Dafny code for `deposit()` (proof and algorithm) can be found [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy).
 
 # Overview
 
@@ -73,7 +73,7 @@ to write the proofs rather `method` or `function method` to write executable cod
 The core algorithms for the incremental Merkle tree algorithms (imperative and functional styles) are very short (see  the _algorithms_ directory 
 [Statistics](./wiki/stats.md)).
 
-The Deposit Smart Contract code and its correctness proof in [DepositSmart.dfy](https://github.com/PegaSysEng/deposit-sc-dafny/blob/3a57971ae6f9d824647403397734ecbbe7dfe837/src/dafny/smart/DepositSmart.dfy) relies on several auxiliary proofs with functions and lemmas.
+The Deposit Smart Contract code and its correctness proof in [DepositSmart.dfy](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy) relies on several auxiliary proofs with functions and lemmas.
 The code for these proofs has not been _optimised_ and some of the hints provided in the proof code are not necessary for Dafny
 to prove the results. 
 
