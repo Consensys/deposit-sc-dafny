@@ -124,6 +124,8 @@ module DepositSmart {
             requires h >= 1
             requires |l| == h 
             ensures branch != zero_hashes
+            ensures count == 0
+            ensures TREE_HEIGHT == h 
         {
             //  State variables
             //  Due to a bug (Issue #1111) in Dafny 3.0.0 in the translation
@@ -200,6 +202,8 @@ module DepositSmart {
             requires count < power2(TREE_HEIGHT) - 1     
             /** The new value `v` should be added to history of received values. */
             ensures values == old(values) + [v]    
+            // ensures count == old(count) + 1
+            // ensures TREE_HEIGHT == old(TREE_HEIGHT)
             
             modifies this, this.branch
         {
