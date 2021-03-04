@@ -24,7 +24,8 @@ The main contributions of this project are:
 *   a **formal definition** of the correctness criterion,
 *   **functional specifications** of correctness,
 *   a **fully mechanised proof of correctness** (including termination, memory safety and array allocations),
-*   **verified algorithms** for the `deposit()` and `get_deposit_root()`.
+*   **verified algorithms** for the `deposit()` and `get_deposit_root()`
+and the initialisation `init_zero_hashes()`.
 
 The main findings are:
 
