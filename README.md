@@ -4,6 +4,7 @@
  [![Proofs](https://img.shields.io/badge/TheoremsProved-132-yellow.svg)](https://shields.io/) 
  [![LoC](https://img.shields.io/badge/LoC-3536-orange.svg)](https://shields.io/) 
  [![Checks](https://img.shields.io/badge/VerificationStatus-Verified-green.svg)](https://shields.io/) 
+ [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FConsenSys%2Fdeposit-sc-dafny&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
 # Verification of the Deposit Smart Contract in Dafny
 
