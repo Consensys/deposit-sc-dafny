@@ -57,7 +57,7 @@ is negated `size % 2 == 0`.
 
 Note that our proofs include **memory safety** and we have verified that:
 1. arrays (`branch` and `zero_hashes`) are properly referenced,
-2. there is side-effects on `zero_hashes` when updating an element in `branch`,
+2. there is **no** side-effects on `zero_hashes` when updating an element in `branch`,
 
 We have also proved the `zero_hashes` initialisation algorithm. 
 
