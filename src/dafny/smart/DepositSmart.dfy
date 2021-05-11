@@ -375,7 +375,7 @@ module DepositSmart {
          *  @note       The autocontracts attribute impliictely adds the pre and 
          *              post condition Valid() to the spec of each method.
          */
-         method {:timeLimitMultiplier 8} get_deposit_root() returns (r : int) 
+        method {:timeLimitMultiplier 8} get_deposit_root() returns (r : int) 
             /** The result of get_deposit_root_() is the root value of the Merkle tree for values.  */
             ensures r == buildMerkle(values, TREE_HEIGHT, f, d).v 
         {

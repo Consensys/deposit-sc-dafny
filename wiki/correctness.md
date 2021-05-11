@@ -77,7 +77,7 @@ The two arrays `branch` and `zero_hashes` contain the values of `rBranch` and `z
 
 ## Pre and Post-conditions
 
-The [proof of **Theorem 2**](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L380) is encoded as a pre/post-conditions for the `get_deposit_root()` function (note that the requires and ensures `Valid()` are ommitted in the actual code and are implicitely added if the `{:autocontracts}` attribute is attached the to enclosing class):
+The [proof of **Theorem 2**](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L380) is encoded as a pre/post-conditions for the `get_deposit_root()` function (note that the requires and ensures `Valid()` are ommitted in the actual code and are implicitly added if the `{:autocontracts}` attribute is attached the to enclosing class):
 
 ```dafny
 method get_deposit_root() returns (r : int) 
@@ -112,11 +112,13 @@ method  deposit(v : int)
     var size : nat := count;
     var i : nat := 0;
     while size % 2 == 1 {
-        value := f(rbranch[TREE_HEIGHT - i - 1], value);
+        value := f(branch[i], value);
         size := size / 2;
         i := i + 1;
     }
     rbranch := rbranch[TREE_HEIGHT - i - 1 := value];
+    branch[i] := value;
+
     count := count + 1;
 
     //  Update of the list of values inserted so far
@@ -126,9 +128,9 @@ method  deposit(v : int)
     ...
 }
 ```
-The proof if this property requires the annotation of the source code with loop invariants
+The proof if this property requires the annotation of the source code with loop invariants (ommitted in the algorithm above)
 that can be checked by Dafny.
-The [actual code for deposit()](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L200) uses dynamically allocated arrays, `branch` and `zero_hashes`. 
+The [actual annotated code for deposit()](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy#L200) uses dynamically allocated arrays, `branch` and `zero_hashes`. 
 As a result, the verification of the  [DepositSmart.dfy](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy) file 
 takes into account the menory footprint of the contract object and proves
 that an update to `branch` does not modify `zero_hashes`. 

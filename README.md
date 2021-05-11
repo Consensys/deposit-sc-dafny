@@ -4,7 +4,7 @@
  [![Proofs](https://img.shields.io/badge/TheoremsProved-132-yellow.svg)](https://shields.io/) 
  [![LoC](https://img.shields.io/badge/LoC-3536-orange.svg)](https://shields.io/) 
  [![Checks](https://img.shields.io/badge/VerificationStatus-Verified-green.svg)](https://shields.io/) 
-[![HitCount](http://hits.dwyl.com/ConsenSys/deposit-sc-dafny.svg)](http://hits.dwyl.com/ConsenSys/deposit-sc-dafny)
+ [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FConsenSys%2Fdeposit-sc-dafny&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
 # Verification of the Deposit Smart Contract in Dafny
 
@@ -23,11 +23,13 @@ The main contributions of this project are:
 
 *   a **formal definition** of the correctness criterion,
 *   **functional specifications** of correctness,
-*   **verified algorithms** for the `deposit()` and `get_deposit_root()`.
-
-The main results are:
-
 *   a **fully mechanised proof of correctness** (including termination, memory safety and array allocations),
+*   **verified algorithms** for the `deposit()` and `get_deposit_root()`
+and the initialisation `init_zero_hashes()`.
+
+The main findings are:
+
+
 *   a proof that the **initial values** in the `branch` array **do not matter** (hence there is no need to initialise it),
 *   a **simplified** version of the `deposit()` algorithm.
 
@@ -61,7 +63,7 @@ Note that our proofs include **memory safety** and we have verified that:
 
 We have also proved the `zero_hashes` initialisation algorithm. 
 
-This uses Dafny _dynamic framing_ features and the `{:autocontracts}` annotation for the deposit contract class. 
+The memory safety proofs use Dafny _dynamic framing_ features and the `{:autocontracts}` annotation for the deposit contract class. 
 
 The Dafny code for `deposit()` (proof and algorithm) can be found [here](https://github.com/ConsenSys/deposit-sc-dafny/blob/master/src/dafny/smart/DepositSmart.dfy).
 
@@ -81,9 +83,9 @@ The proof of the algorithm follows a principled approach to algorithm design:
 * some **key properties** of the problem are identified,
 * a **logical correctness criterion** is defined using Merkle trees,
 * **functional style algorithms** are designed and **proved correct** with respect to the correctness criterion,
-* **memory safety** using _dynamic framing_ supported by Dafny,
-* finally the **imperative versions** (with `while` loops) are **proved correct** by showing that they compute the
-same result as the functional algorithms.
+* the **imperative versions** (with `while` loops) are **proved correct** by showing that they compute the
+same result as the functional algorithms,
+* **memory safety** (and dynamic array allocation) is addressed using _dynamic framing_ supported by Dafny,
 
 This technique has the advantage of highlighting the main steps of the proof:
 * the incremental Merkle tree efficient algorithm is an instance of **dynamic programming**,
