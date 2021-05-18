@@ -10,6 +10,8 @@
 
 This repository contains the implementation and the formal proof of the Deposit Smart Contract algorithm.
 
+If you are interested in the details you may also look at this [experience report](https://arxiv.org/abs/2105.06009v1).
+
 # Breakdown of our results
 
 The source code in this repository is the **first complete formal proof of correctness** of the
