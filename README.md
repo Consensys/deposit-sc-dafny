@@ -10,7 +10,10 @@
 
 This repository contains the implementation and the formal proof of the Deposit Smart Contract algorithm.
 
-If you are interested in the details you may also look at this [experience report](https://arxiv.org/abs/2105.06009v1).
+If you are interested in the details you may also look at this [experience report](https://arxiv.org/abs/2105.06009v1) or watch a [presentation](https://www.youtube.com/watch?v=pxe4qGwGBGg) (Ethereum Engineering Group meet-up) of this work.
+
+<a href="https://arxiv.org/abs/2105.06009"><img src="arxiv-report.png" alt="Deposit Smart Contract in Dafny" style="height:350px"></a>
+<a href="https://www.youtube.com/watch?v=pxe4qGwGBGg"><img src="EEG-26-05-21.png" alt="Deposit Smart Contract in Dafny" style="width:400px"></a>
 
 # Breakdown of our results
 
