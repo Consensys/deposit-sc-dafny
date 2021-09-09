@@ -197,7 +197,7 @@ module DepositSmart {
          *              post condition Valid() to the spec of each method.
          *  
          */
-         method {:timeLimitMultiplier 10} deposit(v : int) 
+        method {:timeLimitMultiplier 10} deposit(v : int) 
             /** The tree cannot be full.  */
             requires count < power2(TREE_HEIGHT) - 1     
             /** The new value `v` should be added to history of received values. */
